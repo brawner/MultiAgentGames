@@ -37,7 +37,8 @@
         </jar>
         <sleep seconds="1"/>
         <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
-            <zipfileset src="${classes.dir}/external-libs.jar"/>
+            <zipfileset src="${classes.dir}/external-libs.jar">
+                <exclude name="META-INF/**/*"/>
             <fileset dir="resources"/>
             <manifest>
                 <attribute name="Main-Class" value="networking.client.GGWebSocketClient"/>
