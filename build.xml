@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="all" basedir="." name="multi-agent-games">
+    
+    <property name="src.dir" value="src"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="classes.dir" value="classes"/>
+    
+    <path id="external.classpath">
+        <pathelement path="${lib.dir}/**/*" />
+    </path>
+    
+    <target name="all" depends="multi-agent-games" />
+    
+    <target name="clean" description="Delete files">
+        <delete dir="${classes.dir}" failonerror="false"/>
+        <delete file="${ant.project.name}.jar"/>
+    </target>
+    
+    <target name="compile" description="Compiles">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}">
+            <classpath refid="external.classpath" />
+        </javac>
+    </target>
+    
+    <target name="multi-agent-games" description="Creates baking jar" depends="compile">
+        <jar jarfile="${classes.dir}/external-libs.jar">
+          <zipgroupfileset dir="${lib.dir}/">
+            <include name="**/*.jar"/>
+          </zipgroupfileset>
+        </jar>
+        <sleep seconds="1"/>
+        <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
+            <zipfileset src="${classes.dir}/external-libs.jar"/>
+            <fileset dir="resources"/>
+        </jar>
+    </target>
+</project>
