@@ -1,0 +1,101 @@
+package networking.server;
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+
+import networking.common.GridGameServerToken;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.WebSocketAdapter;
+
+
+public class GGWebSocketServer extends WebSocketAdapter{
+	
+	private GridGameServer server;
+	private Session session;
+	public GGWebSocketServer() {
+		this.server = GridGameServer.connect();
+	}
+	
+	@Override
+    public void onWebSocketConnect(Session sess)
+    {
+        super.onWebSocketConnect(sess);
+        System.out.println("Socket Connected: " + sess);
+        this.server.onConnect(sess);
+        this.session = sess;
+    }
+    
+    @Override
+    public void onWebSocketText(String message)
+    {
+        super.onWebSocketText(message);
+        System.out.println("Received TEXT message: " + message);
+        GridGameServerToken token = GridGameServerToken.tokenFromJSONString(message);
+        GridGameServerToken response = this.server.onMessage(token);
+        try {
+        	if (!response.isEmpty()) {
+				this.session.getRemote().sendString(response.toJSONString());
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    @Override
+    public void onWebSocketClose(int statusCode, String reason)
+    {
+        super.onWebSocketClose(statusCode,reason);
+        System.out.println("Socket Closed: [" + statusCode + "] " + reason);
+        
+    }
+    
+    @Override
+    public void onWebSocketError(Throwable cause)
+    {
+        super.onWebSocketError(cause);
+        cause.printStackTrace(System.err);
+    }
+	
+	
+	public static void main(String[] args) {
+		GGWebSocketServer ggServer = new GGWebSocketServer();
+		String prefix = "chicken";
+		Server server = new Server();
+        ServerConnector connector = new ServerConnector(server);
+        connector.setPort(8080);
+        server.addConnector(connector);
+
+        // Setup the basic application "context" for this application at "/"
+        // This is also known as the handler tree (in jetty speak)
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        context.setContextPath("/");
+        server.setHandler(context);
+        
+        // Add a websocket to a specific path spec
+        ServletHolder holderEvents = new ServletHolder("ws-events", GGWebSocketServerServlet.class);
+        
+        context.addServlet(holderEvents, "/events/*");
+
+        try
+        {
+            server.start();
+            System.out.println("Server started at: " + server.getURI().toString());
+            //server.dump(System.err);
+            server.join();
+        }
+        catch (Throwable t)
+        {
+            t.printStackTrace(System.err);
+        }
+	}
+
+	
+	
+
+}

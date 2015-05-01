@@ -1,0 +1,17 @@
+{
+	"description":"Two agents, Two goals, Type 0",
+	"width":5,
+	"height":5,
+	"agents": [
+	{"x":4, "y":4},
+	{"x":0, "y":0}
+	],
+	"goals": [
+	{"x":0, "y":4, "gt":1},
+	{"x":4, "y":0, "gt":2}
+	],
+	"vertical_walls": [
+	{"pos": 4, "end1": 4, "end2": 5},
+	{"pos": 1, "end1": 0, "end2": 0}
+	]
+}
