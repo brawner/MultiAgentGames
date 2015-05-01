@@ -39,6 +39,9 @@
         <jar destfile="${ant.project.name}.jar" basedir="${classes.dir}">
             <zipfileset src="${classes.dir}/external-libs.jar"/>
             <fileset dir="resources"/>
+            <manifest>
+                <attribute name="Main-Class" value="networking.client.GGWebSocketClient"/>
+            </manifest>
         </jar>
     </target>
 </project>
