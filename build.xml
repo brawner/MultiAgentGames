@@ -6,6 +6,7 @@
     <property name="classes.dir" value="classes"/>
     
     <path id="external.classpath">
+        <pathelement path="${lib.dir}/burlap.jar" />
         <pathelement path="${lib.dir}" />
     </path>
     
