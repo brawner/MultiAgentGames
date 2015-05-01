@@ -6,8 +6,11 @@
     <property name="classes.dir" value="classes"/>
     
     <path id="external.classpath">
-        <pathelement path="${lib.dir}/burlap.jar" />
-        <pathelement path="${lib.dir}" />
+        <pathelement path="${lib.dir}/servlet-api-3.1.jar" />
+        <pathelement path="${lib.dir}/jetty-all-9.2.10.v20150310.jar" />
+        <pathelement path="${lib.dir}/jackson-annotations-2.2.3.jar" />
+        <pathelement path="${lib.dir}/jackson-core-2.2.3.jar" />
+        <pathelement path="${lib.dir}/jackson-databind-2.2.3.jar" />
     </path>
     
     <target name="all" depends="multi-agent-games" />
