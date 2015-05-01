@@ -6,7 +6,7 @@
     <property name="classes.dir" value="classes"/>
     
     <path id="external.classpath">
-        <pathelement path="${lib.dir}/" />
+        <pathelement path="${lib.dir}" />
     </path>
     
     <target name="all" depends="multi-agent-games" />
