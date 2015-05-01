@@ -11,6 +11,8 @@
         <pathelement path="${lib.dir}/jackson-annotations-2.2.3.jar" />
         <pathelement path="${lib.dir}/jackson-core-2.2.3.jar" />
         <pathelement path="${lib.dir}/jackson-databind-2.2.3.jar" />
+        <pathelement path="${lib.dir}/burlap.jar" />
+        
     </path>
     
     <target name="all" depends="multi-agent-games" />
