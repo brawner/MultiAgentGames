@@ -71,6 +71,13 @@ public class GridGameServer {
 		
 	}
 	
+	public static GridGameServer connect() {
+		if (GridGameServer.singleton == null) {
+			throw new RuntimeException("The grid game server was not properly initialized");
+		}
+		return GridGameServer.singleton;
+	}
+	
 	public static GridGameServer connect(String gameDirectory) {
 		if (GridGameServer.singleton == null) {
 			GridGameServer.singleton = new GridGameServer(gameDirectory);

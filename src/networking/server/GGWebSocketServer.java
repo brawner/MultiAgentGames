@@ -18,6 +18,10 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	
 	private GridGameServer server;
 	private Session session;
+	
+	public GGWebSocketServer() {
+		this.server = GridGameServer.connect();
+	}
 	public GGWebSocketServer(String gameDirectory) {
 		this.server = GridGameServer.connect(gameDirectory);
 	}
