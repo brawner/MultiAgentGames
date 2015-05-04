@@ -1,7 +1,6 @@
 package networking.client;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +14,6 @@ import networking.server.GameHandler;
 import networking.server.GridGameServer;
 
 import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
@@ -37,7 +32,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 	private Session session;
 	private final GGWebSocket socket;
 	private final ConsoleInteraction console;
-	private final List<SGVisualExplorerClient> explorerClients;
+	private final Map<String, SGVisualExplorerClient> explorerClients;
 	private String id;
 	private boolean amOk;
 	private List<GridGameServerToken> worldTokens;
@@ -47,7 +42,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		this.client = new WebSocketClient();
 		this.socket = new GGWebSocket();
 		this.socket.addListener(this);
-		this.explorerClients = new ArrayList<SGVisualExplorerClient>();
+		this.explorerClients = new HashMap<String, SGVisualExplorerClient>();
 		this.console = ConsoleInteraction.connect(this);
 		this.addListener(this.console);
 		
@@ -150,8 +145,9 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 				
 				String name = msg.getString(GameHandler.AGENT);
 				String worldType = msg.getString(GridGameServer.WORLD_TYPE);
+				String threadId = msg.getString(GridGameServer.WORLD_ID);
 				List<Map<String, Object>> stateObj = (List<Map<String, Object>>)msg.getObject(GameHandler.STATE);
-				this.initializeGuiClient(name, worldType, stateObj);
+				this.initializeGuiClient(name, threadId, worldType, stateObj);
 			}
 			
 			if (msgType.equals(GridGameServer.HELLO_MESSAGE)) {
@@ -165,10 +161,15 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		return response;
 	}
 	
-	private void initializeGuiClient(String agentName, String worldType, List<Map<String, Object>> stateObjects) {
+	private void initializeGuiClient(String agentName, String threadId, String worldType, List<Map<String, Object>> stateObjects) {
 		if (this.worldTokens == null) {
 			throw new RuntimeException("This client has received no world descriptions");
 		}
+		String explorerId = threadId + agentName;
+		if (this.explorerClients.containsKey(explorerId)) {
+			return;
+		}
+		
 		World world = null;
 		try {
 			for (GridGameServerToken worldToken : this.worldTokens) {
@@ -193,8 +194,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		explorerClient.addKeyAction("a", agentName + ":"+GridGame.ACTIONWEST);
 		explorerClient.addKeyAction("q", agentName + ":"+GridGame.ACTIONNOOP);
 		
-		
-		this.explorerClients.add(explorerClient);
+		this.explorerClients.put(explorerId, explorerClient);
 		this.addListener(explorerClient);
 		explorerClient.initGUI();
 		String text = this.getInitialGameText(worldType, agentName, world);
@@ -202,8 +202,13 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 	}
 	
 	public void exitGame(SGVisualExplorerClient client) {
-		if (this.explorerClients.remove(client)) {
-			this.removeListener(client);
+		for (Map.Entry<String, SGVisualExplorerClient> entry : this.explorerClients.entrySet()) {
+			if (entry.getValue().equals(client)) {
+				String idToRemove = entry.getKey();
+				this.removeListener(client);
+				this.explorerClients.remove(idToRemove);
+				return;
+			}
 		}
 	}
 	

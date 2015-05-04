@@ -77,7 +77,7 @@ public class GameHandler {
 				response.setString(MSG_TYPE, INITIALIZE);
 				response.setString(AGENT, agent.getAgentName());
 				response.setString(GridGameServer.WORLD_TYPE, world.toString());
-				
+				response.setString(GridGameServer.WORLD_ID, threadId);
 				SGDomain domain = world.getDomain();
 				StateJSONParser parser = new StateJSONParser(domain);
 				response.setObject(GameHandler.STATE, parser.getJSONPrepared(world.startingState()));

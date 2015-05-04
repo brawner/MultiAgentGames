@@ -1,6 +1,7 @@
 package networking.server;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -192,7 +193,7 @@ public class GridGameServer {
 				response.setToken(GameHandler.HANDLER_RESPONSE, handler.onMessage(token));
 			}
 			
-			this.addCurrentState(response);
+			
 			
 			if (session != null) {
 				session.getRemote().sendString(response.toJSONString());
@@ -208,6 +209,23 @@ public class GridGameServer {
 		return response;
     }
 	
+	private void updateConnected() {
+		GridGameServerToken token = new GridGameServerToken();
+		this.addCurrentState(token);
+		this.broadcastMessage(token);
+	}
+	
+	private void broadcastMessage(GridGameServerToken token) {
+		for (Session session : this.sessionLookup.values()) {
+			
+			try {
+				session.getRemote().sendString(token.toJSONString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private void initializeGame(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
 		String worldId = token.getString(GridGameServer.WORLD_ID);
 		
@@ -216,6 +234,7 @@ public class GridGameServer {
 			String activeId = this.getUniqueThreadId();
 			this.activeGameWorlds.put(activeId, world);
 			response.setString(STATUS, "Game " + activeId + " has been initialized");
+			this.updateConnected();
 		} else {
 			response.setError(true);
 			response.setString(WHY_ERROR, "The desired world id does not exist");
@@ -232,16 +251,18 @@ public class GridGameServer {
 			GameHandler handler = new GameHandler(this, session, world, domain, worldId);
 			List<GameHandler> handlers = this.handlersAssociatedWithGames.get(worldId);
 			if (handlers == null) {
-				handlers = new ArrayList<GameHandler>();
+				handlers = Collections.synchronizedList(new ArrayList<GameHandler>());
 				this.handlersAssociatedWithGames.put(worldId, handlers);
 			}
 			handlers.add(handler);
 			this.gameLookup.put(clientId, handler);
 			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
+			this.updateConnected();
 		} else {
 			response.setError(true);
 			response.setString(WHY_ERROR, "The desired world id does not exist");
 		}
+		
 	}
 	
 	private void addAgent(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
@@ -265,6 +286,7 @@ public class GridGameServer {
 		SGDomain domain = world.getDomain();
 		AgentType agentType = new AgentType(agentTypeStr, domain.getObjectClass(GridGame.CLASSAGENT), domain.getSingleActions());
 		agent.joinWorld(world, agentType);
+		this.updateConnected();
 	}
 	
 	private void runGame(GridGameServerToken token, String clientId, GridGameServerToken response) throws TokenCastException {
@@ -286,12 +308,15 @@ public class GridGameServer {
 			this.futures.put(activeId,  future);
 			this.monitor.addFuture(future);
 			response.setString(STATUS, "Game " + activeId + " has now been started with " + activeWorld.getRegisteredAgents().size() + " agents");
+			this.updateConnected();
 		}
+		
 	}
 	
 	private void removeGame(GridGameServerToken token) throws TokenCastException {
 		String activeId = token.getString(GridGameServer.WORLD_ID);
 		this.activeGameWorlds.remove(activeId);
+		this.updateConnected();
 	}
 	
 	public void closeGame(Future<GameAnalysis> future, GameAnalysis result) {
