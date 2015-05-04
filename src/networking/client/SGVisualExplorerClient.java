@@ -1,13 +1,12 @@
 package networking.client;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Map;
 
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.server.GameHandler;
-import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.State;
 import burlap.oomdp.stochasticgames.GroundedSingleAction;
 import burlap.oomdp.stochasticgames.JointAction;
@@ -65,6 +64,14 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 				Map<String, Double> reward = (Map<String, Double>)updateToken.getObject(GameHandler.REWARD);
 				Boolean isTerminal = updateToken.getBoolean(GameHandler.IS_TERMINAL);
 				this.updateScreen(state, jointAction, reward, isTerminal);
+				
+			} else if (msgType.equals(GameHandler.CLOSE_GAME)) {
+				System.out.println("Closing game");
+				this.setEnabled(false);
+				this.setVisible(false);
+				this.socketClient.exitGame(this);
+				this.dispose();
+				
 			}
 		} catch (TokenCastException e) {
 			response.setError(true);

@@ -71,5 +71,11 @@ public class GGWebSocket extends WebSocketAdapter {
     	this.listeners.add(listener);
     	this.lock.writeLock().unlock();
     }
+	public void removeListener(GGWebSocketListener listener) {
+		this.lock.writeLock().lock();
+    	this.listeners.remove(listener);
+    	this.lock.writeLock().unlock();
+		
+	}
 
 }

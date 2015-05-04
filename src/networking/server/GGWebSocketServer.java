@@ -1,8 +1,6 @@
 package networking.server;
 import java.io.IOException;
 
-import javax.servlet.ServletException;
-
 import networking.common.GridGameServerToken;
 
 import org.eclipse.jetty.server.Server;
@@ -15,15 +13,15 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
 public class GGWebSocketServer extends WebSocketAdapter{
 	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
-	
+	private static final String OUTPUT_DIRECTORY = System.getProperty("user.home") + "/grid_games/results";
 	private GridGameServer server;
 	private Session session;
 	
 	public GGWebSocketServer() {
 		this.server = GridGameServer.connect();
 	}
-	public GGWebSocketServer(String gameDirectory) {
-		this.server = GridGameServer.connect(gameDirectory);
+	public GGWebSocketServer(String gameDirectory, String outputDirectory) {
+		this.server = GridGameServer.connect(gameDirectory, outputDirectory);
 	}
 	
 	@Override
@@ -70,10 +68,13 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	
 	public static void main(String[] args) {
 		String gameDirectory = WORLD_DIRECTORY;
-		if (args.length > 0) {
+		String outputDirectory = OUTPUT_DIRECTORY;
+		
+		if (args.length > 1) {
 			gameDirectory = args[0];
+			outputDirectory = args[1];
 		}
-		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory);
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8787);

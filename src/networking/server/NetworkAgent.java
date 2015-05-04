@@ -35,7 +35,7 @@ public class NetworkAgent extends Agent {
 		
 		try {
 			int count = 0;
-			while (action == null) {
+			while (action == null && this.world.isOk()) {
 				this.lock.readLock().lock();
 				action = this.currentAction;
 				this.lock.readLock().unlock();

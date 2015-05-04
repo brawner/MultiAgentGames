@@ -57,6 +57,9 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		this.socket.addListener(listener);
 	}
 	
+	public void removeListener(GGWebSocketListener listener) {
+		this.socket.removeListener(listener);
+	}
 	public boolean isOK() {
 		return this.amOk;
 	}
@@ -198,11 +201,17 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		explorerClient.printText(text);
 	}
 	
+	public void exitGame(SGVisualExplorerClient client) {
+		if (this.explorerClients.remove(client)) {
+			this.removeListener(client);
+		}
+	}
+	
 	private String getInitialGameText(String worldType, String agentName, World world) {
 		int agentNumber  = 0;
 		List<Agent> agents = world.getRegisteredAgents();
 		for (int i = 0; i < agents.size(); i++) {
-			if (agents.get(i).equals(agentName)) {
+			if (agents.get(i).getAgentName().equals(agentName)) {
 				agentNumber = i;
 				break;
 			}
@@ -285,7 +294,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
     }
 
     public static void main(String[] args) {
-    	String host = "localhost:8787";
+    	String host = "elzar.cs.brown.edu:8787";
     	if (args.length > 0) {
     		host = args[0];
     	}

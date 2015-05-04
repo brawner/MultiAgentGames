@@ -44,16 +44,21 @@ public class GameHandler {
 	public final static String SUCCESS = "success";
 	public final static String INITIALIZE = "initialize";
 	public final static String HANDLER_RESPONSE = "handler_response";
+	public static final String CLOSE_GAME = "close_game";
 	
 	private Session session;
 	private World world;
 	private SGDomain domain;
 	private NetworkAgent agent;
+	private GridGameServer server;
+	private String threadId;
 	
-	public GameHandler(Session session, World world, SGDomain domain) {
+	public GameHandler(GridGameServer server, Session session, World world, SGDomain domain, String threadId) {
 		this.session = session;
 		this.world = world;
 		this.domain = domain;
+		this.server = server;
+		this.threadId = threadId;
 	}
 	
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
@@ -129,6 +134,20 @@ public class GameHandler {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void shutdown() {
+		GridGameServerToken token = new GridGameServerToken();
+		token.setString(GameHandler.MSG_TYPE, GameHandler.CLOSE_GAME);
+		try {
+			if (this.session != null) {
+				this.session.getRemote().sendString(token.toJSONString());
+			} 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
 	}
 	
 	
