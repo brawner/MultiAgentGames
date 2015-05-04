@@ -14,11 +14,12 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
 
 public class GGWebSocketServer extends WebSocketAdapter{
+	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
 	
 	private GridGameServer server;
 	private Session session;
-	public GGWebSocketServer() {
-		this.server = GridGameServer.connect();
+	public GGWebSocketServer(String gameDirectory) {
+		this.server = GridGameServer.connect(gameDirectory);
 	}
 	
 	@Override
@@ -64,8 +65,11 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	
 	
 	public static void main(String[] args) {
-		GGWebSocketServer ggServer = new GGWebSocketServer();
-		String prefix = "chicken";
+		String gameDirectory = WORLD_DIRECTORY;
+		if (args.length > 0) {
+			gameDirectory = args[0];
+		}
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8080);

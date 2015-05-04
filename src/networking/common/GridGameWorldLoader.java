@@ -1,16 +1,14 @@
 package networking.common;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.CodeSource;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
 
 import networking.common.messages.WorldFile;
 import networking.server.GridGameServer;
@@ -204,34 +202,22 @@ public class GridGameWorldLoader {
 		return GridGameWorldLoader.loadWorld(fileToken);
 	}
 	
+	//TODO add in environment variable expanding, and other good stuff
+	private static Path expandDirectory(String directory) {
+		return Paths.get(directory);
+	}
+	
 	public static List<GridGameServerToken> loadWorldTokens(String directory) {
-		Enumeration<URL> urls;
-		List<File> files = new ArrayList<File>();
-		try {
-			urls = GridGameWorldLoader.class.getClassLoader().getResources(directory);
-		} catch (IOException e) {
-			e.printStackTrace();
-			return null;
-		}
-		
-		
-		try {
-			while (urls.hasMoreElements()) {
-				URL url = urls.nextElement();
-				File file = new File(url.toURI()); 
-				files.addAll(Arrays.asList(file.listFiles()));
-			} 
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-			return null;
-		}
-		
+		Path path = GridGameWorldLoader.expandDirectory(directory);
+		File file = path.toFile();
+		List<File> files = Arrays.asList(file.listFiles());
 		List<GridGameServerToken> worlds = new ArrayList<GridGameServerToken>();
 	    
 		int count = 0;
-		for (File file : files) {
-			if (file.isFile()) {
-				GridGameServerToken world = GridGameWorldLoader.loadText(file.getAbsolutePath());
+		for (File f : files) {
+			if (f.isFile()) {
+				String filename = f.getAbsolutePath();
+				GridGameServerToken world = GridGameWorldLoader.loadText(filename);
 				world.setString(WorldFile.LABEL, "world" + count++);
 	    		worlds.add(world);
 			}

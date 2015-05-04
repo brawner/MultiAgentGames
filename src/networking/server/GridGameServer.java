@@ -47,7 +47,6 @@ public class GridGameServer {
 	public static final String STATUS = "status";
 	public static final String RANDOM_AGENT = "random";
 	public static final String MAVI_AGENT = "mavi";
-	private static final String WORLD_DIRECTORY = "worlds";
 	
 	private List<GridGameServerToken> worldTokens;
 	private final Map<String, World> worldLookup;
@@ -56,9 +55,10 @@ public class GridGameServer {
 	private final Map<String, GameHandler> gameLookup;
 	private final Map<String, Future<GameAnalysis>> futures;
 	private final ExecutorService gameExecutor;
+	private final String gameDirectory;
 	private long worldCounter;
 	
-	public GridGameServer() {
+	public GridGameServer(String gameDirectory) {
 		this.worldCounter = 0;
 		this.worldLookup = new HashMap<String, World>();
 		this.sessionLookup = new HashMap<String, Session>();
@@ -66,12 +66,14 @@ public class GridGameServer {
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.futures = new HashMap<String, Future<GameAnalysis>>();
 		this.activeGameWorlds = new HashMap<String, World>();
+		this.gameDirectory = gameDirectory;
 		this.worldTokens = this.loadWorlds(null);
+		
 	}
 	
-	public static GridGameServer connect() {
+	public static GridGameServer connect(String gameDirectory) {
 		if (GridGameServer.singleton == null) {
-			GridGameServer.singleton = new GridGameServer();
+			GridGameServer.singleton = new GridGameServer(gameDirectory);
 		}
 		return GridGameServer.singleton;
 	}
@@ -262,7 +264,7 @@ public class GridGameServer {
 	}
 	
 	private List<GridGameServerToken> loadWorlds(GridGameServerToken response){
-		List<GridGameServerToken> tokens = GridGameWorldLoader.loadWorldTokens(GridGameServer.WORLD_DIRECTORY);
+		List<GridGameServerToken> tokens = GridGameWorldLoader.loadWorldTokens(this.gameDirectory);
 		this.worldLookup.clear();
 		this.sessionLookup.clear();
 		this.gameLookup.clear();
