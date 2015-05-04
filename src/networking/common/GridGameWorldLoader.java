@@ -207,10 +207,31 @@ public class GridGameWorldLoader {
 		return Paths.get(directory);
 	}
 	
+	private static List<File> walkDirectory(File file) {
+		List<File> files = new ArrayList<File>();
+		if (file.isFile()) {
+			files.add(file);
+		} else if (file.isDirectory()){
+			for (File f : file.listFiles()) {
+				if (f.isDirectory()) {
+					walkDirectory(file);
+				} else if (f.isFile()) {
+					files.add(f);
+				}
+			}
+		}
+		return files;
+	}
+	
 	public static List<GridGameServerToken> loadWorldTokens(String directory) {
 		Path path = GridGameWorldLoader.expandDirectory(directory);
 		File file = path.toFile();
-		List<File> files = Arrays.asList(file.listFiles());
+		if (!file.exists()) {
+			System.err.println(directory + " could not be found. Check the path");
+		}
+		
+		List<File> files = GridGameWorldLoader.walkDirectory(file);
+		
 		List<GridGameServerToken> worlds = new ArrayList<GridGameServerToken>();
 	    
 		int count = 0;

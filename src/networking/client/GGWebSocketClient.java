@@ -285,7 +285,12 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
     }
 
     public static void main(String[] args) {
-    	GGWebSocketClient client = new GGWebSocketClient("ws://localhost:8080/events/");
+    	String host = "localhost:8787";
+    	if (args.length > 0) {
+    		host = args[0];
+    	}
+    	String webSocketAddress = "ws://" + host + "/events/";
+    	GGWebSocketClient client = new GGWebSocketClient(webSocketAddress);
     	client.attemptConnect();
     	while (!client.isConnected()) {
     		try {
