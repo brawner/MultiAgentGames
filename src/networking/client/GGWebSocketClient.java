@@ -299,7 +299,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
     }
 
     public static void main(String[] args) {
-    	String host = "elzar.cs.brown.edu:8787";
+    	String host = "localhost:8787";
     	if (args.length > 0) {
     		host = args[0];
     	}

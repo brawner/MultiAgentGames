@@ -31,9 +31,9 @@ public class GameMonitor implements Callable<Boolean>{
 			synchronized(this.futures){ 
 				for (Future<GameAnalysis> future : this.futures) {
 					try {
-					GameAnalysis analysis = future.get(0, TimeUnit.SECONDS);
-					this.server.closeGame(future, analysis);
-					toRemove.add(future);
+						GameAnalysis analysis = future.get(0, TimeUnit.SECONDS);
+						this.server.closeGame(future, analysis);
+						toRemove.add(future);
 					} catch (TimeoutException e) {
 						
 					}

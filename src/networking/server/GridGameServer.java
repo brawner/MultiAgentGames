@@ -5,12 +5,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
@@ -52,34 +54,21 @@ public class GridGameServer {
 	public static final String RANDOM_AGENT = "random";
 	public static final String MAVI_AGENT = "mavi";
 	
-	private List<GridGameServerToken> worldTokens;
-	private final Map<String, World> worldLookup;
-	private final Map<String, World> activeGameWorlds;
-	private final Map<String, World> currentlyRunningWorlds;
-	
-	private final Map<String, Session> sessionLookup;
-	private final Map<String, GameHandler> gameLookup;
-	private final Map<String, Future<GameAnalysis>> futures;
-	private final Map<String, List<GameHandler>> handlersAssociatedWithGames;
 	private final ExecutorService gameExecutor;
 	private final String gameDirectory;
 	private final String analysisDirectory;
 	private final GameMonitor monitor;
-	private long threadIdCounter;
+	private final GridGameServerCollections collections;
+	
 	
 	public GridGameServer(String gameDirectory, String analysisDirectory) {
-		this.threadIdCounter = 0;
-		this.worldLookup = new HashMap<String, World>();
-		this.sessionLookup = new HashMap<String, Session>();
-		this.gameLookup = new HashMap<String, GameHandler>();
+		this.collections = new GridGameServerCollections();
 		this.gameExecutor = Executors.newCachedThreadPool();
-		this.futures = new HashMap<String, Future<GameAnalysis>>();
-		this.activeGameWorlds = new HashMap<String, World>();
-		this.currentlyRunningWorlds = new HashMap<String, World>();
-		this.handlersAssociatedWithGames = new HashMap<String, List<GameHandler>>();
 		this.gameDirectory = gameDirectory;
 		this.analysisDirectory = analysisDirectory;
-		this.worldTokens = this.loadWorlds(null);
+		
+		this.collections.addWorldTokens(this.loadWorlds(null));
+		
 		this.monitor = new GameMonitor(this);
 		this.gameExecutor.submit(this.monitor);
 		
@@ -94,55 +83,41 @@ public class GridGameServer {
 	
 	public static GridGameServer connect(String gameDirectory, String outputDirectory) {
 		if (GridGameServer.singleton == null) {
-			GridGameServer.singleton = new GridGameServer(gameDirectory, outputDirectory);
+			GridGameServer singleton = new GridGameServer(gameDirectory, outputDirectory);
+			GridGameServer.singleton = singleton;
 		}
 		return GridGameServer.singleton;
 	}
 	
-	public String getNewCollectionID()
-	{
-		Random random = new Random();
-		String id = Long.toString(random.nextLong());
-		while (this.sessionLookup.containsKey(id) || this.gameLookup.containsKey(id))
-		{
-			id = Long.toString(random.nextLong());
-		}
-		return id;
+	public void submitCallable(String id, Callable<GameAnalysis> callable) {
+		Future<GameAnalysis> future = this.gameExecutor.submit(callable);
+		this.collections.addFuture(id, future);
+		this.monitor.addFuture(future);
 	}
 	
-	private String getUniqueThreadId() {
-		return Long.toString(this.threadIdCounter++);
-	}
 	
-	public String getNewActiveWorldID() {
-		long count = 0;
-		String id = Long.toString(count++);
-		while (this.activeGameWorlds.containsKey(id)) {
-			id = Long.toString(count++);
-		}
-		return id;
-	}
-
 	public void onConnect(Session session) {
         System.out.println("Connect: " + session.getRemoteAddress().getAddress());
         try {
         	GridGameServerToken token = new GridGameServerToken();
-        	String id = this.getNewCollectionID();
+        	String id = this.collections.getNewCollectionID();
         	token.setString(CLIENT_ID, id);
         	this.addCurrentState(token);
         	token.setString(GameHandler.MSG_TYPE, HELLO_MESSAGE);
             session.getRemote().sendString(token.toJSONString());
-            this.sessionLookup.put(id, session);
+            this.collections.addSession(id, session);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 	
 	public void addCurrentState(GridGameServerToken token) {
-		token.setTokenList(WORLDS, this.worldTokens);
+		List<GridGameServerToken> worldTokens = this.collections.getWorldTokens();
+		token.setTokenList(WORLDS, worldTokens);
     	
     	Map<String, String> activeGames = new HashMap<String, String>();
-    	for (Map.Entry<String, World> entry : this.activeGameWorlds.entrySet()) {
+    	Map<String, World> activeGameWorlds = this.collections.getActiveWorlds();
+    	for (Map.Entry<String, World> entry : activeGameWorlds.entrySet()) {
     		World world = entry.getValue();
     		activeGames.put(entry.getKey(), world.toString() + " " + world.getRegisteredAgents().size() + " registered agents");
     	}
@@ -155,8 +130,7 @@ public class GridGameServer {
 		GridGameServerToken response = new GridGameServerToken();
 		try {
 			String id = token.getString(CLIENT_ID);
-			Session session = this.sessionLookup.get(id);
-			
+			Session session = this.collections.getSession(id);
 			String msgType = token.getString(GameHandler.MSG_TYPE);
 			
 			switch(msgType) {
@@ -180,7 +154,7 @@ public class GridGameServer {
 				this.exitGame(id);
 				break;
 			case GameHandler.LOAD_WORLDS:
-				this.worldTokens = this.loadWorlds(response);
+				this.collections.addWorldTokens(this.loadWorlds(response));
 				break;
 			}
 			
@@ -188,12 +162,10 @@ public class GridGameServer {
 				return response;
 			}
 			
-			GameHandler handler = this.gameLookup.get(id);
+			GameHandler handler = this.collections.getHandler(id);
 			if (handler != null) {
 				response.setToken(GameHandler.HANDLER_RESPONSE, handler.onMessage(token));
 			}
-			
-			
 			
 			if (session != null) {
 				session.getRemote().sendString(response.toJSONString());
@@ -216,8 +188,10 @@ public class GridGameServer {
 	}
 	
 	private void broadcastMessage(GridGameServerToken token) {
-		for (Session session : this.sessionLookup.values()) {
-			
+		List<Session> sessions = this.collections.getSessions();
+		
+		for (Session session : sessions) {
+			System.out.println("Broadcasting to: " + session.toString());
 			try {
 				session.getRemote().sendString(token.toJSONString());
 			} catch (IOException e) {
@@ -228,11 +202,12 @@ public class GridGameServer {
 	
 	private void initializeGame(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
 		String worldId = token.getString(GridGameServer.WORLD_ID);
+		World world = this.collections.getWorld(worldId);
 		
-		if (this.worldLookup.containsKey(worldId)) {
-			World world = this.worldLookup.get(worldId).copy();
-			String activeId = this.getUniqueThreadId();
-			this.activeGameWorlds.put(activeId, world);
+		if (world != null) {
+			World copy = world.copy();
+			String activeId = this.collections.getUniqueThreadId();
+			this.collections.addActiveWorld(activeId, copy);
 			response.setString(STATUS, "Game " + activeId + " has been initialized");
 			this.updateConnected();
 		} else {
@@ -243,19 +218,13 @@ public class GridGameServer {
 	
 	private void joinGame(GridGameServerToken token, String clientId, Session session, GridGameServerToken response) throws TokenCastException {
 		String worldId = token.getString(GridGameServer.WORLD_ID);
+		World world = this.collections.getActiveWorld(worldId);
 		
-		
-		if (this.activeGameWorlds.containsKey(worldId)) {
-			World world = this.activeGameWorlds.get(worldId);
+		if (world != null) {
 			SGDomain domain = world.getDomain();
 			GameHandler handler = new GameHandler(this, session, world, domain, worldId);
-			List<GameHandler> handlers = this.handlersAssociatedWithGames.get(worldId);
-			if (handlers == null) {
-				handlers = Collections.synchronizedList(new ArrayList<GameHandler>());
-				this.handlersAssociatedWithGames.put(worldId, handlers);
-			}
-			handlers.add(handler);
-			this.gameLookup.put(clientId, handler);
+			
+			this.collections.addHandler(clientId, worldId, handler);
 			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
 			this.updateConnected();
 		} else {
@@ -267,7 +236,7 @@ public class GridGameServer {
 	
 	private void addAgent(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
 		String worldId = token.getString(GridGameServer.WORLD_ID);
-		World world = this.activeGameWorlds.get(worldId);
+		World world = this.collections.getActiveWorld(worldId);
 		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		
 		
@@ -285,28 +254,33 @@ public class GridGameServer {
 		}
 		SGDomain domain = world.getDomain();
 		AgentType agentType = new AgentType(agentTypeStr, domain.getObjectClass(GridGame.CLASSAGENT), domain.getSingleActions());
-		agent.joinWorld(world, agentType);
+		
+		synchronized(world) {
+			agent.joinWorld(world, agentType);
+		}
+		
 		this.updateConnected();
 	}
 	
 	private void runGame(GridGameServerToken token, String clientId, GridGameServerToken response) throws TokenCastException {
 		String activeId = token.getString(GridGameServer.WORLD_ID);
+		World world = this.collections.getActiveWorld(activeId);
 		
-		if (!this.activeGameWorlds.containsKey(activeId)) {
+		if (world == null) {
 			response.setError(true);
 			response.setString(WHY_ERROR, "The desired active game id does not exist");
 			return;
 		}
 		
-		Future<GameAnalysis> future = this.futures.get(activeId);
+		Future<GameAnalysis> future = this.collections.getFuture(activeId);
 		
 		if (future == null) {
-			World activeWorld = this.activeGameWorlds.remove(activeId);
-			this.currentlyRunningWorlds.put(activeId, activeWorld);
+			World activeWorld = this.collections.removeActiveWorld(activeId);
+			this.collections.addRunningWorld(activeId, activeWorld);
+			
 			Callable<GameAnalysis> callable = this.generateCallable(activeWorld);
-			future = this.gameExecutor.submit(callable);
-			this.futures.put(activeId,  future);
-			this.monitor.addFuture(future);
+			this.submitCallable(activeId, callable);
+			
 			response.setString(STATUS, "Game " + activeId + " has now been started with " + activeWorld.getRegisteredAgents().size() + " agents");
 			this.updateConnected();
 		}
@@ -314,24 +288,19 @@ public class GridGameServer {
 	}
 	
 	private void removeGame(GridGameServerToken token) throws TokenCastException {
+		
 		String activeId = token.getString(GridGameServer.WORLD_ID);
-		this.activeGameWorlds.remove(activeId);
+		this.collections.removeActiveWorld(activeId);
 		this.updateConnected();
 	}
 	
 	public void closeGame(Future<GameAnalysis> future, GameAnalysis result) {
-		String futureId = null;
-		
-		for (Map.Entry<String, Future<GameAnalysis>> entry : this.futures.entrySet()) {
-			if (entry.getValue().equals(future)) {
-				futureId = entry.getKey();
-				break;
-			}
-		}
+		String futureId = this.collections.getFutureId(future);
 		
 		if (futureId != null) {
-			World world = this.currentlyRunningWorlds.remove(futureId);
-			List<GameHandler> handlers = this.handlersAssociatedWithGames.remove(futureId);
+			World world = this.collections.removeRunningWorld(futureId);
+			this.collections.removeFuture(futureId);
+			List<GameHandler> handlers = this.collections.removeHandlers(futureId);
 			String path = this.analysisDirectory + "/episode" + futureId;
 			System.out.println("Writing to " + path);
 			StateJSONParser parser = new StateJSONParser(world.getDomain());
@@ -347,9 +316,9 @@ public class GridGameServer {
 	
 	public void closeGame(String futureId, boolean force) {
 		System.out.println("Attempting to shutdown game " + futureId);
-		Future<GameAnalysis> future = this.futures.remove(futureId);
-		World world = this.currentlyRunningWorlds.remove(futureId);
-		List<GameHandler> handlers = this.handlersAssociatedWithGames.remove(futureId);
+		Future<GameAnalysis> future = this.collections.removeFuture(futureId);
+		World world = this.collections.removeRunningWorld(futureId);
+		List<GameHandler> handlers = this.collections.removeHandlers(futureId);
 		
 		if (future == null) {
 			System.out.println("This thread does not currently seem to be running");
@@ -380,28 +349,24 @@ public class GridGameServer {
 	}
 	
 	private void exitGame(String clientId) {
-		this.gameLookup.remove(clientId);
+		this.collections.removeHandler(clientId);
 	}
 	
 	private List<GridGameServerToken> loadWorlds(GridGameServerToken response){
 		List<GridGameServerToken> tokens = GridGameWorldLoader.loadWorldTokens(this.gameDirectory);
-		this.worldLookup.clear();
-		this.sessionLookup.clear();
-		this.gameLookup.clear();
-		this.futures.clear();
 		
+		this.collections.clearWorlds();
 		
 		try {
 			for (GridGameServerToken token : tokens) {
 				String name = token.getString(WorldFile.LABEL);
 				World world = GridGameWorldLoader.loadWorld(token);
-				this.worldLookup.put(name, world);
+				this.collections.addWorld(name, world);
 			}
 		} catch (TokenCastException e) {
 			throw new RuntimeException(e);
 		}
 		
-		this.activeGameWorlds.clear();
 		if (response != null) {
 			response.setTokenList(GridGameServer.WORLDS, tokens);
 		}
@@ -431,8 +396,6 @@ public class GridGameServer {
 		MAValueIteration vi = 
 				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
 						0.95, hashingFactory, 0., new MaxQ(), 0.00015, 50);
-		MultiAgentVFPlanningAgent a0 = new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
-		AgentType agentType0 = new AgentType(GridGame.CLASSAGENT, domain.getObjectClass(GridGame.CLASSAGENT), domain.getSingleActions());
 		return new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
 		
 	}
@@ -441,7 +404,11 @@ public class GridGameServer {
 		return new Callable<GameAnalysis>() {
 			@Override
 			public GameAnalysis call() throws Exception {
-				return world.runGame();
+				GameAnalysis analysis = null;
+				synchronized (world) {
+					analysis = world.runGame();
+				}
+				return analysis;
 			}
 		};
 	}
