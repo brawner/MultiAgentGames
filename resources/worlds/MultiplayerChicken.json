@@ -1,5 +1,5 @@
 {
-	"description":"Chicken, One goal",
+	"description":"Multi-player chicken",
 	"width":5,
 	"height":5,
 	"agents": [
