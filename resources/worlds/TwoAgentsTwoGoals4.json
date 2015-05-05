@@ -11,7 +11,7 @@
 	{"x":4, "y":0, "gt":2}
 	],
 	"vertical_walls": [
-	{"pos": 3, "end1": 0, "end2": 0, "wt":1},
-	{"pos": 2, "end1": 4, "end2": 4, "wt":1}
+	{"pos": 3, "end1": 0, "end2": 0, "wallType":1},
+	{"pos": 2, "end1": 4, "end2": 4, "wallType":1}
 	]
 }

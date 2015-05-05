@@ -10,7 +10,7 @@
 	{"x":1, "y":2, "gt":0}
 	],
 	"horizontal_walls": [
-		{"end1":0, "end2":0, "pos":1, "wt":1},
-		{"end1":2, "end2":2, "pos":1, "wt":1}
+		{"end1":0, "end2":0, "pos":1, "wallType":1},
+		{"end1":2, "end2":2, "pos":1, "wallType":1}
 	]
 }
