@@ -19,6 +19,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.common.StateJSONParser;
+import burlap.oomdp.core.ObjectInstance;
 import burlap.oomdp.core.State;
 import burlap.oomdp.stochasticgames.Agent;
 import burlap.oomdp.stochasticgames.JointActionModel;
@@ -197,7 +198,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		this.explorerClients.put(explorerId, explorerClient);
 		this.addListener(explorerClient);
 		explorerClient.initGUI();
-		String text = this.getInitialGameText(worldType, agentName, world);
+		String text = this.getInitialGameText(worldType, agentName, world, startState);
 		explorerClient.printText(text);
 	}
 	
@@ -212,15 +213,10 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		}
 	}
 	
-	private String getInitialGameText(String worldType, String agentName, World world) {
-		int agentNumber  = 0;
-		List<Agent> agents = world.getRegisteredAgents();
-		for (int i = 0; i < agents.size(); i++) {
-			if (agents.get(i).getAgentName().equals(agentName)) {
-				agentNumber = i;
-				break;
-			}
-		}
+	private String getInitialGameText(String worldType, String agentName, World world, State startState) {
+		ObjectInstance agentObj = startState.getObject(agentName);
+		int agentNumber = agentObj.getDiscValForAttribute(GridGame.ATTPN);
+		
 		
 		StringBuilder builder = new StringBuilder();
 		builder.append("Game: ").append(worldType).append("\nAgent: ").append(GGVisualizer.agentColorNames.get(agentNumber));
