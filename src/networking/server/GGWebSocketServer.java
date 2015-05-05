@@ -54,6 +54,7 @@ public class GGWebSocketServer extends WebSocketAdapter{
     public void onWebSocketClose(int statusCode, String reason)
     {
         super.onWebSocketClose(statusCode,reason);
+        this.server.onWebSocketClose(this.session);
         System.out.println("Socket Closed: [" + statusCode + "] " + reason);
         
     }

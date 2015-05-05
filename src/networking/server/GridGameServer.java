@@ -111,6 +111,10 @@ public class GridGameServer {
         }
     }
 	
+	public void onWebSocketClose(Session session) {
+		this.collections.removeSession(session);
+	}
+	
 	public void addCurrentState(GridGameServerToken token) {
 		List<GridGameServerToken> worldTokens = this.collections.getWorldTokens();
 		token.setTokenList(WORLDS, worldTokens);

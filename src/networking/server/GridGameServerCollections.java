@@ -102,6 +102,18 @@ public class GridGameServerCollections {
 		}
 		return sessions;
 	}
+
+	public void removeSession(Session session) {
+		synchronized(this.sessionLookup) {
+			for (Map.Entry<String, Session> entry : this.sessionLookup.entrySet()) {
+				if (session.equals(entry.getValue())) {
+					this.sessionLookup.remove(entry.getKey());
+					return;
+				}
+			}
+		}
+	}
+	
 	public GameHandler getHandler(String id) {
 		GameHandler handler = null;
 		synchronized(this.gameLookup) {
