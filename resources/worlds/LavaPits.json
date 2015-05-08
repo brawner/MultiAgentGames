@@ -1,0 +1,21 @@
+{
+	"description":"Toll booths",
+	"width":3,
+	"height":4,
+	"agents": [
+	{"x":1, "y":3},
+	{"x":1, "y":0}
+	],
+	"goals": [
+	{"x":0, "y":0, "gt":1},
+	{"x":2, "y":0, "gt":1},
+	{"x":1, "y":2, "gt":2}
+	],
+	"rewards": [
+	{"x":0, "y":3, "value":-1},
+	{"x":2, "y":3, "value":-1}
+	],
+	"horizontal_walls": [
+	{"pos": 2, "end1": 1, "end2": 1, "wallType":0}
+	]
+}
