@@ -60,8 +60,10 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 				GridGameServerToken updateToken = msg.getToken(GameHandler.UPDATE);
 				State state = updateToken.getState(GameHandler.STATE, domain);
 				GridGameServerToken actionToken = updateToken.getToken(GameHandler.ACTION);
+				
 				JointAction jointAction = GridGameServerToken.jointActionFromToken(actionToken, this.domain);
-				Map<String, Double> reward = (Map<String, Double>)updateToken.getObject(GameHandler.REWARD);
+				Object rewardObj = updateToken.getObject(GameHandler.REWARD);
+				Map<String, Double> reward = (rewardObj == null) ? null : (Map<String, Double>)updateToken.getObject(GameHandler.REWARD);
 				Boolean isTerminal = updateToken.getBoolean(GameHandler.IS_TERMINAL);
 				this.updateScreen(state, jointAction, reward, isTerminal);
 				
@@ -80,9 +82,12 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 		return response;
 	}
 	
-	private void updateScreen(State state, JointAction action, Map<String, Double> reward, boolean isTerminal) {
+	private void updateScreen(State state, JointAction action, Map<String, Double> reward, Boolean isTerminal) {
 		this.updateState(state);
-		this.printText(action.toString() + "\n" + reward.toString() + "\n" + "Terminal: " + isTerminal);
+		if (action != null && reward != null && isTerminal == null) {
+			this.printText(action.toString() + "\n" + reward.toString() + "\n" + "Terminal: " + isTerminal);
+		}
+		
 	}
 	
 	private void attemptAction(GroundedSingleAction action) {

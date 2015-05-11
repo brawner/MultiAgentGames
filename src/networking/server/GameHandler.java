@@ -115,6 +115,21 @@ public class GameHandler {
 		
 		
 	}
+	
+	public void updateClient(State state) {
+		GridGameServerToken token = new GridGameServerToken();
+		token.setState(STATE, state, this.domain);
+		GridGameServerToken msg = new GridGameServerToken();
+		msg.setToken(UPDATE, token);
+		msg.setString(MSG_TYPE, UPDATE);
+		try {
+			if (this.session != null) {
+				this.session.getRemote().sendString(msg.toJSONString());
+			} 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 	public void updateClient(State s, JointAction jointAction,
 			Map<String, Double> jointReward, State sprime, boolean isTerminal) {

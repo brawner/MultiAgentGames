@@ -1,5 +1,9 @@
 package networking.server;
+import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import networking.common.GridGameServerToken;
 
@@ -69,7 +73,16 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	
 	public static void main(String[] args) {
 		String gameDirectory = WORLD_DIRECTORY;
-		String outputDirectory = OUTPUT_DIRECTORY;
+		String outputDirectoryRoot = OUTPUT_DIRECTORY;
+		
+		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+		Date date = new Date();
+		String dateStr = dateFormat.format(date);
+		String outputDirectory = outputDirectoryRoot + "/" + dateStr;
+		File outputDirFile = new File(outputDirectory);
+		if (!outputDirFile.mkdirs()) {
+			throw new RuntimeException("Could not make the output directory " + outputDirFile.getAbsolutePath());
+		}
 		
 		if (args.length > 1) {
 			gameDirectory = args[0];

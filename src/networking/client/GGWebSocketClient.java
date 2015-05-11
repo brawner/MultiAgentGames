@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import networking.common.GridGameExtreme;
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
 import networking.common.TokenCastException;
@@ -186,7 +187,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		StateJSONParser parser = new StateJSONParser(domain);
 		State startState = parser.JSONPreparedToState(stateObjects);
 		JointActionModel jam = world.getActionModel();
-		Visualizer visualizer = GGVisualizer.getVisualizer(world);
+		Visualizer visualizer = GridGameExtreme.getVisualizer(world);
 		SGVisualExplorerClient explorerClient = new SGVisualExplorerClient(domain, visualizer, startState, jam, this);
 		
 		explorerClient.addKeyAction("w", agentName + ":"+GridGame.ACTIONNORTH);
@@ -245,7 +246,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 					SGDomain domain = world.getDomain();
 					State startState = world.startingState();
 					JointActionModel jam = world.getActionModel();
-					Visualizer visualizer = GGVisualizer.getVisualizer(world);
+					Visualizer visualizer = GridGameExtreme.getVisualizer(world);
 					
 					if (visualizer == null) {
 						throw new RuntimeException("Visualizer could not be generated for world " + world.toString());

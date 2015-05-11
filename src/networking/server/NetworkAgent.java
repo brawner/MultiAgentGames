@@ -22,6 +22,11 @@ public class NetworkAgent extends Agent {
 	public void gameStarting() {
 		
 	}
+	
+	@Override
+	public void gameStarting(State startState) {
+		this.handler.updateClient(startState);
+	}
 
 	@Override
 	public GroundedSingleAction getAction(State s) {

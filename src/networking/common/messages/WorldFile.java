@@ -9,4 +9,6 @@ public class WorldFile {
 	public static final String HORIZONTAL_WALLS = "horizontal_walls";
 	public static final String VERTICAL_WALLS = "vertical_walls";
 	public static final String LABEL = "label";
+	public static final String REWARDS = "rewards";
+	public static final String GOALS_PER_AGENT = "goals_per_agent";
 }

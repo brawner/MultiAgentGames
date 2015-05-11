@@ -17,5 +17,6 @@
 	],
 	"horizontal_walls": [
 	{"pos": 2, "end1": 1, "end2": 1, "wallType":0}
-	]
+	],
+	"goals_per_agent": 1
 }

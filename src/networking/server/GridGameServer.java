@@ -409,8 +409,13 @@ public class GridGameServer {
 			@Override
 			public GameAnalysis call() throws Exception {
 				GameAnalysis analysis = null;
+				try {
 				synchronized (world) {
 					analysis = world.runGame();
+				}
+				} catch (Exception e) {
+					e.printStackTrace();
+					throw e;
 				}
 				return analysis;
 			}

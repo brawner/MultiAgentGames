@@ -421,9 +421,15 @@ public class GridGameServerToken extends LinkedHashMap<String, Object> {
 
 	public static JointAction jointActionFromToken(
 			GridGameServerToken actionToken, SGDomain domain) {
+		if (actionToken == null) {
+			return null;
+		}
 		JointAction jointAction = new JointAction();
 		try {
 			List<Object> actions = actionToken.getList(JOINT_ACTION);
+			if (actions == null) {
+				return null;
+			}
 			for (Object object : actions) {
 				GridGameServerToken action = new GridGameServerToken((LinkedHashMap<String, Object>)object);
 				String actionName = action.getString(GameHandler.ACTION);
