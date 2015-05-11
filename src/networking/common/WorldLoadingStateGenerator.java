@@ -19,33 +19,35 @@ import burlap.oomdp.stochasticgames.SGStateGenerator;
 
 public class WorldLoadingStateGenerator extends SGStateGenerator{
 	private final State allGoalsUnsetAgents;
-	private final State prunedGoalsUnsetAgents;
+	private final State noGoalsUnsetAgents;
+	private final int goalsPerAgent;
 	
-	private WorldLoadingStateGenerator(State allGoalsUnsetAgents, State prunedGoalsUnsetAgents) {
+	private WorldLoadingStateGenerator(State allGoalsUnsetAgents, State noGoalsUnsetAgents, int goalsPerAgent) {
 		super();
 		this.allGoalsUnsetAgents = allGoalsUnsetAgents;
-		this.prunedGoalsUnsetAgents = prunedGoalsUnsetAgents;
+		this.noGoalsUnsetAgents = noGoalsUnsetAgents;
+		this.goalsPerAgent = goalsPerAgent;
 	}
 	
-	private static List<List<Integer>> pruneGoals(List<List<Integer>> goals, int goalsPerAgent) {
+	private static List<ObjectInstance> pruneGoals(List<ObjectInstance> goals, int goalsPerAgent) {
 		if (goalsPerAgent == 0) {
 			return goals;
 		}
 		
-		List<List<Integer>> res = new ArrayList<List<Integer>>();
-		Map<Integer, List<List<Integer>>> goalsByAgent = new HashMap<Integer, List<List<Integer>>>();
-		for (List<Integer> goal : goals) {
-			int goalType = goal.get(2);
-			List<List<Integer>> agentsGoals = goalsByAgent.get(goalType);
+		List<ObjectInstance> res = new ArrayList<ObjectInstance>();
+		Map<Integer, List<ObjectInstance>> goalsByAgent = new HashMap<Integer, List<ObjectInstance>>();
+		for (ObjectInstance goal : goals) {
+			int goalType = goal.getDiscValForAttribute(GridGame.ATTGT);
+			List<ObjectInstance> agentsGoals = goalsByAgent.get(goalType);
 			if (agentsGoals == null) {
-				agentsGoals = new ArrayList<List<Integer>>();
+				agentsGoals = new ArrayList<ObjectInstance>();
 				goalsByAgent.put(goalType, agentsGoals);
 			}
-			agentsGoals.add(goal);
+			agentsGoals.add(goal.copy());
 		}
 		
-		for (Map.Entry<Integer, List<List<Integer>>> entry : goalsByAgent.entrySet()) {
-			List<List<Integer>> list = entry.getValue();
+		for (Map.Entry<Integer, List<ObjectInstance>> entry : goalsByAgent.entrySet()) {
+			List<ObjectInstance> list = entry.getValue();
 			Collections.shuffle(list);
 			for (int i = 0; i < goalsPerAgent && i < list.size(); i++) {
 				res.add(list.get(i));
@@ -93,8 +95,6 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			}
 			goalPositions.add(Arrays.asList(startX, startY, goalType));
 		}
-		List<List<Integer>> prunedGoalPositions = WorldLoadingStateGenerator.pruneGoals(goalPositions, goalsPerAgent);
-		
 		
 		final List<List<Integer>> horizontalWallPositions = new ArrayList<List<Integer>>();
 		if (horizontalWallObjects != null) {
@@ -146,16 +146,16 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		State allGoalsUnsetAgents =  WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, goalPositions, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
-		State prunedGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, prunedGoalPositions, 
+		State noGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, null, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
-		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, prunedGoalsUnsetAgents);
+		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent);
 	}
 	
 	private static State generateBaseState(SGDomain domain, List<List<Integer>> agentPositions, List<List<Integer>> goalPositions,
 			List<List<Integer>> horizontalWalls, List<List<Integer>> verticalWalls, List<List<Integer>> rewards, int width, int height) {
-		
-		State state = GridGame.getCleanState(domain, agentPositions.size(), goalPositions.size(), horizontalWalls.size() + 2, verticalWalls.size() + 2, width, height);
+		int numGoals = (goalPositions == null) ? 0 : goalPositions.size();
+		State state = GridGame.getCleanState(domain, agentPositions.size(), numGoals, horizontalWalls.size() + 2, verticalWalls.size() + 2, width, height);
 		
 		for (int i = 0; i < agentPositions.size(); i++) {
 			List<Integer> positions = agentPositions.get(i);
@@ -164,13 +164,14 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			GridGame.setAgent(state, i, x, y, i);
 		}
 		
-		
-		for (int i = 0; i < goalPositions.size(); i++) {
-			List<Integer> goal = goalPositions.get(i);
-			int x = goal.get(0);
-			int y = goal.get(1);
-			int goalType = goal.get(2);
-			GridGame.setGoal(state, i, x, y, goalType);
+		if (goalPositions != null) {
+			for (int i = 0; i < goalPositions.size(); i++) {
+				List<Integer> goal = goalPositions.get(i);
+				int x = goal.get(0);
+				int y = goal.get(1);
+				int goalType = goal.get(2);
+				GridGame.setGoal(state, i, x, y, goalType);
+			}
 		}
 		
 		for (int i = 0 ; i < horizontalWalls.size(); i++) {
@@ -211,7 +212,14 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 	@Override
 	public State generateState(List<Agent> agents) {
 		
-		State copy = this.prunedGoalsUnsetAgents.copy();
+		State copy = this.noGoalsUnsetAgents.copy();
+		List<ObjectInstance> goals = this.allGoalsUnsetAgents.getObjectsOfClass(GridGame.CLASSGOAL);
+		List<ObjectInstance> goalsToAdd = this.pruneGoals(goals, this.goalsPerAgent);
+		
+		for (ObjectInstance goal : goalsToAdd) {
+			copy.addObject(goal);
+		}
+		
 		List<ObjectInstance> agentObjects = copy.getObjectsOfClass(GridGame.CLASSAGENT);
 		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
 			Agent agent = agents.get(i);
@@ -223,27 +231,6 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 	
 	public State generateAbstractedState() {
 		return this.allGoalsUnsetAgents;
-	}
-	
-	public List<ObjectInstance> getGoalsForAgent(State state, Agent agent) {
-		ObjectInstance agentObject = state.getObject(agent.getAgentName());
-		if (agentObject == null) {
-			return null;
-		}
-		
-		return this.getGoalsForAgent(agentObject.getDiscValForAttribute(GridGame.ATTPN));
-	}
-	
-	public List<ObjectInstance> getGoalsForAgent(int playerNum) {
-		List<ObjectInstance> goalObjects = this.prunedGoalsUnsetAgents.getObjectsOfClass(GridGame.CLASSGOAL);
-		List<ObjectInstance> goalsForAgent = new ArrayList<ObjectInstance>();
-		for (ObjectInstance goal : goalObjects) {
-			int goalType = goal.getDiscValForAttribute(GridGame.ATTGT);
-			if ( goalType == 0 || goalType == playerNum + 1) {
-				goalObjects.add(goal);
-			}
-		}
-		return goalsForAgent;
 	}
 
 }
