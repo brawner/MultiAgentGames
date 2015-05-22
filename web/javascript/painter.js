@@ -1,29 +1,53 @@
-var GamePainter = function(agent_name) {
+var GamePainter = function(agent_name, _width, _height) {
     "use strict";
-    var context = document.getElementById("GGCanvas").getContext("2d");
+    var canvas = document.getElementById("GGCanvas");
+    var context = canvas.getContext("2d");
     var primary_color = "green";
     var secondary_color = "blue";
     var statePainter = new StatePainter(context, agent_name, primary_color, secondary_color);
     var actionStatusPainter = new ActionStatusPainter(primary_color);
-    var actionPainter = new ActionPainter(primary_color);
-    var statusPainter = new StatusPainter();
+    var actionPainter = new ActionPainter(canvas, context, primary_color);
+    var statusPainter = new StatusPainter(context, primary_color);
     var worldsPainter = new WorldsPainter();
     var activePainter = new ActiveWorldsPainter();
-
+    var endPainter = new EndScreenPainter(_width, _height, context);
+    var callbacks = [];
+    var width = _width;
+    var height = _height;
+    //canvas.addEventListener('mousedown', function(e) {console.log("click " + e.x + " " + e.y);}); 
+    
     statePainter.addPainter(new CellPainter(context, "circle"), "Agent");
     statePainter.addPainter(new CellPainter(context, "square"), "Goal");
     statePainter.addPainter(new WallPainter(context), "Wall");
     statePainter.addPainter(new CellPainter(context, "square"), "Toll");
     
-
-    this.draw = function(state, client_score, chosen_action, width, height) {
+    var loadButtons = function() {
         var state_width = width - actionPainter.width();
         var state_height = height - statusPainter.height();
 
-        statePainter.draw(state, state_width, state_height);
+        var buttons = [];
+        buttons = buttons.concat(actionPainter.loadButtons(state_width, 0));
+        return buttons;
+    };
+    var button_locations = loadButtons();
+    
+
+    this.draw = function(state, client_score, chosen_action) {
+        context.fillStyle = "white";
+        context.fillRect(0,0, width, height);
+
+        var state_width = width - actionPainter.width();
+        var state_height = height - statusPainter.height();
+
+        statePainter.draw(state, state_width, height);
         //actionStatusPainter.draw(chosen_action);
-        //actionPainter.draw();
-        //statusPainter.draw(client_score);
+        actionPainter.draw(state_width, 0, chosen_action);
+        statusPainter.draw(client_score, state_width, height - 20);
+    };
+
+    this.drawEnd = function(state, score) {
+        this.draw(state, score, undefined);
+        endPainter.draw(score);
     };
 
     this.setActive = function(activeWorlds) {
@@ -33,6 +57,105 @@ var GamePainter = function(agent_name) {
     this.setWorlds = function(worlds) {
         worldsPainter.setWorlds(worlds);
     };
+
+    this.addButtonCallback = function(callback) {
+        callbacks.push(callback);
+    };
+
+    var onMouseDown = function(event) {
+        console.log("click " + event.x + ", " + event.y);
+        var coordinates = getCoordinates(event);
+        var button = getButtonAtCoordinates(coordinates);
+        console.log("button: " + button);
+
+        if (typeof button !== 'undefined') {
+            for (var i = 0;i < callbacks.length; i++) {
+                callbacks[i](button);
+            }
+        }
+    };
+    canvas.addEventListener('mousedown', onMouseDown); 
+    
+
+    var getCoordinates = function(mouse_event) {
+        var offset = getOffset();
+        var mouseX = mouse_event.pageX - offset.x;
+        var mouseY = mouse_event.pageY - offset.y;
+        return {x:mouseX, y:mouseY};
+    };
+
+    var getOffset = function() {
+        var offsetX = 0, offsetY = 0;
+        var element = canvas;
+        if (element.offsetParent !== undefined) {
+            do {
+              offsetX += element.offsetLeft;
+              offsetY += element.offsetTop;
+            } while ((element = element.offsetParent));
+        }
+        return {x:offsetX, y:offsetY};
+    };
+
+    var getButtonAtCoordinates = function(coords) {
+        for (var i = 0; i < button_locations.length; i++) {
+            var button = button_locations[i];
+            if (typeof button !== 'undefined' && button.IsInside(coords.x, coords.y)) {
+                return button.Name();
+            }
+        }
+    };
+};
+
+var Button = function(_name, _x, _y, _width, _height) {
+    "use strict";
+    var name = _name;
+    var x = _x;
+    var y = _y;
+    var width = _width;
+    var height = _height;
+
+    this.Name = function() {
+        return name;
+    };
+
+    this.X = function() {
+        return x;
+    };
+
+    this.Y = function() {
+        return y;
+    };
+
+    this.Width = function() {
+        return width;
+    };
+
+    this.Height = function() {
+        return height;
+    };
+
+    this.Left = function() {
+        return x;
+    };
+
+    this.Right = function() {
+        return x + width;
+    };
+
+    this.Bottom = function() {
+        return y;
+    };
+
+    this.Top = function() {
+        return y + height;
+    };
+
+    this.IsInside = function(x, y) {
+        return (x >= this.Left() && x <= this.Right() &&
+                y >= this.Bottom() && y <= this.Top());
+    };
+
+
 };
 
 var StatePainter = function(context, name, color1, color2) {
@@ -73,22 +196,22 @@ var StatePainter = function(context, name, color1, color2) {
         var dims = getDimensions(state);
         var cell_width = width / dims.x;
         var cell_height = height / dims.y;
-console.log("Agent number %f", agent_number);
+        console.log("Agent number %f", agent_number);
         
-        drawObjects(state.Goals, painters["Goal"], cell_width, cell_height);
-        drawObjects(state.Walls, painters["Wall"], cell_width, cell_height);
-        drawObjects(state.Tolls, painters["Toll"], cell_width, cell_height);
-        drawObjects(state.Agents, painters["Agent"], cell_width, cell_height);
+        drawObjects(state.Goals, painters["Goal"], cell_width, cell_height, height);
+        drawObjects(state.Walls, painters["Wall"], cell_width, cell_height, height);
+        drawObjects(state.Tolls, painters["Toll"], cell_width, cell_height, height);
+        drawObjects(state.Agents, painters["Agent"], cell_width, cell_height, height);
     };
 
-    var drawObjects = function(objects, painter, cell_width, cell_height) {
+    var drawObjects = function(objects, painter, cell_width, cell_height, height) {
         if (typeof painter === 'undefined') {
             return;
         }
         for (var i = 0; i < objects.length; i++) {
             var object = objects[i];
             var color = getColorForObject(object);
-            painter.draw(object, color, cell_width, cell_height);
+            painter.draw(object, color, cell_width, cell_height, height);
             //break;
         }
     };
@@ -133,9 +256,9 @@ var CellPainter = function(context, shape) {
     this.CIRCLE = "circle";
     this.SQUARE = "square";
     
-    this.draw = function(cell, color, cell_width, cell_height) {
+    this.draw = function(cell, color, cell_width, cell_height, canvas_height) {
         var left = cell.X * cell_width;
-        var bottom = cell.Y * cell_height;
+        var bottom = canvas_height - cell.Y * cell_height - cell_height;
         
         context.fillStyle = color;
                 
@@ -143,7 +266,8 @@ var CellPainter = function(context, shape) {
             case this.CIRCLE:
                 
                 var centerX = left + cell_width / 2.0;
-                var centerY = bottom + cell_height / 2.0;
+                var centerY = 
+                bottom + cell_height / 2.0;
 
                 var radius = Math.min(cell_width, cell_height) / 2.0;
                 
@@ -153,8 +277,6 @@ var CellPainter = function(context, shape) {
 
                 break;
             case this.SQUARE:
-                console.log("Filling rect %f %f %f %f", left, bottom, cell_width, cell_height);
-        
                 context.fillRect(left, bottom, cell_width, cell_height);
                 break;
             default:
@@ -168,28 +290,31 @@ var WallPainter = function(context) {
     
     var thickness = 6;
    
-    this.draw = function(wall, color, cell_width, cell_height) {
-        console.log("drawing wall %O with color %s", wall, color);
-        var width = cell_width * (wall.EndX - wall.StartX) + thickness/2.0;
-        var height = cell_height * (wall.EndY - wall.StartY) + thickness/2.0;
+    this.draw = function(wall, color, cell_width, cell_height, canvas_height) {
+        var width = cell_width * (wall.EndX - wall.StartX) + thickness;
+        var height = cell_height * (wall.EndY - wall.StartY) + thickness;
 
         width = Math.max(width, thickness);
         height = Math.max(height, thickness);
 
+        var bottom = canvas_height;
         var left = cell_width * wall.StartX;
         if (width == thickness) {
             left -= width / 2.0;
-            bottom -= thickness / 2.0;
+            bottom += thickness/2.0;
         }
         
-        var bottom = cell_height * wall.StartY;
+        bottom += - (cell_height * wall.StartY + height);
         if (height == thickness) {
-            bottom -= height / 2.0;
+            bottom += height / 2.0;
             left -= thickness / 2.0;
         }
 
-        console.log("Filling rect %f %f %f %f", left, bottom, width, height);
         context.fillStyle = color;
+
+        //console.log("cell.x1 %f cell.y1 %f cell.x2 %f cell.y2 %f ", wall.StartX, wall.StartY, wall.EndX, wall.EndY);
+        //console.log("rect x %i rect y %i width %i height %i", left, bottom, width, height);
+        
         context.fillRect(left, bottom, width, height);
     };
 
@@ -226,40 +351,95 @@ var ActionStatusPainter = function(context, agentColor) {
 };
 
 // Paints actions so they can be clicked
-var ActionPainter = function(context, agentColor) {
+var ActionPainter = function(_canvas, _context, agentColor) {
     "use strict";
     
+    var canvas = _canvas;
+    var context = _context
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
+    var positions = {"North":[0, 1], "South":[0,-1], "East":[1,0], "West":[-1,0], "Wait":[0,0]}
     var bar_width = 100;
     var bar_height = 32;
+    var spacing = 3;
     var color = agentColor;
+    var chosen_action_color = "red";
+    var textColor = "black";
+
+    var getButtonPosition = function(startX, startY, buttonName) {
+        var location = positions[buttonName];
+        var actualX = bar_width + startX + location[0] * (bar_width + spacing);
+        var actualY = bar_height + startY - location[1] * (bar_height + spacing);
+        return {x:actualX, y:actualY};
+    };
     
-    this.draw = function() {
-        var y = 0;
+    this.draw = function(x, startY, current_action) {
+        
         for (var key in actions) {
-            draw_bar(key, actions[key], y);
-            y += bar_height;
+            var position = getButtonPosition(x, startY, key);
+            draw_bar(key, actions[key], position.x, position.y, current_action);
         }
+        draw_waiting(x, startY + this.width(), current_action);
     };
 
-    var draw_bar = function(text, divName, y, left, bottom) {
-        $("#" + divName).html(text);
-        $("#" + divName).css({"position":"absolute", "left":left + "px", "bottom":bottom  + "px", "width": bar_width  + "px", "height":bar_height + "px", 
-            "background-color": color, "outline":"black solid thick"});
+    var draw_bar = function(text, divName, x, y, current_action) {
+        console.log("Drawing action " + current_action);
+        if (typeof current_action === 'undefined' || current_action == null ||
+            current_action !== text) {
+            context.fillStyle = color;    
+        } else {
+            context.fillStyle = chosen_action_color;
+        }
+        
+        context.fillRect(x, y, bar_width, bar_height);
+        context.strokeStyle = textColor;
+        context.strokeRect(x, y, bar_width, bar_height);
+        context.font = "bold 14pt sans-serif";
+        context.textAlign = "center";
+        context.fillStyle = textColor;
+        context.fillText(text, x + bar_width / 2.0, y + bar_height - 10);
+    };
+
+    var draw_waiting = function(x, y, current_action) {
+        if (typeof current_action !== 'undefined') {
+            context.font = "bold 14pt sans-serif";
+            context.textAlign = "left";
+            context.fillStyle = textColor;
+            context.fillText("Waiting for partner's action...", x + 20, y);
+        }
+        
     };
 
     this.width = function() {
-        return bar_width;
-    }
+        return (bar_width + spacing) * 3;
+    };
+
+    this.height = function() {
+        return (bar_height  + spacing) * 3;
+    };
+
+    this.loadButtons = function(x, y) {
+        var buttons = [];
+
+        for (var key in actions) {
+            var position = getButtonPosition(x, y, key);
+            var button = new Button(key, position.x, position.y, bar_width, bar_height);
+            buttons.push(button);
+        }
+
+        return buttons;
+    };
 };
 
 // Displays score, agent color, and available keyboard commands. 
 var StatusPainter = function(context, agentColor) {
     "use strict";
-    
-    var availableActions = "Actions available:<br>w: North, s: South, d: East, a: West, q: Wait";
-   
-    this.draw = function(score) {
+    var textColor = "black";
+
+    this.draw = function(score, x, y) {
+        context.font = "bold 14pt sans-serif";
+        context.textAlign = "left";
+        context.fillStyle = textColor;
+        context.fillText("Score: " + score, x + 20, y + 128);
     };
 
     this.height = function() {
@@ -284,6 +464,41 @@ var ActiveWorldsPainter = function(context) {
 
     this.setActive = function(a) {
         active = a;
+    };
+};
+
+var OpeningScreenPainter = function(width, height) {
+    "use strict";
+    var canvas = document.getElementById("GGCanvas");
+    var context = canvas.getContext("2d");
+    
+    this.draw = function(textBox, button) {
+        context.fillStyle = "black";
+        context.fillRect(0,0, width, height);
+        textBox.style.left = width/2.0;
+        textBox.style.bottom = height/2.0;
+        textBox.style.align = "center";
+        textBox.style.position = "absolute";
+        button.style.left = width/2.0;
+        button.style.bottom = height/2.0 - 30;
+        button.style.align = "center";
+        button.style.position = "absolute";
+    };
+};
+
+var EndScreenPainter = function(width, height, context) {
+    "use strict";
+    var textColor = "white";
+    var background = "black";
+
+    this.draw = function(score) {
+        context.fillStyle = background;
+        context.fillRect(0,0, width, height);
+        context.font = "bold 48pt sans-serif";
+        context.textAlign = "center";
+        context.fillStyle = textColor;
+        context.fillText("Score: " + score, width / 2.0, height / 2.0);
+        
     };
 };
 

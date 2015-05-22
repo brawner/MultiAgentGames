@@ -64,3 +64,4 @@ MessageFields.ATTE2 = "end2";
 MessageFields.ATTP = "pos";
 MessageFields.WALL_TYPE = "wallType";
 MessageFields.GOAL_TYPE = "gt";
+MessageFields.COST = "value";

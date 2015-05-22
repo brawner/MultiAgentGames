@@ -56,23 +56,61 @@ var Game = function() {
         playground,
         painter,
         client_id,
+        agent_name,
         currentState,
         currentAction,
         currentScore = 0;
+    var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
+    
     var self = this;
     var width = 768,
         height = 512;
         
+    var isGameIdValid = function(text) {
+        return !isNaN(text);
+    }
+
+    var onSubmitClick = function() {
+        var textBox = document.getElementById('text_box');
+        if (typeof textBox !== 'undefined' && textBox !== null){ 
+            var text = textBox.value;
+            if (isGameIdValid(text)) {
+                var msg = message_writer.startGameMsg(text, client_id);  
+                console.log("Sending " + msg);
+                connection.Send(msg);  
+            }
+        }
+    };
 	 //Sets up the playground and stage div    
     this.go = function() {
         
         var context = document.getElementById("GGCanvas").getContext("2d");
         context.fillStyle = "#FFFFFF";
         context.fillRect(0,0,768,512);
-        handler = new GeneralHandler();
-
-
+        handler = new GeneralHandler(actions);
+        handler.addActionCallback(onAction);
+        handler.addInteractionCallback(onInteraction);
         connectToServer();
+        painter = new OpeningScreenPainter(768, 512);
+        
+        var inputDiv = document.createElement("div");
+        inputDiv.setAttribute("id", "divvyDiv");
+
+        var element = document.getElementById('text_box');
+        //element.setAttribute("id", "text_box")
+        //element.type = "text";
+        
+        var button = document.getElementById("submit_button");
+        //var buttonText = document.createTextNode("Submit");
+        //button.appendChild(buttonText);
+        button.onclick = onSubmitClick;
+        
+        //inputDiv.appendChild(element);
+        //inputDiv.appendChild(button);
+        //inputDiv.style = "z-index:2; position:absolute";
+
+        painter.draw(element, button)
+        
     };
 
     this.loop = function() {
@@ -95,6 +133,10 @@ var Game = function() {
         }
         painter.draw();
     };
+
+    
+
+    
 
     var connectToServer = function() {
         connection.AddCallback(self);
@@ -126,11 +168,10 @@ var Game = function() {
             break;
         }
 
-        if (typeof painter !== 'undefined') {
+        if (typeof painter !== 'undefined' && painter instanceof GamePainter) {
             painter.setWorlds(worlds);
             painter.setActive(active);
-            console.log("Painting");
-            painter.draw(currentState, currentScore, currentAction, width, height);
+            
         }
     };
 
@@ -151,8 +192,7 @@ var Game = function() {
         var active = message_reader.getActiveWorlds(msg);
         for (var i = 0; i < active.length; i++) {
             var label = active[i].Label;
-            var msg = message_writer.startGameMsg(label, client_id);  
-            connection.Send(msg);  
+            
             return;
         }
 
@@ -165,29 +205,56 @@ var Game = function() {
         console.log(initMsg);
         if (typeof initMsg !== 'undefined') {
             console.log("Initializing game " + initMsg.world_type);
-            painter = new GamePainter(initMsg.agent_name);
+            agent_name = initMsg.agent_name;
+
+            var element = document.getElementById('text_box');
+            element.style.visibility = "hidden";
+            var button = document.getElementById('submit_button');
+            button.style.visibility = "hidden";
+
+            painter = new GamePainter(initMsg.agent_name, width, height);
+            handler.registerWithPainter(painter);
             currentState = initMsg.state;
-            painter.draw(currentState, currentScore, currentAction, width, height);
+            painter.draw(currentState, currentScore, currentAction);
         }
     };
 
     var update_game = function(msg) {
         var updateMsg = message_reader.getUpdateMsg(msg);
-        if (typeof initMsg !== 'undefined') {
+        if (typeof updateMsg !== 'undefined') {
             currentState = updateMsg.state;
-            currentScore = updateMsg.score;
+            if (typeof updateMsg.score !== 'undefined') {
+                currentScore = updateMsg.score;
+            }
+            currentAction = undefined;
         }
+        painter.draw(currentState, currentScore, currentAction);
     };
 
     var game_complete = function(msg) {
         var closeMsg = message_reader.getCloseMsg(msg);
         if (typeof closeMsg !== 'undefined') {
-            painter.drawEnd(closeMsg.state, closeMsg.score, width, height);
+            painter.drawEnd(currentState, closeMsg.score);
         }
     };
 
-    var onKeyPress = function(event) {
+    var onAction = function(event) {
+        if (event in actions) {
+            currentAction = event;
+            sendActionUpdate();
+        }
+        console.log("Current action " + currentAction);
+        painter.draw(currentState, currentScore, currentAction);
+    };
 
+    var onInteraction = function(event) {
+
+    };
+
+    var sendActionUpdate = function() {
+        var actualAction = actions[currentAction];
+        var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
+        connection.Send(msg);
     };
 
 	

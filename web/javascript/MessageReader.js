@@ -35,27 +35,32 @@ var MessageReader = function() {
 
 	this.getUpdateMsg = function(message) {
 		var updateMsg;
-		if (!(MessageFields.STATE in message) ||
-			!(MessageFields.SCORE in message)) {
+		
+		if (!(MessageFields.UPDATE in message)) {
+			return updateMsg;
+		}
+
+		var update = message[MessageFields.UPDATE];
+		if (!(MessageFields.STATE in update)) {
 			return updateMsg;
 		}
 
 		updateMsg = {};
-		updateMsg.state = message[MessageFields.STATE];
-		updateMsg.score = self.getStateFromMessage(message[MessageFields.SCORE]);
+		if (MessageFields.SCORE in update) {
+			updateMsg.score = update[MessageFields.SCORE];
+		} 
+		updateMsg.state = self.getStateFromMessage(update[MessageFields.STATE]);
 		return updateMsg;
 	};
 
 	this.getCloseMsg = function(message) {
 		var closeMsg;
-		if (!(MessageFields.STATE in message) ||
-			!(MessageFields.SCORE in message)) {
+		if (!(MessageFields.SCORE in message)) {
 			return closeMsg;
 		}
 
 		closeMsg = {};
-		closeMsg.state = message[MessageFields.STATE];
-		closeMsg.score = self.getStateFromMessage(message[MessageFields.STATE]);
+		closeMsg.score = message[MessageFields.SCORE];
 		return closeMsg;
 	};
 

@@ -8,8 +8,10 @@
     <style></style>
 </head>
 <body>
-	<canvas id="GGCanvas" width="768" height="512" style="border:1px solid #000000;">
+	<canvas id="GGCanvas" width="768" height="512" style="position: absolute;z-index:1;border:1px solid #000000">
 </canvas>
+    <input id="text_box" type="text" align="center" style="z-index:2; position:absolute; left: 240px; top: 200px; align: center"/>
+    <button id="submit_button" style="z-index:2; position:absolute; left: 240px; top: 230px; align:center">Submit</button>
 	
     <!-- Preload Scripts -->
 	<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>

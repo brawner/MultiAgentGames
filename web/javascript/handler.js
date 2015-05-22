@@ -2,22 +2,74 @@
 //Action Handler//
 //////////////////
 
-var GeneralHandler = function() {
+var GeneralHandler = function(_actions) {
 	"use strict";
-	document.addEventListener("keydown", onKeyPress);
-        //Start game
-	var callbacks = [];
+	    //Start game
+	var actions = _actions;
+	var keyLookup = {65:"West", 87:"North", 83:"South", 68:"East", 81:"Wait"};
+	var actionCallbacks = [];
+	var interactionCallbacks = [];
+	
 	var onKeyPress = function(event) {
-		for (var i = 0; i < callbacks.length; i++) {
-			callbacks[i].onKeyPress(event);
+		var key = event.keyCode;
+		if (typeof key === 'undefined') {
+			return;
+		}
+		console.log("key: " + key);
+		//key = key.toLowerCase();
+		if (key in keyLookup) {
+			for (var i = 0; i < actionCallbacks.length; i++) {
+				actionCallbacks[i](keyLookup[key]);
+			}
+		} else {
+			for (var i = 0; i < interactionCallbacks.length; i++) {
+				interactionCallbacks[i](key);
+			}
+		}
+		
+	};
+	document.addEventListener("keydown", onKeyPress);
+    
+
+	var onButtonPress = function(button) {
+		if (button in actions) {
+			runActionCallbacks(button);
+		} else {
+			runInteractionCallbacks(button);
 		}
 	};
 
-	var addCallback = function(callback) {
-		callbacks.push(callback);
+	
+	this.addActionCallback = function(callback) {
+		actionCallbacks.push(callback);
 	};
 
-	var removeCallback = function(callback) {
-		callbacks.remove(callback);
+	this.addInteractionCallback = function(callback) {
+		interactionCallbacks.push(callback);
+	};
+
+	this.removeCallback = function(callback) {
+		if (callback in actionCallbacks) {
+			actionCallbacks.remove(callback);
+		} else if (callback in interactionCallbacks) {
+			interactionCallbacks.remove(callback);
+		}
+	};
+
+	var runActionCallbacks = function(event) {
+		console.log("Action: " + event);
+		for (var i = 0; i < actionCallbacks.length; i++) {
+			actionCallbacks[i](event);
+		}
+	};
+
+	var runInteractionCallbacks = function(event) {
+		for (var i = 0; i < interactionCallbacks.length; i++) {
+			interactionCallbacks[i](event);
+		}
+	};
+
+	this.registerWithPainter = function(painter) {
+		painter.addButtonCallback(onButtonPress);
 	};
 };
