@@ -105,11 +105,11 @@ public class GridGameWorldLoader {
 	}
 	
 	//TODO add in environment variable expanding, and other good stuff
-	private static Path expandDirectory(String directory) {
+	public static Path expandDirectory(String directory) {
 		return Paths.get(directory);
 	}
 	
-	private static List<File> walkDirectory(File file) {
+	public static List<File> walkDirectory(File file) {
 		List<File> files = new ArrayList<File>();
 		if (file.isFile()) {
 			files.add(file);

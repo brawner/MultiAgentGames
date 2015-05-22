@@ -7,6 +7,7 @@ import java.util.Map;
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.server.GameHandler;
+import networking.server.GridGameServer;
 import burlap.oomdp.core.State;
 import burlap.oomdp.stochasticgames.GroundedSingleAction;
 import burlap.oomdp.stochasticgames.JointAction;
@@ -53,7 +54,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
 		GridGameServerToken response = new GridGameServerToken();
 		try {
-			String msgType = msg.getString(GameHandler.MSG_TYPE);
+			String msgType = msg.getString(GridGameServer.MSG_TYPE);
 			if (msgType == null) {
 				return new GridGameServerToken();
 			} else if (msgType.equals(GameHandler.UPDATE)) {
@@ -93,7 +94,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 	private void attemptAction(GroundedSingleAction action) {
 		GridGameServerToken request = new GridGameServerToken();
 		
-		request.setString(GameHandler.MSG_TYPE, GameHandler.TAKE_ACTION);
+		request.setString(GridGameServer.MSG_TYPE, GameHandler.TAKE_ACTION);
 		request.setString(GameHandler.ACTION, action.actionName());
 		request.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.params));
 		

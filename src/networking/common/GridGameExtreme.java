@@ -54,6 +54,7 @@ public class GridGameExtreme {
 		return new GridGame.GGTerminalFunction(domain);
 	}
 	
+	// TODO change joint reward function
 	public static JointReward generateJointReward(SGDomain domain) {
 		return new GridGame.GGJointRewardFunction(domain);
 	};
@@ -76,12 +77,12 @@ public class GridGameExtreme {
 		
 		Visualizer visualizer = GGVisualizer.getVisualizer(width, height);
 		List<Color> colors = Arrays.asList(Color.RED);
-		visualizer.addObjectClassPainter(GridGameExtreme.CLASSREWARD, new GGVisualizer.CellPainter(width,height, colors, 0));
+		visualizer.insertObjectClassPainter(0, GridGameExtreme.CLASSREWARD, new GGVisualizer.CellPainter(width,height, colors, 0));
 		return visualizer;
 	}
 	
 	/**
-	 * Specifies goal rewards and default rewards for agents. Defaults rewards to 0 reward everywhere except transition to unviersal or personal goals which return a reward 1.
+	 * Specifies goal rewards and default rewards for agents. Defaults rewards to 0 reward everywhere except transition to universal or personal goals which return a reward 1.
 	 * @author James MacGlashan
 	 *
 	 */

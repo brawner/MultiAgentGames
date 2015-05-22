@@ -89,31 +89,31 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		
 		switch (command) {
 		case "init":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.INITIALIZE_GAME);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.INITIALIZE_GAME);
 			msg.setString(GridGameServer.WORLD_ID, options[0]);
 			break;
 		case "join":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.JOIN_GAME);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.JOIN_GAME);
 			msg.setString(GridGameServer.WORLD_ID, options[0]);
 			break;
 		case "add":
-			msg.setString(GameHandler.MSG_TYPE,  GameHandler.ADD_AGENT);
+			msg.setString(GridGameServer.MSG_TYPE,  GameHandler.ADD_AGENT);
 			msg.setString(GridGameServer.AGENT_TYPE, options[0]);
 			msg.setString(GridGameServer.WORLD_ID, options[1]);
 			break;
 		case "run":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.RUN_GAME);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.RUN_GAME);
 			msg.setString(GridGameServer.WORLD_ID, options[0]);
 			break;
 		case "remove":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.REMOVE_GAME);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.REMOVE_GAME);
 			msg.setString(GridGameServer.WORLD_ID, options[0]);
 			break;
 		case "exit":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.EXIT_GAME);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.EXIT_GAME);
 			break;
 		case "load":
-			msg.setString(GameHandler.MSG_TYPE, GameHandler.LOAD_WORLDS);
+			msg.setString(GridGameServer.MSG_TYPE, GameHandler.LOAD_WORLDS);
 			break;
 		case "visualize":
 			this.visualizeWorld(options[0]);
@@ -127,16 +127,13 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
 		GridGameServerToken response = new GridGameServerToken();
 		try {
-			GridGameServerToken handlerMsg = msg.getToken(GameHandler.HANDLER_RESPONSE);
-			if (handlerMsg != null) {
-				msg = handlerMsg;
-			}
+			
 			List<GridGameServerToken> worldTokens = msg.getTokenList(GridGameServer.WORLDS);
 			if (worldTokens != null) {
 				this.worldTokens = worldTokens;
 			}
 			
-			String msgType = msg.getString(GameHandler.MSG_TYPE);
+			String msgType = msg.getString(GridGameServer.MSG_TYPE);
 			if (msgType == null) {
 				return new GridGameServerToken();
 				
@@ -199,6 +196,8 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		this.explorerClients.put(explorerId, explorerClient);
 		this.addListener(explorerClient);
 		explorerClient.initGUI();
+		System.out.println("Agent name " + agentName);
+		System.out.println("State: " + startState.toString());
 		String text = this.getInitialGameText(worldType, agentName, world, startState);
 		explorerClient.printText(text);
 	}
@@ -216,7 +215,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 	
 	private String getInitialGameText(String worldType, String agentName, World world, State startState) {
 		ObjectInstance agentObj = startState.getObject(agentName);
-		int agentNumber = agentObj.getDiscValForAttribute(GridGame.ATTPN);
+		int agentNumber = agentObj.getIntValForAttribute(GridGame.ATTPN);
 		
 		
 		StringBuilder builder = new StringBuilder();
@@ -296,7 +295,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
     }
 
     public static void main(String[] args) {
-    	String host = "elzar.cs.brown.edu:8787";
+    	String host = "localhost:8787";
     	if (args.length > 0) {
     		host = args[0];
     	}

@@ -21,15 +21,14 @@ public class GridGameServerCollections {
 
 	private final List<GridGameServerToken> worldTokens;
 	private final Map<String, World> worldLookup;
-	private final Map<String, World> activeGameWorlds;
+	//private final Map<String, World> activeGameWorlds;
 	private final Map<String, World> currentlyRunningWorlds;
 	
 	private final Map<String, Session> sessionLookup;
 	private final Map<String, GameHandler> gameLookup;
 	private final Map<String, Future<GameAnalysis>> futures;
 	private final Map<String, List<String>> handlersAssociatedWithGames;
-	
-	private final ReadWriteLock collectionsLock;
+	private final Map<String, GridGameConfiguration> configurations;
 	
 	private final AtomicLong threadIdCounter;
 	private final AtomicLong activeIdCounter;
@@ -40,16 +39,15 @@ public class GridGameServerCollections {
 		this.activeIdCounter = new AtomicLong();
 		this.clientIdCounter = new AtomicLong();
 		
-		this.collectionsLock = new ReentrantReadWriteLock();
-		
 		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
-		this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
+		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		
 		this.sessionLookup = Collections.synchronizedMap(new HashMap<String, Session>());
 		this.gameLookup = Collections.synchronizedMap(new HashMap<String, GameHandler>());
 		this.futures = Collections.synchronizedMap(new HashMap<String, Future<GameAnalysis>>());
 		this.handlersAssociatedWithGames = Collections.synchronizedMap(new HashMap<String, List<String>>());
+		this.configurations = Collections.synchronizedMap(new HashMap<String, GridGameConfiguration>());
 		this.worldTokens = new ArrayList<GridGameServerToken>();
 		
 	}
@@ -68,16 +66,16 @@ public class GridGameServerCollections {
 	}
 	
 	public void addWorldTokens(List<GridGameServerToken> tokens) {
-		this.worldTokens.clear();
-		this.worldTokens.addAll(tokens);
+		synchronized(this.worldTokens) {
+			this.worldTokens.clear();
+			this.worldTokens.addAll(tokens);
+		}
 	}
 	
 	public List<GridGameServerToken> getWorldTokens() {
-		List<GridGameServerToken> tokens = null;
 		synchronized(this.worldTokens) {
-			tokens = new ArrayList<GridGameServerToken>(this.worldTokens);
+			return new ArrayList<GridGameServerToken>(this.worldTokens);
 		}
-		return tokens;		
 	}
 	
 	public void addSession(String id, Session session) {
@@ -87,20 +85,15 @@ public class GridGameServerCollections {
 	}
 	
 	public Session getSession(String id) {
-		Session session = null;
 		synchronized(this.sessionLookup) {
-			session = this.sessionLookup.get(id);
+			return this.sessionLookup.get(id);
 		}
-		return session;
 	}
 	
 	public List<Session> getSessions() {
-		this.collectionsLock.readLock().lock();
-		List<Session> sessions = null;
 		synchronized(this.sessionLookup) { 
-			sessions = new ArrayList<Session>(this.sessionLookup.values());
+			return new ArrayList<Session>(this.sessionLookup.values());
 		}
-		return sessions;
 	}
 
 	public void removeSession(Session session) {
@@ -115,11 +108,26 @@ public class GridGameServerCollections {
 	}
 	
 	public GameHandler getHandler(String id) {
-		GameHandler handler = null;
 		synchronized(this.gameLookup) {
-			handler = this.gameLookup.get(id);
+			return this.gameLookup.get(id);
 		}
-		return handler;
+	}
+	
+	public List<GameHandler> getHandlersWithGame(String gameId) {
+		List<String> ids = null;
+		synchronized(this.handlersAssociatedWithGames) {
+			ids = this.handlersAssociatedWithGames.get(gameId);
+		}
+		
+		synchronized(this.gameLookup) {
+			List<GameHandler> handlers = new ArrayList<GameHandler>();
+			
+			for (String id : ids) {
+				handlers.add(this.gameLookup.get(id));
+			}
+			
+			return handlers;
+		}
 	}
 	
 	public void addHandler(String clientId, String worldId, GameHandler handler) {
@@ -135,39 +143,34 @@ public class GridGameServerCollections {
 	}
 	
 	public GameHandler removeHandler(String id) {
-		GameHandler handler = null;
 		synchronized(this.gameLookup) {
-			handler = this.gameLookup.remove(id);
+			GameHandler handler = this.gameLookup.remove(id);
 			for (List<String> ids : this.handlersAssociatedWithGames.values()) {
 				ids.remove(handler);
 			}
+			return handler;
 		}
-		return handler;
 	}
 	
 	public List<GameHandler> removeHandlers(String worldId) {
 		
-		List<GameHandler> handlers = null;
 		synchronized(this.gameLookup) {
 			List<String> ids = this.handlersAssociatedWithGames.remove(worldId);
-			handlers = new ArrayList<GameHandler>();
+			List<GameHandler> handlers = new ArrayList<GameHandler>();
 			for (String id : ids) {
 				GameHandler handler = this.gameLookup.remove(id);
 				if (handler != null) {
 					handlers.add(handler);
 				}
 			}
+			return handlers;
 		}
-		
-		return handlers;
 	}
 	
 	public World getWorld(String id) {
-		World world = null;
 		synchronized(this.worldLookup) {
-			world = this.worldLookup.get(id);
+			return this.worldLookup.get(id);
 		}
-		return world;
 	}
 	
 	public void addWorld(String id, World world) {
@@ -176,20 +179,17 @@ public class GridGameServerCollections {
 		}
 	}
 	
+	/*
 	public World getActiveWorld(String id) {
-		World world = null;
 		synchronized(this.activeGameWorlds) {
-			world = this.activeGameWorlds.get(id);
+			return this.activeGameWorlds.get(id);
 		}
-		return world;
 	}
 	
 	public Map<String, World> getActiveWorlds() {
-		Map<String, World> worlds = null;
 		synchronized(this.activeGameWorlds) {
-			worlds = new HashMap<String, World>(this.activeGameWorlds);
+			return new HashMap<String, World>(this.activeGameWorlds);
 		}
-		return worlds;
 	}
 	public void addActiveWorld(String id, World world) {
 		synchronized(this.activeGameWorlds) {
@@ -198,12 +198,10 @@ public class GridGameServerCollections {
 	}
 	
 	public World removeActiveWorld(String id) {
-		World world = null;
 		synchronized(this.activeGameWorlds) {
-			world = this.activeGameWorlds.remove(id);
+			return this.activeGameWorlds.remove(id);
 		}
-		return world;
-	}
+	}*/
 	
 	public void addRunningWorld(String id, World world) {
 		synchronized(this.currentlyRunningWorlds) {
@@ -212,19 +210,15 @@ public class GridGameServerCollections {
 	}
 	
 	public World removeRunningWorld(String id) {
-		World world = null;
 		synchronized(this.currentlyRunningWorlds) {
-			world = this.currentlyRunningWorlds.remove(id);
+			return this.currentlyRunningWorlds.remove(id);
 		}
-		return world;
 	}
 	
 	public Future<GameAnalysis> getFuture(String id) {
-		Future future = null;
 		synchronized(this.futures) {
-			future = this.futures.get(id);
+			return this.futures.get(id);
 		}
-		return future;
 	}
 	
 	public String getFutureId(Future<GameAnalysis> future) {
@@ -245,11 +239,9 @@ public class GridGameServerCollections {
 	}
 	
 	public Future<GameAnalysis> removeFuture(String id) {
-		Future<GameAnalysis> future = null;
 		synchronized(this.futures) {
-			future = this.futures.get(id);
+			return this.futures.get(id);
 		}
-		return future;
 	}
 	
 	
@@ -271,10 +263,35 @@ public class GridGameServerCollections {
 			this.futures.clear();
 		}
 		
+		/*
 		synchronized(this.activeGameWorlds) {
 			this.activeGameWorlds.clear();
-		}
+		}*/
 		
+	}
+	
+	public void addConfiguration(String id, GridGameConfiguration config) {
+		synchronized(this.configurations) {
+			this.configurations.put(id, config);
+		}
+	}
+	
+	public GridGameConfiguration getConfiguration(String id) {
+		synchronized(this.configurations) {
+			return this.configurations.get(id);
+		}
+	}
+	
+	public GridGameConfiguration removeConfiguration(String id) {
+		synchronized(this.configurations) {
+			return this.configurations.remove(id);
+		}
+	}
+	
+	public Map<String, GridGameConfiguration> getConfigurations() {
+		synchronized(this.configurations) {
+			return new HashMap<String, GridGameConfiguration>(this.configurations);
+		}
 	}
 
 }

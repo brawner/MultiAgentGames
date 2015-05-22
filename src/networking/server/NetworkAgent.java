@@ -71,7 +71,7 @@ public class NetworkAgent extends Agent {
 
 	@Override
 	public void gameTerminated() {
-		// TODO Auto-generated method stub
+		this.handler.gameCompleted();
 
 	}
 	
