@@ -272,7 +272,7 @@ public class GridGameServerToken extends LinkedHashMap<String, Object> {
 	 * @param key		String key for location
 	 * @param value		Integer value to set
 	 */
-	public void setInt(String key, String value) {
+	public void setInt(String key, Integer value) {
 		this.setObject(key, value);
 	}
 	

@@ -1,5 +1,7 @@
 package networking.server;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,8 @@ public class GridGameServer {
 	public static final String WHY_ERROR = "why_error";
 	public static final String STATUS = "status";
 	public static final String RANDOM_AGENT = "random";
-	public static final String MAVI_AGENT = "mavi";
+	public static final String COOPERATIVE_AGENT = "cooperative";
+	public static final String HUMAN_AGENT = "human";
 	
 	private final ExecutorService gameExecutor;
 	private final String gameDirectory;
@@ -114,14 +117,28 @@ public class GridGameServer {
 		List<GridGameServerToken> worldTokens = this.collections.getWorldTokens();
 		token.setTokenList(WORLDS, worldTokens);
     	
-    	Map<String, String> activeGames = new HashMap<String, String>();
+		
     	Map<String, GridGameConfiguration> configurations = this.collections.getConfigurations();
+    	
+    	List<GridGameServerToken> activeGames = new ArrayList<GridGameServerToken>();
     	for (Map.Entry<String, GridGameConfiguration> entry : configurations.entrySet()) {
     		GridGameConfiguration config = entry.getValue();
-    		if (!config.isClosed()) {
-    			World world = config.getBaseWorld();
-    			activeGames.put(entry.getKey(), world.toString() + " " + config.getNumberAgents() + " registered agents");
+    		if (config.isClosed()) {
+    			continue;
     		}
+    		
+    		
+    		World world = config.getBaseWorld();
+			GridGameServerToken gameToken = new GridGameServerToken();
+    		gameToken.setString(WorldFile.LABEL, entry.getKey());
+			
+			gameToken.setString(WorldFile.DESCRIPTION, world.toString() + " " + config.getNumberAgents() + " registered agents");
+    		
+    		Map<String, String> agentDescriptions = config.getAgentTypes();
+    		gameToken.setObject(WorldFile.AGENTS, agentDescriptions);
+    		gameToken.setInt(WorldFile.NUM_AGENTS, world.getMaximumAgentsCanJoin());
+    		activeGames.add(gameToken);
+    		
     	}
     	token.setObject(ACTIVE, activeGames);
     	
@@ -148,6 +165,9 @@ public class GridGameServer {
 				break;
 			case GameHandler.ADD_AGENT:
 				this.addAgent(token, response);
+				break;
+			case GameHandler.CONFIG_GAME:
+				this.configGame(token, response);
 				break;
 			case GameHandler.RUN_GAME:
 				this.runGame(token, id, response);
@@ -222,7 +242,7 @@ public class GridGameServer {
 			GameHandler handler = new GameHandler(this, session, worldId);
 			
 			this.collections.addHandler(clientId, worldId, handler);
-			configuration.addHandler(CLIENT_ID, handler);
+			configuration.addHandler(clientId, handler);
 			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
 			
 			World baseWorld = configuration.getWorldWithAgents();
@@ -261,9 +281,37 @@ public class GridGameServer {
 		this.updateConnected();
 	}
 	
+	private void configGame(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
+		String worldId = token.getString(GridGameServer.WORLD_ID);
+		GridGameConfiguration configuration = this.collections.getConfiguration(worldId);
+		
+		if (configuration == null) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The desired world id does not exist");
+			return;
+		}
+		
+		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
+		
+		for (String agentTypeStr : agentTypes) {
+			boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
+			
+			if (!isValidAgent) {
+				response.setError(true);
+				response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
+				return;
+			}
+			configuration.addAgentType(agentTypeStr);
+		}
+		
+		this.updateConnected();
+		
+	}
+	
 	private boolean isValidAgent(String worldId, String agentTypeStr) {
+		
 		agentTypeStr = agentTypeStr.toLowerCase();
-		return (agentTypeStr.equals("random") || agentTypeStr.equals("mavi"));
+		return Arrays.asList(GridGameServer.COOPERATIVE_AGENT, GridGameServer.RANDOM_AGENT, GridGameServer.HUMAN_AGENT).contains(agentTypeStr);
 	}
 	
 	private void runGame(GridGameServerToken token, String clientId, GridGameServerToken response) throws TokenCastException {

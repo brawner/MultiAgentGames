@@ -43,6 +43,7 @@ public class GameHandler {
 	public static final String CLOSE_GAME = "close_game";
 	public static final String SCORE = "score";
 	public static final String GAME_COMPLETED = "game_complete";
+	public static final String CONFIG_GAME = "config_game";
 	
 	private Session session;
 	private NetworkAgent agent;

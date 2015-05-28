@@ -56,17 +56,21 @@ public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListene
 					this.worlds.put(token.getString(WorldFile.LABEL), token.getString(WorldFile.DESCRIPTION));
 				}
 			}
+			
+			List<GridGameServerToken> activeGames = msg.getTokenList(GridGameServer.ACTIVE);
+			
+			if (activeGames != null) {
+				this.activeWorlds.clear();
+				for (GridGameServerToken gameToken : activeGames) {
+					this.activeWorlds.put(gameToken.getString(WorldFile.LABEL), gameToken.getString(WorldFile.DESCRIPTION));
+				}
+			}
+			
 		} catch (TokenCastException e) {
 			e.printStackTrace();
 		}
 		
-		Object activeObj = msg.getObject(GridGameServer.ACTIVE);
 		
-		if (activeObj != null) {
-			Map<String, String> active = (Map<String, String>)activeObj;
-			this.activeWorlds.clear();
-			this.activeWorlds.putAll(active);
-		}
 		this.printOptions();
 		
 		

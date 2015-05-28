@@ -3,6 +3,7 @@ package networking.server;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,6 +62,16 @@ public class GridGameConfiguration {
 		return this.baseWorld.copy();
 	}
 	
+	public boolean canAddAgent() {
+		int maxAgentsCanJoin = this.baseWorld.getMaximumAgentsCanJoin();
+		if (maxAgentsCanJoin == -1) {
+			return true;
+		}
+		synchronized(this.orderedAgents) {
+			return this.orderedAgents.size() < maxAgentsCanJoin;
+		}
+	}
+	
 	public World getWorldWithAgents() {
 		World world = this.getBaseWorld();
 		
@@ -106,9 +117,10 @@ public class GridGameConfiguration {
 	}
 	
 	private Agent getNewAgentForWorld(World world, String agentType) {
-		if (agentType.equalsIgnoreCase(GridGameServer.RANDOM_AGENT)) {
+		switch(agentType) {
+		case GridGameServer.RANDOM_AGENT:
 			return this.getNewRandomAgent();
-		} else if (agentType.equalsIgnoreCase(GridGameServer.MAVI_AGENT)) {
+		case GridGameServer.COOPERATIVE_AGENT:
 			return this.getNewMAVIAgent(world);
 		}
 		return null;
@@ -147,6 +159,9 @@ public class GridGameConfiguration {
 	}
 	
 	public void addAgent(Agent agent) {
+		if (!this.canAddAgent()) {
+			return;
+		}
 		String agentName = this.generateAgentId();
 		synchronized(this.repeatedAgents) {
 			if (!this.repeatedAgents.containsValue(agent)) {
@@ -157,6 +172,13 @@ public class GridGameConfiguration {
 	}
 	
 	public void addAgentType(String agentType) {
+		if (!this.canAddAgent()) {
+			return;
+		}
+		if (agentType.equals(GridGameServer.HUMAN_AGENT)) {
+			this.addHumanVacancy();
+			return;
+		}
 		String agentName = this.generateAgentId();
 		synchronized(this.regeneratedAgents) {
 			this.regeneratedAgents.put(agentName, agentType);
@@ -187,15 +209,65 @@ public class GridGameConfiguration {
 	}
 	
 	public void addHandler(String id, GameHandler handler) {
-		String agentName = this.generateAgentId();
-		synchronized(this.orderedAgents) {
-			this.orderedAgents.add(agentName);
+		
+		String agentName = this.getNextVacancy();
+		if (agentName == null) {
+			if (!this.canAddAgent()) {
+				return;
+			}
+			agentName = this.generateAgentId();
+			synchronized(this.orderedAgents) {
+				this.orderedAgents.add(agentName);
+			}
 		}
+		
 		synchronized(this.networkAgents) {
 			this.networkAgents.put(agentName, handler);
 		}
 		synchronized(this.handlerLookup) {
 			this.handlerLookup.put(id, handler);
+		}
+	}
+	
+	private String getNextVacancy() {
+		synchronized(this.orderedAgents) {
+			for (int i = 0; i < this.orderedAgents.size(); i++) {
+				String id = this.orderedAgents.get(i);
+				if (this.isVacancy(id)) {
+					return id;
+				}
+			}
+		}
+		return null;
+	}
+	
+	private boolean isVacancy(String id) {
+		synchronized(this.regeneratedAgents) {
+			if (this.regeneratedAgents.containsKey(id)) {
+				return false;
+			}
+		}
+		
+		synchronized(this.repeatedAgents) {
+			if (this.repeatedAgents.containsKey(id)) {
+				return false;
+			}
+		}
+		
+		synchronized(this.networkAgents) {
+			if (this.networkAgents.containsKey(id)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	public void addHumanVacancy() {
+		if (!this.canAddAgent()) {
+			return;
+		}
+		String agentName = this.generateAgentId();
+		synchronized(this.orderedAgents) {
+			this.orderedAgents.add(agentName);
 		}
 	}
 	
@@ -230,5 +302,24 @@ public class GridGameConfiguration {
 		}
 		List<ObjectInstance> agents = startingState.getObjectsOfClass(GridGame.CLASSAGENT);
 		return (pos == -1) ? null : agents.get(pos).getName();
+	}
+
+	public Map<String, String> getAgentTypes() {
+		Map<String, String> agentTypes = new LinkedHashMap<String, String>();
+		for (String agentName : this.orderedAgents) {
+			String agentType = null;
+			if (this.repeatedAgents.containsKey(agentName)) {
+				Agent agent = this.repeatedAgents.get(agentName);
+				agentType = agent.getClass().getSimpleName();
+				
+			} else if (this.regeneratedAgents.containsKey(agentName)) {
+				agentType = this.regeneratedAgents.get(agentName);
+				
+			} else {
+				agentType = "human";
+			}
+			agentTypes.put(agentName, agentType);
+		}
+		return agentTypes;
 	}
 }

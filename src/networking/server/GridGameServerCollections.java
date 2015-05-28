@@ -114,9 +114,11 @@ public class GridGameServerCollections {
 	}
 	
 	public List<GameHandler> getHandlersWithGame(String gameId) {
-		List<String> ids = null;
+		List<String> ids = new ArrayList<String>();
 		synchronized(this.handlersAssociatedWithGames) {
-			ids = this.handlersAssociatedWithGames.get(gameId);
+			if (this.handlersAssociatedWithGames.containsKey(gameId)) {
+				ids = this.handlersAssociatedWithGames.get(gameId);
+			}
 		}
 		
 		synchronized(this.gameLookup) {
@@ -156,7 +158,11 @@ public class GridGameServerCollections {
 		
 		synchronized(this.gameLookup) {
 			List<String> ids = this.handlersAssociatedWithGames.remove(worldId);
+			
 			List<GameHandler> handlers = new ArrayList<GameHandler>();
+			if (ids == null) {
+				return handlers;
+			}
 			for (String id : ids) {
 				GameHandler handler = this.gameLookup.remove(id);
 				if (handler != null) {

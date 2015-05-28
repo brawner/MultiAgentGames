@@ -73,7 +73,6 @@ public class GridGameWorldLoader {
 		GridGame gridGame = new GridGame();
 		
 		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
-		JointActionModel jointActionModel = GridGameExtreme.generateJointActionModel(domain);
 		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
 		JointReward jointReward = GridGameExtreme.generateJointReward(domain);
 		
@@ -85,8 +84,8 @@ public class GridGameWorldLoader {
 			
 			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
 			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
-			
-			world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator, abstraction);
+			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
+			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
 			
 			String description = token.getString(WorldFile.DESCRIPTION);
 			world.setDescription(description);
