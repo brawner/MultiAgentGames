@@ -239,9 +239,12 @@ var MessageReader = function() {
 			return actives;
 		}
 		var activeMsgs = msg[MessageFields.ACTIVE];
-		for (var label in activeMsgs) {
-			var description = activeMsgs[label];
-			var active = new ActiveWorld(label, description);
+		for (var i = 0; i < activeMsgs.length; i++) {
+			var label = activeMsgs[i][MessageFields.LABEL];
+			var description = activeMsgs[i][MessageFields.DESCRIPTION];
+			var agents = activeMsgs[i][MessageFields.AGENTS];
+			var maxAgents = activeMsgs[i][MessageFields.NUM_AGENTS];
+			var active = new ActiveWorld(label, description, agents, maxAgents);
 			actives.push(active);
 		}
 

@@ -502,708 +502,294 @@ var EndScreenPainter = function(width, height, context) {
     };
 };
 
-/*
-var SplashPainter = function(startOnClick, textOnKeyDown) {
+var AdminPagePainter = function(onWorldClick, onActiveClick) {
     "use strict";
-    var painters = [];
-    var allowReset = true;
+    var worldButtons = {};
+    var activeButtons = {};
+    var onWorld = onWorldClick;
+    var onActive = onActiveClick;
 
-    this.draw = function() {
-         $("#stage").append("<div id='"+gameConfig.SceneSplashName+"'></div>");
-        
-        //Title
-        $("#"+gameConfig.SceneSplashName).append("<h1 id='splashTitle'>" + gameConfig.Title + "</h1>");
-        //console.log("Debug: Splash Scene -> Generating Title at " + gamePos.TitleY + " " + gamePos.TitleX);
-        $("#splashTitle").css({
-            "color": gameConfig.TitleColor,
-            "font-size": gameConfig.TitleSize,
-            "position":"absolute",
-            "top":gamePos.TitleY,
-            "left":gamePos.TitleX});
-        
-        //Name input
-        $("#"+gameConfig.SceneSplashName).append("<input id='playerName' type='text'>");
-        //console.log("Debug: Splash Scene -> Generating Player Name text input at...");
-
-        $("#playerName").css({
-            "width":256,
-            "position":"relative",
-            "top":240,
-            "left":228}).val('Enter thy name Chef!')
-            .keydown(function() {
-                allowReset = false;
-                textOnKeyDown();})
-            .click(function() {if (allowReset) {$("#playerName").val("");}});
-
-        //Start button
-        //console.log("Debug: Splash Scene -> Generating Start button at " + gamePos.StartY + " " + gamePos.StartX);
-        $("#"+gameConfig.SceneSplashName).append("<button id='splashButton' type='button'>" + gameConfig.StartButton + "</button>");
-        $("#splashButton").css({
-            "position":"absolute",
-            "top":gamePos.StartY,
-            "left":gamePos.StartX})
-            .click(startOnClick);
-    };
-
-    this.addPainter = function(painter) {
-        painters.push(painter);
-    };
-};
-
-var GamePainter = function(playground, mouseTracker) {
-    "use strict";
-    
-    var painters = [];
-    playground.pauseGame().clearScenegraph().startGame().addGroup(
-            "background", {width: gameConfig.StageWidth, height: gameConfig.StageHeight}).addSprite(
-            "background", {animation: gameAnimations.background1, width: gameConfig.StageWidth, height: gameConfig.StageHeight}).end()
-        .mousemove(mouseTracker.onMouseMove)
-        .mousedown(mouseTracker.onMouseDown)
-        .mouseup(mouseTracker.onMouseUp)
-        .addGroup("grid", {width: 768, height: 256, posx: 0, posy: 192}).end()    
-        .addGroup("holding", {width: 756, height: 512, posx: 0, posy: 0})
-            .end()
-        .addGroup("selectionDiv", {width: 756, height: 512, posx: 0, posy: 0})
-            .end()
-        .addGroup("recipeBackground", {width: 384, height: 192, posx: 384, posy: 0})
-            .css({"background-image": "url('./Sprites/RecipeDivBG.PNG')", "overflow": "visible"})
-            .addGroup("recipeDiv", {width: 374, height: 186, posx: 10, posy: 6})
-                .css({"font-size": "10pt", "color": "black", "overflow": "auto"})
-                .end().end()
-        .addGroup("consoleBackground", {width: 384, height: 192, posx: 0, posy: 0})
-            .css({"background-image": "url('./Sprites/TerminalDivBG.PNG')", "overflow": "visible"})
-            .addGroup("consoleDiv", {width: 364, height: 180, posx: 10, posy: 6})
-                .css({"font-size": "10pt", "color": "green", "overflow": "auto"})
-                .end().end()
-        .addGroup("actionDiv",{width: 768, height: 64, posx: 0, posy: 448})
-            .css({"font-size": "8pt", "color": "yellow", "overflow": "auto"})
-            .addSprite("actSelector", {animation: gameAnimations.overSelectionP1, width: 64, height: 64, posx: 0})
-            .append("<button id='matchResetBtn' type='button'>Reset</button>")
-            .end()
-        .addGroup(actionText.DisplayDiv, {width: 256, height: 64, posx: 448, posy: 448})
-            .end();
-
-    this.draw = function () {
-        var i = 0;  
-        for (i = 0; i < painters.length; i++) {
-            painters[i].draw();
-        }
-    };
-
-    this.addPainter = function (painter) {
-        painters.push(painter);
-    };
-
-    this.addPainters = function(newPainters) {
-        painters = painters.concat(newPainters);
-    };
-};
-
-var GridPainter = function() {
-    "use strict";
-    var painters = [];
-    
-    var initGroup = function() {
-        if ($("#appliances").length === 0) {
-            $("#grid").addGroup("appliances", {width: 384, height: 128, posx: 0, posy: 0}).end()
-        }
-        if ($("#containers").length === 0) {
-            $("#grid").addGroup("containers", {width: 768, height: 64, posx: 0, posy: 128}).end()
-        }
-        if ($("#ingredients").length === 0) {
-            $("#grid").addGroup("ingredients", {width: 768, height: 64, posx: 0, posy: 192}).end()
-        }
-    };
-    initGroup();
-
-    this.addPainter = function(painter) {
-        painters.push(painter);
-    };
-
-    this.removePainter = function(painter) {
-        var position = $.inArray(painter, painters);
-        if (position != -1) 
-        {
-            painters[position].clear();
-            painters.splice(position, 1);
-        }
-    };
-
-    this.setPainters = function(newPainters) {
-        painters = newPainters;
-    };
-
-    this.getBounds = function() {
-        var left = $("#grid").x();
-        var right = $("#grid").x() + $("#grid").width();
-        var bottom = $("#grid").y();
-        var top = $("#grid").y() + $("#grid").height();
-        return {top:top, bottom:bottom, left:left, right:right};
-    };  
-
-    this.clear = function() {
-        for (var i = 0; i < painters.length; i++) {
-            painters[i].clear();
-        }
-        painters = [];
-        clearGroup($("#appliances"));
-        clearGroup($("#containers"));
-        clearGroup($("#ingredients"));
-    };
-
-    var clearGroup = function(group) {
-        for (var i = 0; i < group.length; i++) {
-            group.remove();
-        }
-        initGroup();
-    };
-
-    this.draw = function() {
-        for (var i = 0; i < painters.length; i++) {
-            painters[i].draw();
-        }
-    };
-};
-
-var ActionBarPainter = function(usedActions, onClick, onReset) {
-    "use strict";
-    var actions = usedActions,
-        selector = 0;
-    var DisplayDiv = "actionDiv";
-
-
-
-    //Configure reset button
-    $("#matchResetBtn").css({
-        "position":"absolute",
-        "top":16,
-        "left":708}).click(onReset);     
-        
-
-
-    this.setSelector = function(position) {
-        if (0 <= position && position < actions.length) {
-            selector = position;
-        }
-        this.draw();
-    };
-
-    this.draw = function() {
-        var i = 0,
-            x = 0,
-            action = 0,
-            actionDiv = "",
-            animation = null;
-        var actionGroup = $("#" + DisplayDiv);
-
-        for (i = 0; i < actions.length; i++) {
-            x = i * 64;
-            action = actions[i];
-            animation = getSprite(action);
-            actionDiv = "action_" + i.toString();
-
-            actionGroup.addSprite(actionDiv, {animation: animation, width: 64, height: 64, posx: x});
-            $("#" + actionDiv).click(onClick);
-        }
-
-        $("#actSelector").x(64 * selector);
-    };
-
-    this.getBounds = function() {
-        var div = $("#" + DisplayDiv);
-        return {"left":div.x(), "right":div.x() + div.width(), "bottom":div.y(), "top": div.y() + div.height()};
-    };
-
-    var getSprite = function(action) {
-        switch(action) {
-        case EnumActions.Look:
-            return gameAnimations.actLook;
-            break;
-        case EnumActions.Use:
-            return gameAnimations.actUse;
-            break;
-        case EnumActions.Mix:
-            return gameAnimations.actMix;
-            break;
-        case EnumActions.Spread:
-            return gameAnimations.actSpread;
-            break;
-        case EnumActions.TurnOnOff:
-            return gameAnimations.actTurnOnOff;
-            break;
-        case EnumActions.Peel:
-            return gameAnimations.actPeel;
-            break;
-        case EnumActions.Shape:
-            return gameAnimations.actShape;
-            break;
-        case EnumActions.Cut:
-            return gameAnimations.actCut;
-            break;
-        default:
-            return -1;
-        }
-        return -1;
-    };
-};
-
-var AppliancePainter = function(sprite, posx, posy, currentSlot, containerPainters) {
-    "use strict";
-
-    var x = posx;
-    var y = posy;
-    var group = "appliances";
-    var slot = currentSlot;
-    var containers = containerPainters;
-    var applianceGroup = "appliances" + "_" + slot.toString();
-    var animation;
-    var spritePainter;
-    var imageUrl = "./Sprites/" + sprite;
+    var allElements = [];
     var self = this;
 
-    var imageExists = function() {
-        animation = new $.gameQuery.Animation({imageURL: imageUrl });
-        self.draw();
-    };
-
-    var imageNotExists = function() {
-        animation = new $.gameQuery.Animation({imageURL: "./Sprites/Appliance.PNG"})
-        spritePainter = new SpritePainter(sprite, "sprite_" + sprite, applianceGroup);
-        spritePainter.setSize(128,128);
-        self.draw();
-    };
-
-    $.get(imageUrl)
-        .done(imageExists).fail(imageNotExists);
-
     this.clear = function() {
-        removeAll();
-    };
-
-    var groupObject = function() {
-        return $("#" + applianceGroup.toString());
-    };
-
-    var slotObject = function() {
-        return $("#" + slot.toString());
-    };
-
-    var getGroupObject = function() {
-        if (groupObject().length === 0) {
-            setApplianceGroup();
+        for (var i = 0; i < allElements.length; i++) {
+            document.body.removeChild(allElements[i]);
         }
-
-        return groupObject();
+        allElements = [];
+        worldButtons = {};
+        activeButtons = {};
     };
 
-    var getSlotObject = function() {
-        if (slotObject().length === 0) {
-            setSprite();
-        }
+    this.draw = function(worlds, active) {
+        this.clear();
 
-        return slotObject();
+        drawTitles(100, 80, 100, 400);        
+        drawButtons(worlds, worldButtons, onWorld);
+        drawButtons(active, activeButtons, onActive);
+
+        placeButtons(100, 100, worldButtons);
+        placeButtons(100, 420, activeButtons);
+            
     };
 
-    var removeAll = function() {
-        slotObject().remove();
-        groupObject().remove();
+    var drawTitles = function(worldsX, worldsY, activeX, activeY) {
+        var startWorldDiv = document.createElement("div");
+        var startWorldText = document.createTextNode("Start new game");
+        var configureActiveDiv = document.createElement("div");
+        var configureActiveText = document.createTextNode("Configure/Run Existing Game");
+
+        startWorldDiv.appendChild(startWorldText);
+        configureActiveDiv.appendChild(configureActiveText);
+
+        document.body.appendChild(startWorldDiv);
+        allElements.push(startWorldDiv);
+        document.body.appendChild(configureActiveDiv);
+        allElements.push(configureActiveDiv);
+        startWorldDiv.style.position = "absolute";
+        configureActiveDiv.style.position = "absolute";
+
+        startWorldDiv.style.left = worldsX + "px";
+        startWorldDiv.style.top = worldsY + "px";
+
+        configureActiveDiv.style.left = activeX + "px";
+        configureActiveDiv.style.top = activeY + "px";
     };
 
-    var setApplianceGroup = function() {
-        groupObject().remove();
+    var drawButtons = function(worlds, buttons, callback) {
         
-        $("#" + group).addGroup(applianceGroup.toString(), 
-                {width: 128, height: 128, posx: x, posy: y});
-    };
+        for (var i = 0; i < worlds.length; i++) {
+            
+            var label = worlds[i].Label;
+            var description = worlds[i].Description;
+            if (!(label in buttons)) {
+                var button = document.createElement("BUTTON");
+                button.title = description;
+                button.id = label;
+                button.addEventListener("click", function() {callback(this.id);});
+                
+                var text = document.createTextNode(label);
+                button.appendChild(text);
+                buttons[label] = button;
 
-    var setSprite = function() {
-        slotObject().remove();
-        $("#" + applianceGroup).addSprite(slot.toString(), 
-                {animation:animation, width: 128, height: 128});
-    };
+                var descripDiv = document.createElement('div');
+                var descrText = document.createTextNode(description);
+                descripDiv.id = label + "_desc";
+                descripDiv.appendChild(descrText);
 
-    var setContainers = function() {
-        var containerSlot,
-        containerX,
-        containerY,
-        containerGroup;
-
-        for (var i = 0; i < containers.length; i++) {
-            containerX = (i % 2) * 64;
-            containerY = Math.floor(i / 2) * 64;
-            containerSlot = slot + "_" + i.toString();
-
-            containers[i].setConfiguration(containerSlot, containerX, containerY, applianceGroup);
+                document.body.appendChild(button);
+                document.body.appendChild(descripDiv); 
+                
+                allElements.push(button);
+                allElements.push(descripDiv);
+            }
         }
     };
 
-    var setAll = function() {
-        setApplianceGroup();
-        setSprite();
-        setContainers();
-    };
 
-    this.addPainter = function(newContainer) {
-        containers.push(newContainer);
-    };
+    var placeButtons = function(startX, startY, buttons) {
+        var offset = 0;
+        for (var key in buttons) {
+            var button = document.getElementById(key);
+            if (typeof button === 'undefined' || button === null) {
+                continue;
+            }
+            button.style.position = "absolute";
+            button.style.left = startX + "px";
+            button.style.top = (startY + offset) + "px";
+            button.style.width = "64px";
+            
+            var description = document.getElementById(key + "_desc");
+            description.style.position = "absolute";
+            description.style.left = (startX + 70) + "px";
+            description.style.top = (startY + offset) + "px";
 
-    this.setPainters = function(newContainers) {
-        containers = newContainers;
-    };
-
-    this.removePainter = function(toRemove) {
-        var position = $.inArray(toRemove, containers);
-        if (position != -1) {
-            containers.splice(position, 1);
-        }
-    }
-
-    this.setPosition = function(newX, newY) {
-        removeAll();
-        x = newX;
-        y = newY;
-    };
-    this.setGroup = function(newGroup) {
-        removeAll();
-        group = newGroup;
-        applianceGroup = group.toString() + "_" + slot.toString();
-    };
-
-    this.setAnimation = function(newAnimation) {
-        removeAll();
-        animation = newAnimation;
-    };
-
-    this.setSlot = function(newSlot) {
-        removeAll();
-        slot = newSlot;
-        applianceGroup = group.toString() + "_" + slot.toString();
-    };
-
-    this.setConfiguration = function(newSlot, newX, newY, newGroup) {
-        removeAll();
-        if (typeof newSlot !== 'undefined') {
-            slot = newSlot;
-            applianceGroup = group.toString() + "_" + slot.toString();    
-        }
-        if (typeof newX !== 'undefined') {
-            x = newX;
-        }
-        if (typeof newY !== 'undefined') {
-            y = newY;
-        }
-        if (typeof newGroup !== 'undefined') {
-            group = newGroup;
-            applianceGroup = group.toString() + "_" + slot.toString();
-        }
-    };
-
-    this.draw = function() {
-        setAll();
-        if (typeof spritePainter !== 'undefined') {
-            spritePainter.draw();
-        }
-        for (var i = 0; i < containers.length; i++) {
-            containers[i].draw();
+            offset += 24;
+                
         }
     };
 };
 
-var ContainerPainter = function(text, sprite, posx, posy, currentSlot, containerGroup) {
+var GameConfigPainter = function(_label, _description, _submitConfigCallback, _onRunCallback, _onRemoveCallback) {
     "use strict";
-    var group = (typeof containerGroup !== 'undefined') ? containerGroup : "containers";
-    var containerGroup = group + "_" + currentSlot.toString();
-    var imageUrl = "./Sprites/" + sprite;
-    var animation,
-        spritePainter;
-    var slot = currentSlot;
-    var x = posx;
-    var y = posy;
+
+    var configChange = _submitConfigCallback;
+    var onRunCallback = _onRunCallback;
+    var onRemoveCallback = _onRemoveCallback;
     var self = this;
-    var initialized = false;
+    var agentMenus = [];
+    var allElements = [];
+    var label = _label;
+    var description = _description;
 
-    var imageExists = function() {
-        animation = new $.gameQuery.Animation({imageURL: imageUrl });
-        initialized = true;
-        self.draw();
+    var onSubmit = function() {
+        var agentConfigurations = [];
+        for (var i = 0; i < agentMenus.length; i++) {
+            agentConfigurations.push(agentMenus[i].value);
+        }
+
+        self.clear();
+
+        configChange(label, agentConfigurations);
+        
     };
 
-    var imageNotExists = function() {
-        animation = new $.gameQuery.Animation({imageURL: "./Sprites/Container.PNG"})
-        spritePainter = new SpritePainter(text, "sprite_" + sprite, containerGroup);
-        initialized = true;
-        self.draw();
+    var onRun = function() {
+
+        self.clear();
+        onRunCallback(label);
     };
 
-    $.get(imageUrl)
-        .done(imageExists).fail(imageNotExists);
-
-    var slotObject = function() {
-        return $("#" + slot.toString());
+    var onRemove = function() {
+        self.clear();
+        onRemoveCallback(label);
     };
 
-    var containerObject = function() {
-        return $("#" + containerGroup);
-    };
-
-    var groupObject = function() {
-        return $("#" + group);
-    };
+    var agentTypes = ["random", "cooperative", "human"];
 
     this.clear = function() {
-        this.clearAnimation();
-    }
+        for (var i = 0; i < allElements.length; i++) {
+            document.body.removeChild(allElements[i]);
+        }
+        allElements = [];
+    };
+    this.draw = function(agents, maxAgents, x, y) {
+        if (maxAgents == -1) {
+            maxAgents = 2;
+        }
+        drawText(label, description, x, y);
+        var offset = drawAgents(agents, maxAgents, x + 20, y + 40);
+        var buttonY =  offset + y + 40;
+        drawButton(x, buttonY, "Submit", onSubmit);
+        drawButton(x + 60, buttonY, "Run", onRun);
+        drawButton(x + 180, buttonY, "Remove", onRemove);
+    };
 
-    
+    var drawButton = function(x, y, text, callback) {
+        var button = document.createElement("button");
+        var buttonText = document.createTextNode(text);
+        button.appendChild(buttonText);
+        allElements.push(button);
 
-    var drawSprite = function() {
-        if (typeof group !== 'undefined') {
-            if (containerObject().length === 0)
-            {
-                groupObject().addGroup(containerGroup.toString(), 
-                    {width: 64, height: 64, posx: x, posy: y})
+        document.body.appendChild(button);
+        button.style.position = "absolute";
+        button.style.top = y + "px";
+        button.style.left = x + "px";
+        button.addEventListener("click", callback);
+    };
+
+    var drawText = function(label, description, x, y) {
+        var headerDiv = document.createElement('div');
+        var headerText = document.createTextNode("Game \u00A0 Description");
+        headerDiv.appendChild(headerText);
+        allElements.push(headerDiv);
+
+        var labelDiv = document.createElement('div');
+        var labelText = document.createTextNode(label);
+        labelDiv.appendChild(labelText);
+        allElements.push(labelDiv);
+
+        var descriptionDiv = document.createElement('div');
+        var descriptionText = document.createTextNode(description);
+        descriptionDiv.appendChild(descriptionText);
+        allElements.push(descriptionDiv);
+
+        document.body.appendChild(headerDiv);
+        document.body.appendChild(labelDiv);
+        document.body.appendChild(descriptionDiv);
+
+        headerDiv.style.position = "absolute";
+        headerDiv.style.left = (x - 12) + "px";
+        headerDiv.style.top = (y - 20) + "px";
+
+        labelDiv.style.position = "absolute";
+        labelDiv.style.left = x + "px";
+        labelDiv.style.top = y + "px";
+
+        descriptionDiv.style.position = "absolute";
+        descriptionDiv.style.left = (x + labelDiv.clientWidth + 30) + "px";
+        descriptionDiv.style.top = y + "px";
+    };
+
+
+
+    var drawAgents = function(agents, numAgents, x ,y) {
+        var offset = 24;
+        var count = 0;
+
+        var headerDiv = document.createElement('div');
+        var headerText = document.createTextNode("Agent \u00A0\u00A0 Type");
+        headerDiv.appendChild(headerText);
+        allElements.push(headerDiv);
+
+        document.body.appendChild(headerDiv);
+        headerDiv.style.position = "absolute";
+        headerDiv.style.top = (y) + "px";
+        headerDiv.style.left = (x-20) + "px";
+
+        for (var key in agents) {
+            var agent = agents[key];
+            count++;
+            var numberDiv = document.createElement('div');
+            var numberText = document.createTextNode(key);
+            numberDiv.appendChild(numberText);
+            allElements.push(numberDiv);
+            document.body.appendChild(numberDiv);
+            numberDiv.style.position = "absolute";
+            numberDiv.style.top = (y + offset) + "px";
+            numberDiv.style.left = x + "px";
+
+            var descripDiv = document.createElement('div');
+            var descripText = document.createTextNode(agent);
+            descripDiv.appendChild(descripText);
+
+            descripDiv.style.position = "absolute";
+            descripDiv.style.top = (y + offset) + "px";
+            descripDiv.style.left = (x + 30) + "px";
+
+            document.body.appendChild(descripDiv);
+            allElements.push(descripDiv);
+            offset += 24;
+        }
+
+        for (var i = count; i < numAgents; i++) {
+            var numberDiv = document.createElement('div');
+            var numberText = document.createTextNode(i);
+            numberDiv.appendChild(numberText);
+            allElements.push(numberDiv);
+
+            document.body.appendChild(numberDiv);
+            numberDiv.style.position = "absolute";
+            numberDiv.style.top = (y + offset) + "px";
+            numberDiv.style.left = x + "px";
+
+            var select = createDropDown(i, agentTypes);
+            select.style.position = "absolute";
+            select.style.top = (y + offset) + "px";
+            select.style.left = (x + 30) + "px";
+            offset += 24;
+        }
+
+        return offset;
+    };
+
+    var createDropDown = function(agentNumber, agentTypes, selectedType) {
+
+        var select = document.createElement("select");
+        allElements.push(select);
+        agentMenus.push(select);
+        select.id = "agent_" + agentNumber;
+
+        for (var i = 0; i < agentTypes.length; i++) {
+            var option = document.createElement("option");
+            option.value = agentTypes[i];
+            if (agentTypes[i] === selectedType) {
+                option.selected = true;
             }
-            if (slotObject().length === 0)
-            {
-                containerObject().addSprite(slot.toString(), 
-                    {animation: animation, width: 64, height: 64});
-            }
+            option.innerHTML = agentTypes[i];
+            select.add(option);
         }
-    };
-
-    this.setPosition = function(newX, newY) {
-        slotObject().remove();
-        x = newX;
-        y = newY;
-    };
-
-    this.setGroup = function(newGroup) {
-        slotObject().remove();
-        group = newGroup;
-        containerGroup = group + "_" + slot.toString();
-        if (typeof spritePainter !== 'undefined') 
-        {
-            spritePainter.setGroup(containerGroup);
-        }
-    };
-
-    this.setAnimation = function(newAnimation) {
-        animation = newAnimation;
-    };
-
-    this.clearAnimation = function() {
-        if (slotObject().length !== 0) {
-            slotObject().setAnimation();
-            slotObject().remove();
-        }
-    };
-
-    this.setSlot = function(newSlot) {
-        slotObject().remove();
-        slot = newSlot;
-        containerGroup = group + "_" + slot.toString();
-        if (typeof spritePainter !== 'undefined') 
-        {
-            spritePainter.setGroup(containerGroup);
-        }
-    };
-
-    this.setConfiguration = function(newSlot, newX, newY, newGroup) {
-        slotObject().remove();
-
-        if (typeof newSlot !== 'undefined') {
-            slot = newSlot;
-        }
-        if (typeof newX !== 'undefined') {
-            x = newX;
-        }
-        if (typeof newY !== 'undefined') {
-            y = newY;
-        }
-        if (typeof newGroup !== 'undefined') {
-            group = newGroup;
-        }
-        containerGroup = group + "_" + slot.toString();
-        if (typeof spritePainter !== 'undefined') 
-        {
-            spritePainter.setGroup(containerGroup);
-        }        
-    };
-
-    this.draw = function() {
-        if (slot != "-1" && initialized) {
-            drawSprite();
-            if (typeof spritePainter !== 'undefined') {
-                spritePainter.draw();   
-            }
-        }
+        document.body.appendChild(select);
+        return select;
     };
 };
-
-var RecipePainter = function() {
-    "use strict";
-    var x, y;
-    var text;
-    var status;
-    var div = "recipeDiv";
-
-    var recipeDiv = function() {
-        return $("#" + div);
-    }
-
-    this.SetX = function(newX) {
-        x = newX;
-    };
-
-    this.SetY = function(newY) {
-        y = newY;
-    };
-
-    this.setText = function(newText) {
-        text = newText;
-        if (typeof status === 'undefined') {
-            status = [];
-            for (var i = 0; i < text.length; i++) {
-                status[i] = false;
-            }
-        }
-    };
-
-    this.setStatus = function(newStatus) {
-        status = newStatus;
-        for (var i = status.length; i < text.length; i++) {
-            status[i] = false;
-        }
-    };
-
-    this.draw = function(){
-        if (typeof text === 'undefined') {
-            return;
-        }
-        recipeDiv().html("");
-        recipeDiv().append("<u>" + text[0] + "</u>");
-        recipeDiv().append("<ol>");
-        var color;
-        for (var i = 1; i < text.length; i++) {
-            color = (status[i-1]) ? "gray" : "black";
-            recipeDiv().append("<li class='recipe_" + color + "'>" + text[i] + "</li>");
-        }
-        recipeDiv().append("</ol>");
-
-        $(".recipe_gray").css({"color":"gray"});
-        $(".recipe_black").css({"color":"black"});
-    };
-};
-
-$.fn.textHeight = function()
- {
-   var self = $(this),
-         children = self.children(),
-         calculator = $('<span style="display: inline-block;" />'),
-         height;
- 
-    var selfHeight = self.height();
-     
-     children.wrap(calculator);
-     height = children.parent().height(); // parent = the calculator wrapper
-     children.unwrap();
-     return height * children.length;
- };
-
-var MatchConsolePainter = function() {
-    "use strict";
-    var DisplayDiv = "consoleDiv";
-    var text = [];
-    var error = [];
-    var height = $("#" + DisplayDiv).height() - 8;
-
-    var divObject = function() {
-        return $("#" + DisplayDiv);
-    }
-
-    this.setText = function(lines, status) {
-        text = lines;
-        error = status;
-    };
-
-    this.draw = function() {
-        divObject().html("");
-        var color;
-        for (var i = 0; i < text.length; i++) {
-            color = (error[i] == 0) ? "console_green" : "console_red";
-            divObject().append("<span class='" + color + "'>" + text[i] + "</span></br>");
-        }
-        $(".console_green").css({"color":"green"});
-        $(".console_red").css({"color":"red"});
-        var scrollAmount = divObject().textHeight();
-       divObject().scrollTop(scrollAmount);
-    };
-};
-
-var HoldingBoxPainter = function() {
-    "use strict";
-    var x, y;
-
-    $("#holding").addGroup("holdingBox", {width:64, height:64}).end();
-
-    var holdingGroup = "holdingBox";
-
-    var holdingObjectPainter;
-
-    this.clear = function() {
-        this.clearHoldingObjectPainter();
-    };
-
-    var groupObject = function() {
-        return $("#" + holdingGroup);
-    };
-
-    var getGroupObject = function() {
-        if (groupObject().length === 0) {
-            setGroupObject();
-        }
-        return groupObject();
-    };
-
-    var setGroupObject = function() {
-        $("#holding").addGroup("holdingBox", {width:64, height:64}).end();        
-    };
-
-    this.setPosition = function(newX, newY) {
-        x = newX;
-        y = newY;
-        this.draw();
-    };
-
-    this.setHoldingObjectPainter = function(objPainter, tileX, tileY) {
-        //objPainter.clearAnimation();
-        //objPainter.setGroup();
-
-        holdingObjectPainter = objPainter;
-        holdingObjectPainter.setGroup(holdingGroup);
-        holdingObjectPainter.setPosition(-tileX,-tileY);
-        this.draw();
-    };
-
-    this.clearHoldingObjectPainter = function() {
-        if (holdingObjectPainter) {
-            holdingObjectPainter.clearAnimation();
-            holdingObjectPainter.setGroup();
-        }
-
-        holdingObjectPainter = undefined;
-
-        groupObject().remove();
-        groupObject().html();
-    };
-
-    this.draw = function() {
-        var obj = getGroupObject();
-        obj.x(x);
-        obj.y(y);
-
-        if (typeof holdingObjectPainter !== 'undefined') {
-            holdingObjectPainter.draw();
-        }
-    };
-};*/

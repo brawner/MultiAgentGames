@@ -54,9 +54,18 @@ var World = function(label, description, maxAgents) {
     this.NumAgents = maxAgents;
 };
 
-var ActiveWorld = function(label, description) {
+var ActiveWorld = function(label, description, agents, maxAgents) {
     "use strict";
 
     this.Label = label;
     this.Description = description;
+    this.Agents = agents;
+    this.NumAgents = maxAgents;
 }
+
+var AgentConfig = function(type, number) {
+    "use strict";
+
+    this.Type = type;
+    this.Number = number;
+};

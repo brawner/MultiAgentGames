@@ -19,7 +19,7 @@ var GameConnect = function(){
     }
     GameConnect.prototype._gameSceneMatch = this;
     
-    var wsurl = "ws://127.0.0.1:8787/events/",
+    var wsurl = "ws://localhost:8787/events/",
         callbacks = [],
         callbackIds = [],
         ws = 0,

@@ -65,3 +65,5 @@ MessageFields.ATTP = "pos";
 MessageFields.WALL_TYPE = "wallType";
 MessageFields.GOAL_TYPE = "gt";
 MessageFields.COST = "value";
+MessageFields.NUM_AGENTS = "num_agents";
+MessageFields.CONFIG_GAME = "config_game";
