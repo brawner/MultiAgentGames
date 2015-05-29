@@ -7,7 +7,7 @@ import java.util.Map;
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.server.GameHandler;
-import networking.server.GridGameServer;
+import networking.server.GridGameManager;
 import burlap.oomdp.core.State;
 import burlap.oomdp.stochasticgames.GroundedSingleAction;
 import burlap.oomdp.stochasticgames.JointAction;
@@ -16,7 +16,12 @@ import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.explorers.SGVisualExplorer;
 import burlap.oomdp.visualizer.Visualizer;
 
-
+/**
+ * A subclass of the SGVisualExplorer so that we can render grid games using the same logic. It also implements a websocket listener so that
+ * it can read state messages that are sent from the server. Any key actions that need to be added, should be included here.
+ * @author brawner
+ *
+ */
 public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSocketListener {
 
 	/**
@@ -27,7 +32,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 	private final GGWebSocketClient socketClient;
 	public SGVisualExplorerClient(SGDomain domain, Visualizer painter,
 			State baseState, JointActionModel jam, GGWebSocketClient socketClient) {
-		super(domain, painter, baseState, jam);
+		super(domain, painter, baseState);
 		this.socketClient = socketClient;
 		
 	}
@@ -54,7 +59,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
 		GridGameServerToken response = new GridGameServerToken();
 		try {
-			String msgType = msg.getString(GridGameServer.MSG_TYPE);
+			String msgType = msg.getString(GridGameManager.MSG_TYPE);
 			if (msgType == null) {
 				return new GridGameServerToken();
 			} else if (msgType.equals(GameHandler.UPDATE)) {
@@ -94,7 +99,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 	private void attemptAction(GroundedSingleAction action) {
 		GridGameServerToken request = new GridGameServerToken();
 		
-		request.setString(GridGameServer.MSG_TYPE, GameHandler.TAKE_ACTION);
+		request.setString(GridGameManager.MSG_TYPE, GameHandler.TAKE_ACTION);
 		request.setString(GameHandler.ACTION, action.actionName());
 		request.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.params));
 		

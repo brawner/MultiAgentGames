@@ -14,10 +14,14 @@ import java.util.concurrent.Future;
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.common.messages.WorldFile;
-import networking.server.GridGameServer;
+import networking.server.GridGameManager;
 import burlap.parallel.Concurrent;
 
-
+/**
+ * Handles text interaction on the command line for the client. Probably not a whole lot has to be changed, except maybe the instructions it prints out.
+ * @author brawner
+ *
+ */
 public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListener{
 
 	private static ConsoleInteraction singleton;
@@ -47,7 +51,7 @@ public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListene
 	
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
 		try {
-			List<GridGameServerToken> worlds = msg.getTokenList(GridGameServer.WORLDS);
+			List<GridGameServerToken> worlds = msg.getTokenList(GridGameManager.WORLDS);
 			
 			if (worlds != null) {
 				this.worlds.clear();
@@ -57,7 +61,7 @@ public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListene
 				}
 			}
 			
-			List<GridGameServerToken> activeGames = msg.getTokenList(GridGameServer.ACTIVE);
+			List<GridGameServerToken> activeGames = msg.getTokenList(GridGameManager.ACTIVE);
 			
 			if (activeGames != null) {
 				this.activeWorlds.clear();

@@ -124,7 +124,7 @@ var Admin = function() {
         connection.Close();
     };
 
-    var connection_painter = new ConnectionStatusPainter(onConnect, onDisconnect);
+    var connection_painter = new ConnectionStatusPainter(onConnect, onDisconnect, 0,0);
         
     this.go = function() {
         

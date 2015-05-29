@@ -10,11 +10,16 @@ import java.util.concurrent.TimeoutException;
 
 import burlap.behavior.stochasticgame.GameAnalysis;
 
+/**
+ * Constantly monitors the currently running games to check if they are done and shut them down if they are.
+ * @author brawner
+ *
+ */
 public class GameMonitor implements Callable<Boolean>{
 
 	private final List<Future<GameAnalysis>> futures;
-	private final GridGameServer server;
-	public GameMonitor(GridGameServer server) {
+	private final GridGameManager server;
+	public GameMonitor(GridGameManager server) {
 		this.futures = Collections.synchronizedList(new ArrayList<Future<GameAnalysis>>());
 		this.server = server;
 	}
@@ -46,7 +51,7 @@ public class GameMonitor implements Callable<Boolean>{
 				for (int i = 0; i < toRemove.size(); i++) {
 					Future<GameAnalysis> future = toRemove.get(i);
 					GameAnalysis analysis = analyses.get(i);
-					this.server.closeGame(future, analysis);
+					this.server.processGameCompletion(future, analysis);
 				}
 				
 			}

@@ -17,6 +17,11 @@ import org.eclipse.jetty.websocket.api.Session;
 import burlap.behavior.stochasticgame.GameAnalysis;
 import burlap.oomdp.stochasticgames.World;
 
+/**
+ * Handles all synchronous access to the collection objects required by the server. Everything included here should be thread safe, I hope.
+ * @author brawner
+ *
+ */
 public class GridGameServerCollections {
 
 	private final List<GridGameServerToken> worldTokens;

@@ -18,14 +18,14 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 public class GGWebSocketServer extends WebSocketAdapter{
 	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
 	private static final String OUTPUT_DIRECTORY = System.getProperty("user.home") + "/grid_games/results";
-	private GridGameServer server;
+	private GridGameManager server;
 	private Session session;
 	
 	public GGWebSocketServer() {
-		this.server = GridGameServer.connect();
+		this.server = GridGameManager.connect();
 	}
 	public GGWebSocketServer(String gameDirectory, String outputDirectory) {
-		this.server = GridGameServer.connect(gameDirectory, outputDirectory);
+		this.server = GridGameManager.connect(gameDirectory, outputDirectory);
 	}
 	
 	@Override

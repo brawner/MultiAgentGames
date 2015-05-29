@@ -1,3 +1,6 @@
+// All constants used in the javascript are kept here. It doesn't really do the same thing that java does
+// because it's totally possible to call undefined fields in other pieces of javascript, soo...whatever.
+
 function MessageFields() {
 	"use strict";
 };

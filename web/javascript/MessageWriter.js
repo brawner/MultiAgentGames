@@ -1,3 +1,5 @@
+
+// Construct messages of different types. Again, doesn't really do much, but helps to be explicit.
 var MessageWriter = function() {
 	"use strict";
 	var self = this;

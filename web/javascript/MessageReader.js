@@ -1,3 +1,5 @@
+
+// Allows of reading from a a json message. Really, it doesn't do much, just helps being explicit.
 var MessageReader = function() {
 	"use strict";
 	var self = this;

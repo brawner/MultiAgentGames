@@ -9,6 +9,11 @@ import burlap.oomdp.core.ObjectInstance;
 import burlap.oomdp.core.State;
 import burlap.oomdp.stochasticgames.Agent;
 
+/**
+ * Abstracts the goals away, so that an agent cannot tell which goal another agent is attempting to go to.
+ * @author brawner
+ *
+ */
 public class GoalAbstraction implements StateAbstraction{
 	private State reference;
 	public GoalAbstraction(State reference) {

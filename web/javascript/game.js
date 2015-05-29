@@ -1,66 +1,48 @@
 /** GameController.js
 *   Robocook main logic controller
-*   by: Lee Painton
 *   by: Stephen Brawner
 *   Development version
 */
 
-//?Possible Recipes?
-//Cookies
-//Meatloaf
-//Brownies
-//Gnocchi
-
-//Enum game state below tells the game what its current state is
-//To change state set CurrentGameState to the appropriate state
-//Note that game scenes may need to be reset() as well
-var EnumGameState = {
-    GameInit: 0,        	//Game initializing, precache
-    SplashInit: 10,     	//Splash intro
-    SplashIdle: 11,
-    SplashTrans: 12,    	//Splash transition out
-    MainMenuInit: 20,   	//Main menu active
-    MainMenuIdle: 21,
-    MainMenuTrans: 22,
-    MatchmakingInit: 30,   //Matchmaking step, connection to server
-    MatchmakingIdle: 31,
-    MatchmakingTrans: 32,
-    MatchInit: 40,      	//Main play started > init state
-    MatchIntro: 50,     	//Main intro display
-    MatchActive: 60,    	//Main active play state
-    MatchEnd: 70,       	//Main play finished success or failure
-    MatchTrans: 71,     	//Match transition out
-    PostMatch: 80   			//Post main play conditions, restart?
-};
-
-//Set dummy player name
-var PlayerName = "";
-
-//Set initial game state
-var CurrentGameState = EnumGameState.GameInit;
-
+/**
+* Method called from index.html. Start point.
+*/
 function fnMain(jQuery) {
     "use strict";
     var game = new Game();
     game.go();    
 }
 
+/**
+* This handles the coordination for an interactive game.
+*/
 var Game = function() {
     "use strict";
     
-    //This sets up several necessary objects
+    //The websocket connection object
     var connection = new GameConnect(),
+        // Interprets messages received from the server
         message_reader = new MessageReader(),
+        // Writes appropriate messages for sending to the server
         message_writer = new MessageWriter(),
+        // Handles key and button interactions
         handler,
-        playground,
+        // the current main painter object
         painter,
+        // tracks the connection status and displays it
         status_painter,
+        // The client id assigned by the server to this client
         client_id,
+        // The name given to the agent associated with this client
         agent_name,
+        // Last state sent by the server
         currentState,
+        // The last action requested by this client
         currentAction,
+        // The current score for this agent.
         currentScore = 0;
+
+    // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
     
     var self = this;
@@ -71,6 +53,7 @@ var Game = function() {
         return !isNaN(text);
     }
 
+    // When the submit button is clicked, this attempts to join the game with the server
     var onSubmitClick = function() {
         var textBox = document.getElementById('text_box');
         if (typeof textBox !== 'undefined' && textBox !== null){ 
@@ -82,7 +65,8 @@ var Game = function() {
             }
         }
     };
-	 //Sets up the playground and stage div    
+
+	// sets up everything
     this.go = function() {
         
         var context = document.getElementById("GGCanvas").getContext("2d");
@@ -107,15 +91,36 @@ var Game = function() {
         
     };
 
+    // When the connect button is clicked, this method attempts to connect with the server
+    var onConnect = function(url) {
+        if (!connection.IsValidUrl(url)) {
+            return "URL is not a valid websocket url";
+        }
+        connection.SetUrl(url);
+        connection.Open();
+        if (connection.IsOpen()) {
+            return 0;
+        } else {
+            return "Could not connect to server";
+        }
+    };
+
+    // When the disconnect button is clicked, this ottempts to disconnect the server.
+    var onDisconnect = function() {
+        connection.Close();
+    };
+
+    var connection_painter = new ConnectionStatusPainter(onConnect, onDisconnect, 0, height);
     
 
     
-
+    // Initial conenction to server method
     var connectToServer = function() {
         connection.AddCallback(self);
         connection.Open();
     };
 
+    // On every message received from the server, this method handles it accordingly
     this.onMessage = function(msg) {
         if (MessageFields.Error in msg && msg[MessageFields.ERROR] === true) {
             console.log(msg[MessageFields.WHY_ERROR]);
@@ -148,18 +153,23 @@ var Game = function() {
         }
     };
 
+    // Called when the websocket closes
     this.onClose = function(msg) {
-
+          connection_painter.draw(false, connection.URL(), 10, height + 10);
     };
 
+    // Called when the websocket has an error
     this.onError = function(msg) {
 
     };
 
+    // Called when the websocket connects
     this.onOpen = function(msg) {
         console.log("Connected to server");
+        connection_painter.draw(true, connection.URL(), 10, height + 10);
     };
 
+    // When receiving a helo message from the server, start things
     var hello = function(msg) {
 
         var active = message_reader.getActiveWorlds(msg);
@@ -173,6 +183,7 @@ var Game = function() {
         
     };
 
+    // When receiving an initialization message from the server, initialize a new game
     var initialize_game = function(msg) {
         var initMsg = message_reader.getInitializationMsg(msg);
         console.log(initMsg);
@@ -192,6 +203,7 @@ var Game = function() {
         }
     };
 
+    // Handle a game update, and update the state and visualization
     var update_game = function(msg) {
         var updateMsg = message_reader.getUpdateMsg(msg);
         if (typeof updateMsg !== 'undefined') {
@@ -204,6 +216,7 @@ var Game = function() {
         painter.draw(currentState, currentScore, currentAction);
     };
 
+    // Handle the game complete state
     var game_complete = function(msg) {
         var closeMsg = message_reader.getCloseMsg(msg);
         if (typeof closeMsg !== 'undefined') {
@@ -211,6 +224,7 @@ var Game = function() {
         }
     };
 
+    // Callback function for the Action Handler when someone presses a button or enters a key action
     var onAction = function(event) {
         if (event in actions) {
             currentAction = event;
@@ -220,10 +234,12 @@ var Game = function() {
         painter.draw(currentState, currentScore, currentAction);
     };
 
+    // Not used
     var onInteraction = function(event) {
 
     };
 
+    // Send the action update to the server.
     var sendActionUpdate = function() {
         var actualAction = actions[currentAction];
         var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);

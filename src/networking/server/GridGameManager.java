@@ -38,8 +38,13 @@ import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 
-public class GridGameServer {
-	private static GridGameServer singleton;
+/**
+ * Manages the initializing, configuring and running of games, as well as the connections to clients.
+ * @author brawner
+ *
+ */
+public class GridGameManager {
+	private static GridGameManager singleton;
 	public static final String MSG_TYPE = "msg_type";
 	public static final String CLIENT_ID = "client_id";
 	public static final String WORLD_ID = "world_id";
@@ -55,15 +60,35 @@ public class GridGameServer {
 	public static final String COOPERATIVE_AGENT = "cooperative";
 	public static final String HUMAN_AGENT = "human";
 	
+	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
+	
+	/**
+	 * The Executor service which runs the games in threads
+	 */
 	private final ExecutorService gameExecutor;
+	
+	
 	private final String gameDirectory;
 	private final String analysisDirectory;
+	
+	/**
+	 * The game monitor constantly polls the running worlds to find which ones finish, and report their completion
+	 * to the manager
+	 */
 	private final GameMonitor monitor;
 	private Future<Boolean> monitorFuture;
+	
+	/**
+	 * All collections that need to be synchronized and protected from multi-threaded interactions should be kept here
+	 */
 	private final GridGameServerCollections collections;
 	
-	
-	public GridGameServer(String gameDirectory, String analysisDirectory) {
+	/**
+	 * Initializes a new manager. Requires a game files directory and a results directory
+	 * @param gameDirectory
+	 * @param analysisDirectory
+	 */
+	private GridGameManager(String gameDirectory, String analysisDirectory) {
 		this.collections = new GridGameServerCollections();
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.gameDirectory = gameDirectory;
@@ -76,21 +101,37 @@ public class GridGameServer {
 		
 	}
 	
-	public static GridGameServer connect() {
-		if (GridGameServer.singleton == null) {
+	/** 
+	 * Connect to the grid game manager. Any call to this method must come after the connect method below.
+	 * @return
+	 */
+	public static GridGameManager connect() {
+		if (GridGameManager.singleton == null) {
 			throw new RuntimeException("The grid game server was not properly initialized");
 		}
-		return GridGameServer.singleton;
+		return GridGameManager.singleton;
 	}
 	
-	public static GridGameServer connect(String gameDirectory, String outputDirectory) {
-		if (GridGameServer.singleton == null) {
-			GridGameServer singleton = new GridGameServer(gameDirectory, outputDirectory);
-			GridGameServer.singleton = singleton;
+	/**
+	 * Connect to the grid game manager with a game files directory and results directory. If it has already been initialized, it 
+	 * will just pass that instance.
+	 * @param gameDirectory
+	 * @param outputDirectory
+	 * @return
+	 */
+	public static GridGameManager connect(String gameDirectory, String outputDirectory) {
+		if (GridGameManager.singleton == null) {
+			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory);
+			GridGameManager.singleton = singleton;
 		}
-		return GridGameServer.singleton;
+		return GridGameManager.singleton;
 	}
 	
+	/**
+	 * Run a game and monitor its progress
+	 * @param id
+	 * @param callable
+	 */
 	public void submitCallable(String id, Callable<GameAnalysis> callable) {
 		Future<GameAnalysis> future = this.gameExecutor.submit(callable);
 		this.collections.addFuture(id, future);
@@ -98,22 +139,49 @@ public class GridGameServer {
 	}
 	
 	
+	/**
+	 * Called by the server whenever a new client connects. It also sends a initialization message to the client with the worlds available, 
+	 * configurable games.
+	 * @param session
+	 */
 	public void onConnect(Session session) {
         System.out.println("Connect: " + session.getRemoteAddress().getAddress());
-        GridGameServerToken token = new GridGameServerToken();
-    	String id = this.collections.getNewCollectionID();
-    	token.setString(CLIENT_ID, id);
-    	this.addCurrentState(token);
-    	token.setString(GridGameServer.MSG_TYPE, HELLO_MESSAGE);
+        
+        String id = this.collections.getNewCollectionID();
+    	
+    	GridGameServerToken token = this.constructConnectionToken(id);
     	session.getRemote().sendStringByFuture(token.toJSONString());
-        this.collections.addSession(id, session); 
+        
+    	this.collections.addSession(id, session); 
     }
 	
+	/** 
+	 * Constructs the message for a connection event. Includes the available worlds, active games, and allowable agents
+	 * @param id
+	 * @return
+	 */
+	private GridGameServerToken constructConnectionToken(String id) {
+		GridGameServerToken token = new GridGameServerToken();
+		token.setString(CLIENT_ID, id);
+    	this.addCurrentState(token);
+    	token.setString(GridGameManager.MSG_TYPE, HELLO_MESSAGE);
+    	token.setStringList(WorldFile.AGENTS, ALLOWED_AGENTS);
+    	return token;
+	}
+	
+	/**
+	 * Notified when a client closes the method. Games probably should be stopped when their session closes
+	 * @param session
+	 */
 	public void onWebSocketClose(Session session) {
 		this.collections.removeSession(session);
 	}
 	
-	public void addCurrentState(GridGameServerToken token) {
+	/**
+	 * Adds the worlds and configurable games to the message token.
+	 * @param token
+	 */
+	private void addCurrentState(GridGameServerToken token) {
 		List<GridGameServerToken> worldTokens = this.collections.getWorldTokens();
 		token.setTokenList(WORLDS, worldTokens);
     	
@@ -144,13 +212,19 @@ public class GridGameServer {
     	
 	}
 
+	/**
+	 * Whenever a message is received by the server, it calls this method. This handles the message parsing, and the calls to
+	 * the appropiate handling messages.
+	 * @param token
+	 * @return
+	 */
 	public GridGameServerToken onMessage(GridGameServerToken token)
 	{		
 		GridGameServerToken response = new GridGameServerToken();
 		try {
 			String id = token.getString(CLIENT_ID);
 			Session session = this.collections.getSession(id);
-			String msgType = token.getString(GridGameServer.MSG_TYPE);
+			String msgType = token.getString(GridGameManager.MSG_TYPE);
 			
 			if (msgType == null) {
 				return response;
@@ -203,12 +277,19 @@ public class GridGameServer {
 		return response;
     }
 	
+	/**
+	 * Whenever a new game is initialized, or configured the clients should be updated so they can see and modify it.
+	 */
 	private void updateConnected() {
 		GridGameServerToken token = new GridGameServerToken();
 		this.addCurrentState(token);
 		this.broadcastMessage(token);
 	}
 	
+	/**
+	 * Broadcasts a message to all connected clients.
+	 * @param token
+	 */
 	private void broadcastMessage(GridGameServerToken token) {
 		List<Session> sessions = this.collections.getSessions();
 		
@@ -218,8 +299,14 @@ public class GridGameServer {
 		}
 	}
 	
+	/**
+	 * Parses the message token and initializes a game with a specified world.
+	 * @param token
+	 * @param response
+	 * @throws TokenCastException
+	 */
 	private void initializeGame(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
-		String worldId = token.getString(GridGameServer.WORLD_ID);
+		String worldId = token.getString(GridGameManager.WORLD_ID);
 		World world = this.collections.getWorld(worldId);
 		if (world != null) {
 			GridGameConfiguration config = new GridGameConfiguration(world.copy());
@@ -234,8 +321,16 @@ public class GridGameServer {
 		}
 	}
 	
+	/**
+	 * Parses the message token and connects a client with their desired game
+	 * @param token
+	 * @param clientId
+	 * @param session
+	 * @param response
+	 * @throws TokenCastException
+	 */
 	private void joinGame(GridGameServerToken token, String clientId, Session session, GridGameServerToken response) throws TokenCastException {
-		String worldId = token.getString(GridGameServer.WORLD_ID);
+		String worldId = token.getString(GridGameManager.WORLD_ID);
 		GridGameConfiguration configuration = this.collections.getConfiguration(worldId);
 		
 		if (configuration != null) {
@@ -246,7 +341,7 @@ public class GridGameServer {
 			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
 			
 			World baseWorld = configuration.getWorldWithAgents();
-			response.setString(GridGameServer.WORLD_TYPE, baseWorld.toString());
+			response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 			SGDomain domain = baseWorld.getDomain();
 			State startState = baseWorld.startingState();
 			String agentName = configuration.getAgentName(handler);
@@ -259,8 +354,14 @@ public class GridGameServer {
 		}	
 	}
 	
+	/** 
+	 * Adds an agent to a configurable game. Only agents of type human/random/cooperative are allowed currently.
+	 * @param token
+	 * @param response
+	 * @throws TokenCastException
+	 */
 	private void addAgent(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
-		String worldId = token.getString(GridGameServer.WORLD_ID);
+		String worldId = token.getString(GridGameManager.WORLD_ID);
 		GridGameConfiguration configuration = this.collections.getConfiguration(worldId);
 		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		
@@ -281,8 +382,14 @@ public class GridGameServer {
 		this.updateConnected();
 	}
 	
+	/**
+	 * Submit a configuration for a configurable game. One configured, a game cannot be reconfigured.
+	 * @param token
+	 * @param response
+	 * @throws TokenCastException
+	 */
 	private void configGame(GridGameServerToken token, GridGameServerToken response) throws TokenCastException {
-		String worldId = token.getString(GridGameServer.WORLD_ID);
+		String worldId = token.getString(GridGameManager.WORLD_ID);
 		GridGameConfiguration configuration = this.collections.getConfiguration(worldId);
 		
 		if (configuration == null) {
@@ -308,19 +415,38 @@ public class GridGameServer {
 		
 	}
 	
+	/**
+	 * Checks if an agentType can be added to this world. Right now, it just limits the agent types to Cooperative,Random, and Human.
+	 * @param worldId
+	 * @param agentTypeStr
+	 * @return
+	 */
 	private boolean isValidAgent(String worldId, String agentTypeStr) {
 		
 		agentTypeStr = agentTypeStr.toLowerCase();
-		return Arrays.asList(GridGameServer.COOPERATIVE_AGENT, GridGameServer.RANDOM_AGENT, GridGameServer.HUMAN_AGENT).contains(agentTypeStr);
+		return ALLOWED_AGENTS.contains(agentTypeStr);
 	}
 	
+	/**
+	 * Takes a configured world and runs it. If the configuration hasn't been fully configured, it won't run the game.
+	 * @param token
+	 * @param clientId
+	 * @param response
+	 * @throws TokenCastException
+	 */
 	private void runGame(GridGameServerToken token, String clientId, GridGameServerToken response) throws TokenCastException {
-		String activeId = token.getString(GridGameServer.WORLD_ID);
+		String activeId = token.getString(GridGameManager.WORLD_ID);
 		GridGameConfiguration configuration = this.collections.getConfiguration(activeId);
 		
 		if (configuration == null) {
 			response.setError(true);
 			response.setString(WHY_ERROR, "The desired active game id does not exist");
+			return;
+		}
+		
+		if (!configuration.isFullyConfigured()) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "This game has not been fully connected, or it is awaiting humans to join");
 			return;
 		}
 				
@@ -332,6 +458,12 @@ public class GridGameServer {
 		
 	}
 	
+	/**
+	 * Runs a game from a configuration. This may be called multiple times in a configurations life, as it can be restarted.
+	 * @param configuration
+	 * @param id
+	 * @param response
+	 */
 	private void runGame(GridGameConfiguration configuration, String id, GridGameServerToken response) {
 		try {
 			if (this.monitorFuture.get(0, TimeUnit.SECONDS) != null) {
@@ -348,13 +480,19 @@ public class GridGameServer {
 		
 		this.collections.addRunningWorld(id, world);
 		
-		Callable<GameAnalysis> callable = this.generateCallable(world);
+		Callable<GameAnalysis> callable = this.generateCallable(world, configuration.getMaxTurns());
 		this.submitCallable(id, callable);
 		
 		response.setString(STATUS, "Game " + id + " has now been started with " + world.getRegisteredAgents().size() + " agents");
 		this.updateConnected();
 	}
 	
+	/**
+	 * Restarts a game when it has finished and runs it.
+	 * @param configuration
+	 * @param id
+	 * @param handlers
+	 */
 	private void restartGame(GridGameConfiguration configuration, String id, List<GameHandler> handlers) {
 		GridGameServerToken message = new GridGameServerToken();
 		this.runGame(configuration, id, message);
@@ -363,14 +501,24 @@ public class GridGameServer {
 		}
 	}
 	
+	/**
+	 * Removes a configurable game from the servers list.
+	 * @param token
+	 * @throws TokenCastException
+	 */
 	private void removeGame(GridGameServerToken token) throws TokenCastException {
 		
-		String activeId = token.getString(GridGameServer.WORLD_ID);
+		String activeId = token.getString(GridGameManager.WORLD_ID);
 		this.collections.removeConfiguration(activeId);
 		this.updateConnected();
 	}
 	
-	public void closeGame(Future<GameAnalysis> future, GameAnalysis result) {
+	/**
+	 * When the game monitor notices a game has finished, it attempts to close it or restart it. 
+	 * @param future
+	 * @param result
+	 */
+	public void processGameCompletion(Future<GameAnalysis> future, GameAnalysis result) {
 		String futureId = this.collections.getFutureId(future);
 		
 		if (futureId != null) {
@@ -398,6 +546,11 @@ public class GridGameServer {
 		}
 	}
 	
+	/**
+	 * Attempts to kill a currently running game.
+	 * @param futureId
+	 * @param force
+	 */
 	public void closeGame(String futureId, boolean force) {
 		System.out.println("Attempting to shutdown game " + futureId);
 		Future<GameAnalysis> future = this.collections.removeFuture(futureId);
@@ -432,10 +585,19 @@ public class GridGameServer {
 		
 	}
 	
+	/**
+	 * Removes a client from a configurable game.
+	 * @param clientId
+	 */
 	private void exitGame(String clientId) {
 		this.collections.removeHandler(clientId);
 	}
 	
+	/**
+	 * Loads all available worlds from this managers game directory. May be triggered during the server's running.
+	 * @param response
+	 * @return
+	 */
 	private List<GridGameServerToken> loadWorlds(GridGameServerToken response){
 		List<GridGameServerToken> tokens = GridGameWorldLoader.loadWorldTokens(this.gameDirectory);
 		
@@ -452,21 +614,25 @@ public class GridGameServer {
 		}
 		
 		if (response != null) {
-			response.setTokenList(GridGameServer.WORLDS, tokens);
+			response.setTokenList(GridGameManager.WORLDS, tokens);
 		}
 		return tokens;
 	}
 	
 	
-	
-	private Callable<GameAnalysis> generateCallable(final World world) {
+	/**
+	 * Creates a Callable object that can be run in a separated thread for this world object.
+	 * @param world
+	 * @return
+	 */
+	private Callable<GameAnalysis> generateCallable(final World world, final int maxIterations) {
 		return new Callable<GameAnalysis>() {
 			@Override
 			public GameAnalysis call() throws Exception {
 				GameAnalysis analysis = null;
 				try {
 				synchronized (world) {
-					analysis = world.runGame();
+					analysis = world.runGame(maxIterations);
 				}
 				} catch (Exception e) {
 					e.printStackTrace();

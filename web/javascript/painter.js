@@ -1,3 +1,7 @@
+// All rendering happens on this page. Different pieces are broken into different functions. Because these
+// painters actually interact with the html, they also have to set the callback functions, which is weird.
+
+// Main game painter, calls the painters below it.
 var GamePainter = function(agent_name, _width, _height) {
     "use strict";
     var canvas = document.getElementById("GGCanvas");
@@ -106,6 +110,7 @@ var GamePainter = function(agent_name, _width, _height) {
     };
 };
 
+// Button object, useful to get bounding boxes
 var Button = function(_name, _x, _y, _width, _height) {
     "use strict";
     var name = _name;
@@ -158,6 +163,7 @@ var Button = function(_name, _x, _y, _width, _height) {
 
 };
 
+// Paints a new state based on the object passed to it.
 var StatePainter = function(context, name, color1, color2) {
     "use strict";
     
@@ -250,6 +256,8 @@ var StatePainter = function(context, name, color1, color2) {
     };
 };
 
+
+// Draws cells, either rectangles or circles.
 var CellPainter = function(context, shape) {
     "use strict";
     
@@ -285,6 +293,7 @@ var CellPainter = function(context, shape) {
     };
 };
 
+// Draws walls. Does not currently draw semi-walls.
 var WallPainter = function(context) {
     "use strict";
     
@@ -447,6 +456,7 @@ var StatusPainter = function(context, agentColor) {
     };
 };
 
+// Unused
 var WorldsPainter = function(context) {
     "use strict";
     
@@ -457,6 +467,7 @@ var WorldsPainter = function(context) {
     };
 };
 
+// Unused
 var ActiveWorldsPainter = function(context) {
     "use strict";
     
@@ -467,6 +478,7 @@ var ActiveWorldsPainter = function(context) {
     };
 };
 
+// Paints black screen with text box and submit button
 var OpeningScreenPainter = function(width, height) {
     "use strict";
     var canvas = document.getElementById("GGCanvas");
@@ -486,6 +498,7 @@ var OpeningScreenPainter = function(width, height) {
     };
 };
 
+// Paints the game complete screen.
 var EndScreenPainter = function(width, height, context) {
     "use strict";
     var textColor = "white";
@@ -502,6 +515,7 @@ var EndScreenPainter = function(width, height, context) {
     };
 };
 
+// Draws the world and active games buttons for the admin page
 var AdminPagePainter = function(onWorldClick, onActiveClick) {
     "use strict";
     var worldButtons = {};
@@ -610,6 +624,7 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
     };
 };
 
+// Draws a specific configuration for an active game.
 var GameConfigPainter = function(_label, _description, _submitConfigCallback, _onRunCallback, _onRemoveCallback) {
     "use strict";
 
@@ -796,11 +811,15 @@ var GameConfigPainter = function(_label, _description, _submitConfigCallback, _o
 
 };
 
-var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback) {
+
+// Should draw the necessary items for the visualization of the connection.
+var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback, offsetX, offsetY) {
         var allElements = [];
         var tryConnect = tryConnectCallback;
         var disconnect = disconnectCallback;
         var textBox;
+        var _x = offsetX;
+        var _y = offsetY;
         this.clear = function() {
             for (var i = 0; i < allElements.length; i++) {
                 document.body.removeChild(allElements[i]);
@@ -809,6 +828,7 @@ var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback) {
         };
 
         var onConnectClick = function() {
+
             if (typeof textBox !== 'undefined') {
                 var serverText = textBox.value;
                 var result = tryConnect(serverText);
@@ -821,8 +841,8 @@ var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback) {
                     allElements.push(textDiv);
 
                     textDiv.style.position = "absolute";
-                    textDiv.style.top = "50px";
-                    textDiv.style.left = "10px";
+                    textDiv.style.top = (_y + 50) + "px";
+                    textDiv.style.left = (_x + 10) + "px";
                 }
             }
         };  
@@ -833,7 +853,6 @@ var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback) {
 
         this.draw = function(isConnected, server, x, y) {
             this.clear();
-
             var headerDiv = document.createElement('div');
             var str = (isConnected) ? " Connected to " + server : "Disconnected";
             var connectedText = document.createTextNode(str);

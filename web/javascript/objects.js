@@ -1,4 +1,5 @@
-
+// Any explicit objects are specified here. Used for state descriptions, world descriptions, 
+// game descriptions, and agent descriptions
 
 var Agent = function(name, playerNum, posX, posY) {
     "use strict";

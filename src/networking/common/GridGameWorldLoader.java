@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import networking.common.messages.WorldFile;
-import networking.server.GridGameServer;
+import networking.server.GridGameManager;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.StateAbstraction;
 import burlap.oomdp.core.ObjectClass;
@@ -25,44 +25,16 @@ import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
 
+/**
+ * Handles loading of a World from a file, a directory, or message tokens.
+ * @author brawner
+ *
+ */
 public class GridGameWorldLoader {
 	
 	
 	private static GridGameServerToken loadText(String filename) {
 		return GridGameServerToken.tokenFromFile(filename);
-	}
-	
-	private static List<List<Integer>> selectGoals(List<List<Integer>> goals, List<Agent> agents, State state) {
-		if (agents == null || agents.isEmpty()) {
-			return goals;
-		}
-		List<List<Integer>> res = new ArrayList<List<Integer>>();
-		Map<Agent, List<List<Integer>>> goalsByAgent = new HashMap<Agent, List<List<Integer>>>();
-		for (List<Integer> goal : goals) {
-			if (goal.get(2) == 0) {
-				res.add(goal);
-				continue;
-			}
-			
-			for (Agent agent : agents) {
-				ObjectInstance agentObj = state.getObject(agent.getAgentName());
-				if (goal.get(2) == agentObj.getDiscValForAttribute(GridGame.ATTPN) + 1) {
-					List<List<Integer>> agentsGoals = goalsByAgent.get(agent.getAgentName());
-					if (agentsGoals == null) {
-						agentsGoals = new ArrayList<List<Integer>>();
-					}
-					agentsGoals.add(goal);
-				}
-			}
-		}
-		
-		for (Map.Entry<Agent, List<List<Integer>>> entry : goalsByAgent.entrySet()) {
-			List<List<Integer>> list = entry.getValue();
-			Collections.shuffle(list);
-			res.add(list.get(0));
-		}
-		
-		return res;
 	}
 	
 	private static WorldLoadingStateGenerator generateStateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent) throws TokenCastException {
@@ -163,7 +135,7 @@ public class GridGameWorldLoader {
 	
 	public static List<World> loadWorlds(GridGameServerToken token) {
 		try {
-			List<GridGameServerToken> worldTokens = token.getTokenList(GridGameServer.WORLDS);
+			List<GridGameServerToken> worldTokens = token.getTokenList(GridGameManager.WORLDS);
 			return GridGameWorldLoader.loadWorlds(worldTokens);
 		} catch (TokenCastException e) {
 			e.printStackTrace();
