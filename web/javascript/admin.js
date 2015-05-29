@@ -106,6 +106,26 @@ var Admin = function() {
 
         config_painter.draw(agents, maxAgents, 600, 100);
     };
+
+    var onConnect = function(url) {
+        if (!connection.IsValidUrl(url)) {
+            return "URL is not a valid websocket url";
+        }
+        connection.SetUrl(url);
+        connection.Open();
+        if (connection.IsOpen()) {
+            return 0;
+        } else {
+            return "Could not connect to server";
+        }
+    };
+
+    var onDisconnect = function() {
+        connection.Close();
+    };
+
+    var connection_painter = new ConnectionStatusPainter(onConnect, onDisconnect);
+        
     this.go = function() {
         
         //handler = new GeneralHandler(actions);
@@ -163,7 +183,7 @@ var Admin = function() {
     };
 
     this.onClose = function(msg) {
-
+          connection_painter.draw(false, connection.URL(), 10, 10);
     };
 
     this.onError = function(msg) {
@@ -172,6 +192,7 @@ var Admin = function() {
 
     this.onOpen = function(msg) {
         console.log("Connected to server");
+        connection_painter.draw(true, connection.URL(), 10, 10);
     };
 
     var hello = function(msg) {

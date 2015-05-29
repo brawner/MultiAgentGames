@@ -31,6 +31,18 @@ var GameConnect = function(){
         return isOpen;
     };
 
+    this.URL = function() {
+        return wsurl;
+    };
+
+    this.SetUrl = function(url) {
+        wsurl = url;
+    };
+
+    this.IsValidUrl = function(url) {
+        return true;
+    };
+
     this.Open = function() {
         websocket = new WebSocket(wsurl);
         
@@ -48,6 +60,11 @@ var GameConnect = function(){
         };
     };
 
+    this.Close = function() {
+        if (typeof websocket !== 'undefined') {
+            websocket.close();
+        }
+    };
     this.AddCallback = function(callback) {
         var id = 0;
         if (callbackIds.length > 0) {

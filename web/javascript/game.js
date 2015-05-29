@@ -55,6 +55,7 @@ var Game = function() {
         handler,
         playground,
         painter,
+        status_painter,
         client_id,
         agent_name,
         currentState,
@@ -97,41 +98,13 @@ var Game = function() {
         inputDiv.setAttribute("id", "divvyDiv");
 
         var element = document.getElementById('text_box');
-        //element.setAttribute("id", "text_box")
-        //element.type = "text";
         
         var button = document.getElementById("submit_button");
-        //var buttonText = document.createTextNode("Submit");
-        //button.appendChild(buttonText);
+        
         button.onclick = onSubmitClick;
         
-        //inputDiv.appendChild(element);
-        //inputDiv.appendChild(button);
-        //inputDiv.style = "z-index:2; position:absolute";
-
         painter.draw(element, button)
         
-    };
-
-    this.loop = function() {
-
-        //Debugging code
-        /*if (CurrentGameState === EnumGameState.GameInit) {
-            console.log("DEBUG: Main loop initialized.");
-        }*/
-        
-        //This is the entry point for  decision making in the game loop.
-        //All possible game states should be reflected here.
-        switch(CurrentGameState)
-        {
-			case EnumGameState.GameInit:
-            self.connectToServer();
-                break;
-            default:
-                break;
-                
-        }
-        painter.draw();
     };
 
     

@@ -792,4 +792,91 @@ var GameConfigPainter = function(_label, _description, _submitConfigCallback, _o
         document.body.appendChild(select);
         return select;
     };
+
+
 };
+
+var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback) {
+        var allElements = [];
+        var tryConnect = tryConnectCallback;
+        var disconnect = disconnectCallback;
+        var textBox;
+        this.clear = function() {
+            for (var i = 0; i < allElements.length; i++) {
+                document.body.removeChild(allElements[i]);
+            }
+            allElements = [];
+        };
+
+        var onConnectClick = function() {
+            if (typeof textBox !== 'undefined') {
+                var serverText = textBox.value;
+                var result = tryConnect(serverText);
+
+                if (result !== 0) {
+                    var textDiv = document.createElement('div');
+                    var text = document.createTextNode(result);
+                    textDiv.appendChild(text);
+                    document.body.appendChild(textDiv);
+                    allElements.push(textDiv);
+
+                    textDiv.style.position = "absolute";
+                    textDiv.style.top = "50px";
+                    textDiv.style.left = "10px";
+                }
+            }
+        };  
+
+        var onDisconnectClick = function() {
+            disconnect();
+        };
+
+        this.draw = function(isConnected, server, x, y) {
+            this.clear();
+
+            var headerDiv = document.createElement('div');
+            var str = (isConnected) ? " Connected to " + server : "Disconnected";
+            var connectedText = document.createTextNode(str);
+            headerDiv.appendChild(connectedText);
+            allElements.push(headerDiv);
+            document.body.appendChild(headerDiv);
+
+            headerDiv.style.position = "absolute";
+            headerDiv.style.top = y + "px";
+            headerDiv.style.left = x + "px";
+
+            if (!isConnected) {
+                textBox = document.createElement('input');
+                textBox.value = server;
+                textBox.style.position = "absolute";
+                textBox.left = x + "px";
+                textBox.top = (y + 20) + "px";
+
+                var button = document.createElement("button");
+                var buttonText = document.createTextNode("Connect");
+                button.appendChild(buttonText);
+                button.addEventListener("click", onConnectClick);
+                button.style.position = "absolute";
+                button.style.left = (x) + "px";
+                button.style.top = (y + 20) + "px";
+
+                document.body.appendChild(textBox);
+                allElements.push(textBox);
+                document.body.appendChild(button);
+                allElements.push(button);
+            } else {
+                var button = document.createElement("button");
+                var buttonText = document.createTextNode("Disconnect");
+                button.appendChild(buttonText);
+                button.addEventListener("click", onDisconnectClick);
+
+                document.body.appendChild(button);
+                allElements.push(button);
+
+                button.style.position = "absolute";
+                button.style.left = x + "px";
+                button.style.top = (y + 20) + "px";
+            }
+            
+        };  
+    };
