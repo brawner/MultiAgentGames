@@ -57,6 +57,7 @@ var Admin = function() {
         config_painter,
         worlds,
         active,
+        agents,
         client_id;
     
     var self = this;
@@ -102,7 +103,7 @@ var Admin = function() {
         if (typeof config_painter !== 'undefined') {
             config_painter.clear();
         }
-        config_painter = new GameConfigPainter(label, description, onSubmitConfig, onRunGame, onRemoveGame);
+        config_painter = new GameConfigPainter(label, description, agents, onSubmitConfig, onRunGame, onRemoveGame);
 
         config_painter.draw(agents, maxAgents, 600, 100);
     };
@@ -174,6 +175,9 @@ var Admin = function() {
         }
         if (MessageFields.ACTIVE in msg) {
             active = message_reader.getActiveWorlds(msg);
+        }
+        if (MessageFields.AGENTS in msg) {
+            agents = message_reader.getAgentTypes(msg);
         }
 
         console.log(msgType);

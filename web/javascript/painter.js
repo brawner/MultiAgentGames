@@ -625,7 +625,7 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
 };
 
 // Draws a specific configuration for an active game.
-var GameConfigPainter = function(_label, _description, _submitConfigCallback, _onRunCallback, _onRemoveCallback) {
+var GameConfigPainter = function(_label, _description, _agents, _submitConfigCallback, _onRunCallback, _onRemoveCallback) {
     "use strict";
 
     var configChange = _submitConfigCallback;
@@ -636,6 +636,7 @@ var GameConfigPainter = function(_label, _description, _submitConfigCallback, _o
     var allElements = [];
     var label = _label;
     var description = _description;
+    var agentTypes = _agents;
 
     var onSubmit = function() {
         var agentConfigurations = [];
@@ -659,8 +660,6 @@ var GameConfigPainter = function(_label, _description, _submitConfigCallback, _o
         self.clear();
         onRemoveCallback(label);
     };
-
-    var agentTypes = ["random", "cooperative", "human"];
 
     this.clear = function() {
         for (var i = 0; i < allElements.length; i++) {

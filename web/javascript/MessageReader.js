@@ -252,4 +252,14 @@ var MessageReader = function() {
 
 		return actives;
 	};
+
+	this.getAgentTypes = function(msg) {
+		var agents;
+		if (!(MessageFields.AGENTS in msg)) {
+			return agents;
+		}
+
+		agents = msg[MessageFields.AGENTS];
+		return agents;
+	};
 };
