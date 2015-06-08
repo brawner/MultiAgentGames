@@ -93,7 +93,7 @@ public class GridGameWorldLoader {
 				}
 			}
 		}
-		return files;
+		return files;	
 	}
 	
 	public static List<GridGameServerToken> loadWorldTokens(String directory) {
@@ -113,7 +113,7 @@ public class GridGameWorldLoader {
 				String filename = f.getAbsolutePath();
 				GridGameServerToken world = GridGameWorldLoader.loadText(filename);
 				//world.setString(WorldFile.LABEL, "world" + count++);
-				world.setString(WorldFile.LABEL, f.getName().split("\\.")[0]);
+				world.setString(WorldFile.LABEL, f.getName());
 	    		worlds.add(world);
 			}
 		}
