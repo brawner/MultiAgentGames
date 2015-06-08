@@ -42,6 +42,17 @@ var Game = function() {
         // The current score for this agent.
         currentScore = 0;
 
+    var vars = [], hash;
+    var q = document.URL.split('?')[1];
+    if(q != undefined){
+        q = q.split('&');
+        for(var i = 0; i < q.length; i++){
+            hash = q[i].split('=');
+            vars.push(hash[1]);
+            vars[hash[0]] = hash[1];
+            }
+    }
+
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
     
@@ -66,6 +77,33 @@ var Game = function() {
         }
     };
 
+    // If the URL has the correct query terms, this attempts to join the game with the server
+    var onURLWithQueryTerms = function() {
+        
+            //if the game exists, have agent join game
+            var game = vars['exp_name'];
+            var url_client_id = vars['t_id'];
+            if (isGameIdValid(game)) {
+                var msg = message_writer.startGameURLMsg(game, client_id, url_client_id);  
+                console.log("Sending " + msg);
+                connection.Send(msg);
+            //else create the game and have agent join game
+            }else{
+                //create game
+
+            }
+
+            
+            //if the game has all players, run game
+            var msg = message_writer.runGameMsg(label);
+            connection.Send(msg);
+            
+
+        
+    };
+
+   
+
 	// sets up everything
     this.go = function() {
         
@@ -87,7 +125,7 @@ var Game = function() {
         
         button.onclick = onSubmitClick;
         
-        painter.draw(element, button)
+        painter.draw(element, button);
         
     };
 
@@ -172,6 +210,12 @@ var Game = function() {
     // When receiving a helo message from the server, start things
     var hello = function(msg) {
 
+        if(vars.length>0 && vars['exp_name']!==null && vars['t_id']!==null){
+
+
+            onURLWithQueryTerms();
+        }
+
         var active = message_reader.getActiveWorlds(msg);
         for (var i = 0; i < active.length; i++) {
             var label = active[i].Label;
@@ -180,6 +224,7 @@ var Game = function() {
         }
 
         console.log("No games initialized. Initialize game first");
+
         
     };
 
@@ -202,6 +247,7 @@ var Game = function() {
             painter.draw(currentState, currentScore, currentAction);
         }
     };
+
 
     // Handle a game update, and update the state and visualization
     var update_game = function(msg) {

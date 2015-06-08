@@ -12,6 +12,15 @@ var MessageWriter = function() {
 		return msg;
 	};
 
+	this.startGameURLMsg = function(label, id, url_client) {
+		var msg = {};
+		msg[MessageFields.MSG_TYPE] = MessageFields.JOIN_GAME;
+		msg[MessageFields.WORLD_ID] = label;
+		msg[MessageFields.CLIENT_ID] = id;
+		msg[MessageFields.URL_ID] = url_client;
+		return msg;
+	};
+
 	this.updateActionMsg = function(id, action, agentName) {
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.TAKE_ACTION;
@@ -26,6 +35,7 @@ var MessageWriter = function() {
 		msg[MessageFields.WORLD_ID] = label;
 		return msg;
 	};
+
 
 	this.configurationMsg = function(label, agentDescriptions) {
 		var msg = {};

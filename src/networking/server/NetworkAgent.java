@@ -8,7 +8,7 @@ import burlap.oomdp.stochasticgames.GroundedSingleAction;
 import burlap.oomdp.stochasticgames.JointAction;
 
 /**
- * A subclass of the StochasticGames agent. This implements the requried methods for the World to call when running a game
+ * A subclass of the StochasticGames agent. This implements the required methods for the World to call when running a game
  * @author brawner
  *
  */

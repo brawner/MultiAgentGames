@@ -88,6 +88,7 @@ public class GGWebSocketServer extends WebSocketAdapter{
 			gameDirectory = args[0];
 			outputDirectory = args[1];
 		}
+		
 		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);

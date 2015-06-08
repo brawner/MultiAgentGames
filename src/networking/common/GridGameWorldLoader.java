@@ -112,7 +112,8 @@ public class GridGameWorldLoader {
 			if (f.isFile()) {
 				String filename = f.getAbsolutePath();
 				GridGameServerToken world = GridGameWorldLoader.loadText(filename);
-				world.setString(WorldFile.LABEL, "world" + count++);
+				//world.setString(WorldFile.LABEL, "world" + count++);
+				world.setString(WorldFile.LABEL, f.getName().split(".")[0]);
 	    		worlds.add(world);
 			}
 		}
