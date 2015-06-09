@@ -220,8 +220,8 @@ var Game = function() {
 
     // When receiving a helo message from the server, start things
     var hello = function(msg) {
-
-        if(vars.length>0 && vars['exp_name']!==null && vars['t_id']!==null){
+        console.log("Running hello vars length "+vars.length);
+        if(vars.length>0){
 
 
             onURLWithQueryTerms();
