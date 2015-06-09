@@ -83,20 +83,29 @@ var Game = function() {
             //if the game exists, have agent join game
             var label = vars['exp_name'];
             var url_client_id = vars['t_id'];
-            if (isGameIdValid(game)) {
+            console.log("Running based on URL");
+            
+            if (isGameIdValid(label)) {
                 var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
                 console.log("Sending " + msg);
                 connection.Send(msg);
             //else create the game and have agent join game
             }else{
                 //create game
+                var initMsg = message_writter.initializeGameMsg(label);
+                connetion.Send(initMsg);
+                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
+                console.log("Sending " + msg);
+                connection.Send(msg);
+
+                var msg = message_writer.configurationMsg(label, agent_configurations);
+                connection.Send(msg);
 
             }
 
             
             //if the game has all players, run game
-            var initMsg = message_writter.initializeGameMsg(label);
-            connetion.Send(initMsg);
+            
             var msg = message_writer.runGameMsg(label);
             connection.Send(msg);
             
