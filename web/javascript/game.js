@@ -93,7 +93,7 @@ var Game = function() {
             }else{
                 //create game
                 var initMsg = message_writer.initializeGameMsg(label);
-                connetion.Send(initMsg);
+                connection.Send(initMsg);
                 var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
                 console.log("Sending " + msg);
                 connection.Send(msg);
