@@ -92,7 +92,7 @@ var Game = function() {
             //else create the game and have agent join game
             }else{
                 //create game
-                var initMsg = message_writter.initializeGameMsg(label);
+                var initMsg = message_writer.initializeGameMsg(label);
                 connetion.Send(initMsg);
                 var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
                 console.log("Sending " + msg);
