@@ -86,28 +86,34 @@ var Game = function() {
             console.log("Running based on URL");
             
             if (isGameIdValid(label)) {
-                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
-                console.log("Sending " + msg);
+
+                var msg = message_writer.configurationMsg(label, connection.agent_configurations);
+                connection.Send(msg); 
+
+                var msg = message_writer.runGameMsg(label);
+                connection.Send(msg);
+
+                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id); 
+                console.log("Sending after valid " + msg);
                 connection.Send(msg);
             //else create the game and have agent join game
             }else{
                 //create game
                 var initMsg = message_writer.initializeGameMsg(label);
                 connection.Send(initMsg);
-                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
-                console.log("Sending " + msg);
+
+                var msg = message_writer.configurationMsg(label, connection.agent_configurations);
+                connection.Send(msg); 
+
+                   var msg = message_writer.runGameMsg(label);
                 connection.Send(msg);
 
-                var msg = message_writer.configurationMsg(label, agent_configurations);
+                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
+                console.log("Sending not valid " + msg);
                 connection.Send(msg);
+
 
             }
-
-            
-            //if the game has all players, run game
-            
-            var msg = message_writer.runGameMsg(label);
-            connection.Send(msg);
             
 
         
@@ -226,6 +232,7 @@ var Game = function() {
 
             onURLWithQueryTerms();
             console.log("Ran on URL");
+
         }
 
         var active = message_reader.getActiveWorlds(msg);

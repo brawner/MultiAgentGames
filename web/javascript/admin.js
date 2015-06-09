@@ -228,6 +228,8 @@ var Admin = function() {
             handler.registerWithPainter(painter);
             currentState = initMsg.state;
             painter.draw(currentState, currentScore, currentAction);
+        }else{
+            console.log("Not initializing " + initMsg.world_type);
         }
     };
 
