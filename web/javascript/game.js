@@ -225,6 +225,7 @@ var Game = function() {
 
 
             onURLWithQueryTerms();
+            console.log("Ran on URL");
         }
 
         var active = message_reader.getActiveWorlds(msg);
@@ -234,7 +235,7 @@ var Game = function() {
             return;
         }
 
-        console.log("No games initialized. Initialize game first");
+        console.log("No games initialized. Initialize some game first");
 
         
     };
