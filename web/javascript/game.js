@@ -55,7 +55,7 @@ var Game = function() {
 
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
-    var agents = ["human","random"];
+    var agents = ["human","qlearner"];
     
     var self = this;
     var width = 768,
