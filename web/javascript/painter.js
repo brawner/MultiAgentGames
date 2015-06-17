@@ -538,12 +538,12 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
     this.draw = function(worlds, active) {
         this.clear();
 
-        drawTitles(100, 80, 100, 800);        
+        drawTitles(100, 80, 100, 500);        
         drawButtons(worlds, worldButtons, onWorld);
         drawButtons(active, activeButtons, onActive);
 
         placeButtons(100, 100, worldButtons);
-        placeButtons(100, 420, activeButtons);
+        placeButtons(100, 520, activeButtons);
             
     };
 
