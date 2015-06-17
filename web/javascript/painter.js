@@ -414,6 +414,11 @@ var ActionPainter = function(_canvas, _context, agentColor) {
             context.textAlign = "left";
             context.fillStyle = textColor;
             context.fillText("Waiting for partner's action...", x + 20, y);
+            var delay=1000; //1 seconds
+
+			setTimeout(function(){
+  			//your code to be executed after 1 seconds
+			}, delay); 
         }
         
     };
