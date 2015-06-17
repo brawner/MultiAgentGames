@@ -55,6 +55,7 @@ var Game = function() {
 
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
+    var agents = ["human","random"];
     
     var self = this;
     var width = 768,
@@ -71,7 +72,7 @@ var Game = function() {
             var text = textBox.value;
             if (isGameIdValid(text)) {
                 var msg = message_writer.startGameMsg(text, client_id);  
-                console.log("Sending " + msg);
+                console.log("Sending from submit: " + msg);
                 connection.Send(msg);  
             }
         }
@@ -86,28 +87,34 @@ var Game = function() {
             console.log("Running based on URL");
             
             if (isGameIdValid(label)) {
-                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
-                console.log("Sending " + msg);
+
+                var msg = message_writer.configurationMsg(label, agents);
+                connection.Send(msg); 
+
+                var msg = message_writer.runGameMsg(label);
+                connection.Send(msg);
+
+                var msg = message_writer.startGameMsg(label, client_id); 
+                console.log("Sending after valid " + msg);
                 connection.Send(msg);
             //else create the game and have agent join game
             }else{
                 //create game
                 var initMsg = message_writer.initializeGameMsg(label);
                 connection.Send(initMsg);
-                var msg = message_writer.startGameURLMsg(label, client_id, url_client_id);  
-                console.log("Sending " + msg);
-                connection.Send(msg);
 
-                var msg = message_writer.configurationMsg(label, agent_configurations);
-                connection.Send(msg);
+                var configmsg = message_writer.configurationMsg(label, agents);
+                connection.Send(configmsg); 
+
+                var runmsg = message_writer.runGameMsg(label);
+                connection.Send(runmsg);
+
+                var startmsg = message_writer.startGameMsg(label, client_id);  
+                console.log("Sending not valid: " + startmsg);
+                connection.Send(startmsg);
+
 
             }
-
-            
-            //if the game has all players, run game
-            
-            var msg = message_writer.runGameMsg(label);
-            connection.Send(msg);
             
 
         
@@ -226,7 +233,8 @@ var Game = function() {
 
             onURLWithQueryTerms();
             console.log("Ran on URL");
-        }
+
+        }else{
 
         var active = message_reader.getActiveWorlds(msg);
         for (var i = 0; i < active.length; i++) {
@@ -234,6 +242,7 @@ var Game = function() {
             
             return;
         }
+    }
 
         console.log("No games initialized. Initialize some game first");
 

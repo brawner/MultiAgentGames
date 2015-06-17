@@ -312,12 +312,13 @@ public class GridGameManager {
 			GridGameConfiguration config = new GridGameConfiguration(world.copy());
 			
 			String activeId = this.collections.getUniqueThreadId();
-			this.collections.addConfiguration(activeId, config);
-			response.setString(STATUS, "Game " + activeId + " has been initialized");
+			//this.collections.addConfiguration(activeId, config);
+			this.collections.addConfiguration(worldId, config);
+			response.setString(STATUS, "Game " + worldId + " has been initialized");
 			this.updateConnected();
 		} else {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The desired world id does not exist");
+			response.setString(WHY_ERROR, "Init: The desired world id does not exist");
 		}
 	}
 	
@@ -350,7 +351,7 @@ public class GridGameManager {
 			this.updateConnected();
 		} else {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The desired world id does not exist");
+			response.setString(WHY_ERROR, "Join: The desired world id does not exist");
 		}	
 	}
 	
@@ -368,7 +369,7 @@ public class GridGameManager {
 		
 		if (configuration == null) {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The desired world id does not exist");
+			response.setString(WHY_ERROR, "Add agent: The desired world id does not exist");
 			return;
 		}
 		
@@ -394,7 +395,7 @@ public class GridGameManager {
 		
 		if (configuration == null) {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The desired world id does not exist");
+			response.setString(WHY_ERROR, "Config: The desired world id does not exist");
 			return;
 		}
 		
@@ -440,7 +441,7 @@ public class GridGameManager {
 		
 		if (configuration == null) {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The desired active game id does not exist");
+			response.setString(WHY_ERROR, "Run: The desired active game id does not exist");
 			return;
 		}
 		
