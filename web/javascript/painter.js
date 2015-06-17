@@ -615,9 +615,9 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
             
             var description = document.getElementById(key + "_desc");
             description.style.position = "absolute";
-            description.style.left = (startX + 70) + "px";
+            description.style.left = (startX + 200) + "px";
             description.style.top = (startY + offset) + "px";
-            description.style.width = "300px"
+            description.style.width = "400px"
 
             offset += 24;
                 
