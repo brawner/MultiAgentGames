@@ -611,7 +611,7 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
             button.style.position = "absolute";
             button.style.left = startX + "px";
             button.style.top = (startY + offset) + "px";
-            button.style.width = "128px";
+            button.style.width = "160px";
             
             var description = document.getElementById(key + "_desc");
             description.style.position = "absolute";
