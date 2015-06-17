@@ -538,7 +538,7 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
     this.draw = function(worlds, active) {
         this.clear();
 
-        drawTitles(200, 160, 200, 600);        
+        drawTitles(100, 80, 100, 400);        
         drawButtons(worlds, worldButtons, onWorld);
         drawButtons(active, activeButtons, onActive);
 
@@ -611,12 +611,13 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
             button.style.position = "absolute";
             button.style.left = startX + "px";
             button.style.top = (startY + offset) + "px";
-            button.style.width = "64px";
+            button.style.width = "128px";
             
             var description = document.getElementById(key + "_desc");
             description.style.position = "absolute";
             description.style.left = (startX + 70) + "px";
             description.style.top = (startY + offset) + "px";
+            description.style.width = "300px"
 
             offset += 24;
                 
