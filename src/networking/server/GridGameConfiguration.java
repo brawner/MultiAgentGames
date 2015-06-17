@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import burlap.behavior.singleagent.learning.LearningAgent;
+import burlap.behavior.singleagent.learning.tdmethods.QLearning;
 import burlap.behavior.statehashing.NameDependentStateHashFactory;
 import burlap.behavior.statehashing.StateHashFactory;
 import burlap.behavior.stochasticgame.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgame.agents.RandomAgent;
 import burlap.behavior.stochasticgame.agents.mavf.MultiAgentVFPlanningAgent;
+import burlap.behavior.stochasticgame.agents.naiveq.SGNaiveQLAgent;
 import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.MaxQ;
 import burlap.behavior.stochasticgame.mavaluefunction.policies.EGreedyMaxWellfare;
 import burlap.behavior.stochasticgame.mavaluefunction.vfplanners.MAValueIteration;
@@ -204,6 +207,8 @@ public class GridGameConfiguration {
 			return this.getNewRandomAgent();
 		case GridGameManager.COOPERATIVE_AGENT:
 			return this.getNewMAVIAgent(world);
+		case GridGameManager.QLEARNER_AGENT:
+			return this.getNewQAgent(world);
 		}
 		return null;
 	}
@@ -232,6 +237,24 @@ public class GridGameConfiguration {
 				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
 						0.95, hashingFactory, 0., new MaxQ(), 0.00015, 50);
 		return new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
+		
+	}
+	
+	/**
+	 * Constructs a default multi agent value iteration agent. It's cooperative, and breaks ties randomly.
+	 * @param world
+	 * @return
+	 */
+	private Agent getNewQAgent(World world) {
+		
+		SGDomain domain = world.getDomain();
+		
+		JointReward rf = world.getRewardModel();
+		StateHashFactory hashingFactory = new NameDependentStateHashFactory();
+		
+		Agent agent = new SGNaiveQLAgent(domain, .95, .9, 0.0, hashingFactory);
+		
+		return agent;
 		
 	}
 	

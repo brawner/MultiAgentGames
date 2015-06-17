@@ -58,9 +58,10 @@ public class GridGameManager {
 	public static final String STATUS = "status";
 	public static final String RANDOM_AGENT = "random";
 	public static final String COOPERATIVE_AGENT = "cooperative";
+	public static final String QLEARNER_AGENT = "qlearner";
 	public static final String HUMAN_AGENT = "human";
 	
-	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
+	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.QLEARNER_AGENT, GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
 	
 	/**
 	 * The Executor service which runs the games in threads
