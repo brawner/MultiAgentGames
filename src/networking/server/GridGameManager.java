@@ -313,8 +313,8 @@ public class GridGameManager {
 			GridGameConfiguration config = new GridGameConfiguration(world.copy());
 			
 			String activeId = this.collections.getUniqueThreadId();
-			//this.collections.addConfiguration(activeId, config);
-			this.collections.addConfiguration(worldId, config);
+			this.collections.addConfiguration(activeId, config);
+			//this.collections.addConfiguration(worldId, config);
 			response.setString(STATUS, "Game " + worldId + " has been initialized");
 			this.updateConnected();
 		} else {

@@ -96,7 +96,7 @@ public class GridGameConfiguration {
 	private final AtomicInteger maxTurns;
 	
 	private static final int DEFAULT_MAX_TURNS = 10000;
-	private static final int DEFAULT_MAX_ITERATIONS = 5;
+	private static final int DEFAULT_MAX_ITERATIONS = 30;
 	
 	public GridGameConfiguration(World world) {
 		this.baseWorld = world;
