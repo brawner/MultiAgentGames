@@ -113,7 +113,10 @@ public class GridGameWorldLoader {
 				String filename = f.getAbsolutePath();
 				GridGameServerToken world = GridGameWorldLoader.loadText(filename);
 				//world.setString(WorldFile.LABEL, "world" + count++);
-				world.setString(WorldFile.LABEL, f.getName());
+				String[] temp = f.getName().split("//.");
+				String[] temp2 = temp[temp.length-2].split("_");
+				String worldUniqueId = temp2[temp2.length-2];
+				world.setString(WorldFile.LABEL, worldUniqueId);
 	    		worlds.add(world);
 			}
 		}
