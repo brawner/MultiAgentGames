@@ -52,10 +52,24 @@ var MessageWriter = function() {
 		return msg;
 	};
 
+	this.urlJoinMsg = function(label,agentDescriptions,url_client_id){
+		
+		var msg = {};
+		msg[MessageFields.MSG_TYPE] = MessageFields.RUN_URL_GAME;
+		msg[MessageFields.WORLD_ID] = label;
+		msg[MessageFields.AGENTS] = agentDescriptions;
+		msg[MessageFields.URL_ID] = url_client_id;
+
+		return msg;
+
+
+	};
+
 	this.removeGameMsg = function(label) {
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.REMOVE_GAME;
 		msg[MessageFields.WORLD_ID] = label;
+
 		return msg;
 	};
 };

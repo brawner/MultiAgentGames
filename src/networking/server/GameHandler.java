@@ -48,6 +48,7 @@ public class GameHandler {
 	public static final String SCORE = "score";
 	public static final String GAME_COMPLETED = "game_complete";
 	public static final String CONFIG_GAME = "config_game";
+	public static final String RUN_URL_GAME = "run_url_game";
 	
 	/**
 	 * The websocket session for this connection.

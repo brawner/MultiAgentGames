@@ -37,6 +37,7 @@ MessageFields.ADD_AGENT = "add_agent";
 MessageFields.JOIN_GAME = "join_game";
 MessageFields.EXIT_GAME= "exit_game";
 MessageFields.RUN_GAME = "run_game";
+MessageFields.RUN_URL_GAME = "run_url_game";
 MessageFields.LOAD_WORLDS = "load_worlds";
 MessageFields.REMOVE_GAME = "remove_game";
 MessageFields.AGENT_TYPE = "agent_type";

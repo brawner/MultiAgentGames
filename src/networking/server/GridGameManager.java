@@ -256,6 +256,9 @@ public class GridGameManager {
 			case GameHandler.LOAD_WORLDS:
 				this.collections.addWorldTokens(this.loadWorlds(response));
 				break;
+			case GameHandler.RUN_URL_GAME:
+				this.runUrlGame(token,id,session,response);
+				break;
 			}
 			
 			if (response.getError()) {
@@ -320,6 +323,7 @@ public class GridGameManager {
 		} else {
 			response.setError(true);
 			response.setString(WHY_ERROR, "Init: The desired world id does not exist");
+			return;
 		}
 	}
 	
@@ -513,6 +517,95 @@ public class GridGameManager {
 		String activeId = token.getString(GridGameManager.WORLD_ID);
 		this.collections.removeConfiguration(activeId);
 		this.updateConnected();
+	}
+	
+	private void runUrlGame(GridGameServerToken token, String clientId, Session session,
+			GridGameServerToken response) throws TokenCastException{
+			System.out.println("___***___***Running URL Code***_____*****_____");
+			String activeId;
+			//this.initializeGame(token, response);
+			String worldId = token.getString(GridGameManager.WORLD_ID);
+			World world = this.collections.getWorld(worldId);
+			if (world != null) {
+				GridGameConfiguration config = new GridGameConfiguration(world.copy());
+				
+				activeId = this.collections.getUniqueThreadId();
+				this.collections.addConfiguration(activeId, config);
+				//this.collections.addConfiguration(worldId, config);
+				response.setString(STATUS, "Game " + worldId + " has been initialized");
+				//this.updateConnected();
+			} else {
+				response.setError(true);
+				response.setString(WHY_ERROR, "Init: The desired world id does not exist");
+				return;
+			}
+			
+			//this.joinGame(token, id, session, response);
+			
+			GridGameConfiguration configuration = this.collections.getConfiguration(activeId);
+			
+			
+			
+			//this.configGame(token, response);
+			
+			if (configuration == null) {
+				response.setError(true);
+				response.setString(WHY_ERROR, "Config: The desired world id does not exist");
+				return;
+			}
+			
+			List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
+			
+			for (String agentTypeStr : agentTypes) {
+				boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
+				
+				if (!isValidAgent) {
+					response.setError(true);
+					response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
+					return;
+				}
+				configuration.addAgentType(agentTypeStr);
+			}
+			
+			
+			//this.updateConnected();
+			
+			
+			//
+			//this.runGame(token, id, response);
+			
+					
+			Future<GameAnalysis> future = this.collections.getFuture(activeId);
+			
+			if (future == null) {
+				System.out.println("___***___****About to run a game****_____*****_____");
+				this.runGame(configuration, activeId, response);
+			}
+			
+			if (configuration != null) {
+				GameHandler handler = new GameHandler(this, session, worldId);
+				
+				this.collections.addHandler(clientId, worldId, handler);
+				configuration.addHandler(clientId, handler);
+				response.setString(STATUS, "Client " + clientId + " has been added to game " + activeId);
+				
+				World baseWorld = configuration.getWorldWithAgents();
+				response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
+				SGDomain domain = baseWorld.getDomain();
+				State startState = baseWorld.startingState();
+				String agentName = configuration.getAgentName(handler);
+				response.setString(GameHandler.AGENT, agentName);
+				response.setState(GameHandler.STATE, startState, domain);
+				//this.updateConnected();
+			} else {
+				response.setError(true);
+				response.setString(WHY_ERROR, "Join: The desired world id does not exist");
+				return;
+			}	
+			
+			System.out.println("___***___****Should have run a game****_____*****_____");
+			
+		
 	}
 	
 	/**

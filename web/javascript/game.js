@@ -55,7 +55,7 @@ var Game = function() {
 
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
-    var agents = ["human","qlearner"];
+    var agents = ["human","random"];
     
     var self = this;
     var width = 768,
@@ -86,6 +86,11 @@ var Game = function() {
             var url_client_id = vars['t_id'];
             console.log("Running based on URL");
             
+
+            var msg = message_writer.urlJoinMsg(label,agents,url_client_id);
+            console.log()
+            connection.Send(msg);
+            /*
             if (isGameIdValid(label)) {
 
                 var msg = message_writer.configurationMsg(label, agents);
@@ -97,7 +102,7 @@ var Game = function() {
                 var msg = message_writer.startGameMsg(label, client_id); 
                 console.log("Sending after valid " + msg);
                 connection.Send(msg);
-            //else create the game and have agent join game
+             //else create the game and have agent join game
             }else{
                 //create game
                 var initMsg = message_writer.initializeGameMsg(label);
@@ -114,7 +119,7 @@ var Game = function() {
                 connection.Send(startmsg);
 
 
-            }
+            }*/
             
 
         
@@ -144,6 +149,7 @@ var Game = function() {
         button.onclick = onSubmitClick;
         
         painter.draw(element, button);
+       
         
     };
 
@@ -234,7 +240,7 @@ var Game = function() {
             onURLWithQueryTerms();
             console.log("Ran on URL");
 
-        }else{
+        }
 
         var active = message_reader.getActiveWorlds(msg);
         for (var i = 0; i < active.length; i++) {
@@ -242,7 +248,7 @@ var Game = function() {
             
             return;
         }
-    }
+    
 
         console.log("No games initialized. Initialize some game first");
 
@@ -299,7 +305,7 @@ var Game = function() {
         }
         console.log("Current action " + currentAction);
         painter.draw(currentState, currentScore, currentAction);
-    };
+    };response.setError(true);
 
     // Not used
     var onInteraction = function(event) {
