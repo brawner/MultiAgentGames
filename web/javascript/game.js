@@ -137,6 +137,8 @@ var Game = function() {
         handler.addActionCallback(onAction);
         handler.addInteractionCallback(onInteraction);
         connectToServer();
+        if(vars.length==0){
+
         painter = new OpeningScreenPainter(768, 512);
         
         var inputDiv = document.createElement("div");
@@ -149,9 +151,16 @@ var Game = function() {
         button.onclick = onSubmitClick;
         
         painter.draw(element, button);
-       
+        }
         
     };
+
+    this.drawInitialState = function(){
+        painter = new GamePainter(vars['t_id'], width, height);
+            handler.registerWithPainter(painter);
+            currentState = initialState;
+            painter.draw(currentState, currentScore, currentAction);
+    }
 
     // When the connect button is clicked, this method attempts to connect with the server
     var onConnect = function(url) {
@@ -233,7 +242,7 @@ var Game = function() {
 
     // When receiving a helo message from the server, start things
     var hello = function(msg) {
-        console.log("Running hello vars length "+vars.length);
+        console.log("Running hello: vars length "+vars.length);
         if(vars.length>0){
 
 
@@ -272,6 +281,7 @@ var Game = function() {
             handler.registerWithPainter(painter);
             currentState = initMsg.state;
             painter.draw(currentState, currentScore, currentAction);
+            console.log("DRAWN STATE");
         }
     };
 
@@ -305,7 +315,7 @@ var Game = function() {
         }
         console.log("Current action " + currentAction);
         painter.draw(currentState, currentScore, currentAction);
-    };response.setError(true);
+    };
 
     // Not used
     var onInteraction = function(event) {

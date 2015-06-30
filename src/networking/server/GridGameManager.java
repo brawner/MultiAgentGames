@@ -521,7 +521,17 @@ public class GridGameManager {
 	
 	private void runUrlGame(GridGameServerToken token, String clientId, Session session,
 			GridGameServerToken response) throws TokenCastException{
-			System.out.println("___***___***Running URL Code***_____*****_____");
+			System.out.println("***Running URL Code***");
+			
+		    //init_game message received
+            //join_game message received
+            //config_game message received
+
+            //GET INITIALIZE MESSAGE STATE PAINTED HERE
+
+            //run_game
+			
+			
 			String activeId;
 			//this.initializeGame(token, response);
 			String worldId = token.getString(GridGameManager.WORLD_ID);
@@ -570,6 +580,10 @@ public class GridGameManager {
 			
 			//this.updateConnected();
 			
+			response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
+			response.setString(GridGameManager.WORLD_ID, activeId);
+			
+			response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
 			
 			//
 			//this.runGame(token, id, response);
