@@ -31,55 +31,55 @@ import burlap.oomdp.stochasticgames.World;
  *
  */
 public class GridGameWorldLoader {
-	
-	
+
+
 	private static GridGameServerToken loadText(String filename) {
 		return GridGameServerToken.tokenFromFile(filename);
 	}
-	
+
 	private static WorldLoadingStateGenerator generateStateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent) throws TokenCastException {
 		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent);
 	}
-	
+
 	public static World loadWorld(GridGameServerToken token) {
 		GridGame gridGame = new GridGame();
-		
+
 		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
 		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
 		JointReward jointReward = GridGameExtreme.generateJointReward(domain);
-		
-		
+
+
 		World world = null;
 		try {
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
-			
+
 			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
 			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
 			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
 			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
-			
+
 			String description = token.getString(WorldFile.DESCRIPTION);
 			world.setDescription(description);
-			
+
 		} catch (TokenCastException e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		return world;
 	}
-	
+
 	public static World loadWorld(String filename) {
 		GridGameServerToken fileToken = GridGameWorldLoader.loadText(filename);
 		return GridGameWorldLoader.loadWorld(fileToken);
 	}
-	
+
 	//TODO add in environment variable expanding, and other good stuff
 	public static Path expandDirectory(String directory) {
 		return Paths.get(directory);
 	}
-	
+
 	public static List<File> walkDirectory(File file) {
 		List<File> files = new ArrayList<File>();
 		if (file.isFile()) {
@@ -95,7 +95,7 @@ public class GridGameWorldLoader {
 		}
 		return files;	
 	}
-	
+
 	public static List<GridGameServerToken> loadWorldTokens(String directory) {
 		System.out.println("Lodaing worlds!!");
 		Path path = GridGameWorldLoader.expandDirectory(directory);
@@ -103,11 +103,11 @@ public class GridGameWorldLoader {
 		if (!file.exists()) {
 			System.err.println(directory + " could not be found. Check the path");
 		}
-		
+
 		List<File> files = GridGameWorldLoader.walkDirectory(file);
-		
+
 		List<GridGameServerToken> worlds = new ArrayList<GridGameServerToken>();
-	    
+
 		int count = 0;
 		for (File f : files) {
 			if (f.isFile()) {
@@ -115,20 +115,22 @@ public class GridGameWorldLoader {
 				GridGameServerToken world = GridGameWorldLoader.loadText(filename);
 				//world.setString(WorldFile.LABEL, "world" + count++);
 				String[] temp = f.getName().split("\\.");
-				String worldUniqueId = temp[temp.length-2];
-				System.out.println("UID: "+worldUniqueId);
-				world.setString(WorldFile.LABEL, worldUniqueId);
-	    		worlds.add(world);
+				if(temp.length>=2){
+					String worldUniqueId = temp[temp.length-2];
+					System.out.println("UID: "+worldUniqueId);
+					world.setString(WorldFile.LABEL, worldUniqueId);
+					worlds.add(world);
+				}
 			}
 		}
-	    return worlds;
+		return worlds;
 	}
-	
+
 	public static List<World> loadWorlds(String directory) {
 		List<GridGameServerToken> worldTokens = GridGameWorldLoader.loadWorldTokens(directory);
 		return GridGameWorldLoader.loadWorlds(worldTokens);
 	}
-	
+
 	public static List<World> loadWorlds(List<GridGameServerToken> worldTokens) {
 		List<World> worlds = new ArrayList<World>(worldTokens.size());
 		for (GridGameServerToken token : worldTokens) {
@@ -137,7 +139,7 @@ public class GridGameWorldLoader {
 		}
 		return worlds;
 	}
-	
+
 	public static List<World> loadWorlds(GridGameServerToken token) {
 		try {
 			List<GridGameServerToken> worldTokens = token.getTokenList(GridGameManager.WORLDS);
@@ -147,9 +149,9 @@ public class GridGameWorldLoader {
 			return null;
 		}
 	}
-	
-	
-	
+
+
+
 	public static class WorldLoaderException extends RuntimeException {
 
 		public WorldLoaderException(String string) {
@@ -160,9 +162,9 @@ public class GridGameWorldLoader {
 		 * 
 		 */
 		private static final long serialVersionUID = 3175358082484906501L;
-		
+
 	}
 
 
-	
+
 }
