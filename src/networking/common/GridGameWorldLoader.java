@@ -97,6 +97,7 @@ public class GridGameWorldLoader {
 	}
 	
 	public static List<GridGameServerToken> loadWorldTokens(String directory) {
+		System.out.println("Lodaing worlds!!");
 		Path path = GridGameWorldLoader.expandDirectory(directory);
 		File file = path.toFile();
 		if (!file.exists()) {
