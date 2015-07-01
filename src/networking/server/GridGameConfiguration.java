@@ -96,7 +96,7 @@ public class GridGameConfiguration {
 	private final AtomicInteger maxTurns;
 	
 	private static final int DEFAULT_MAX_TURNS = 10000;
-	private static final int DEFAULT_MAX_ITERATIONS = 30;
+	private static final int DEFAULT_MAX_ITERATIONS = 5;
 	
 	public GridGameConfiguration(World world) {
 		this.baseWorld = world;
@@ -149,11 +149,17 @@ public class GridGameConfiguration {
 	}
 	
 	/** 
-	 * Checks if there are any more items that can be modified for this configuration. Currently, it just checks for all agents being assigned.
+	 * Checks if there are any more items that can be modified for this configuration. 
+	 * Currently, it just checks for all agents being assigned.
 	 * @return
 	 */
 	public boolean isFullyConfigured() {
-		return !this.canAddAgent();
+		if(this.getNextVacancy()==null){
+		
+			return !this.canAddAgent();
+		}else{
+			return false;
+		}
 	}
 	
 	/**

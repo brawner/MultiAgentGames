@@ -58,6 +58,7 @@ var MessageWriter = function() {
 		msg[MessageFields.MSG_TYPE] = MessageFields.RUN_URL_GAME;
 		msg[MessageFields.WORLD_ID] = label;
 		msg[MessageFields.AGENTS] = agentDescriptions;
+		msg[MessageFields.AGENT_TYPE] = "human";
 		msg[MessageFields.URL_ID] = url_client_id;
 
 		return msg;

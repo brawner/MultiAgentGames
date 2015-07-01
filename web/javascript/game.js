@@ -53,6 +53,8 @@ var Game = function() {
             }
     }
 
+    var client_id;
+
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
     var agents = ["human","random"];
@@ -243,25 +245,29 @@ var Game = function() {
     // When receiving a helo message from the server, start things
     var hello = function(msg) {
         console.log("Running hello: vars length "+vars.length);
-        if(vars.length>0){
 
+        client_id = message_reader.getClientId(msg);
+
+        var active = message_reader.getActiveWorlds(msg);
+
+        if(vars.length>0){
 
             onURLWithQueryTerms();
             console.log("Ran on URL");
 
-        }
+        }else{
 
-        var active = message_reader.getActiveWorlds(msg);
-        for (var i = 0; i < active.length; i++) {
-            var label = active[i].Label;
+            //var active = message_reader.getActiveWorlds(msg);
+            for (var i = 0; i < active.length; i++) {
+                var label = active[i].Label;
             
-            return;
-        }
+                return;
+            }
     
 
-        console.log("No games initialized. Initialize some game first");
+            console.log("No games initialized. Initialize some game first");
 
-        
+        }
     };
 
     // When receiving an initialization message from the server, initialize a new game
