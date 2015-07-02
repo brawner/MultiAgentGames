@@ -86,6 +86,10 @@ var Game = function() {
             //if the game exists, have agent join game
             var label = vars['exp_name'];
             var url_client_id = vars['t_id'];
+            var run_two_humans = vars['human'];
+            if(run_two_humans=='yes'){
+                agents = ["human","human"];
+            }
             console.log("Running based on URL");
             
 
