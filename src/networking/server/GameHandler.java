@@ -199,6 +199,12 @@ public class GameHandler {
 		return this.session.isOpen();
 	}
 	
+	public NetworkAgent getNetworkAgent(){
+		return agent;
+	}
 	
+	public String getThreadId(){
+		return threadId;
+	}
 
 }

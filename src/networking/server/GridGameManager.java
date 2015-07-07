@@ -1,4 +1,5 @@
 package networking.server;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +49,7 @@ public class GridGameManager {
 	public static final String MSG_TYPE = "msg_type";
 	public static final String CLIENT_ID = "client_id";
 	public static final String WORLD_ID = "world_id";
+	public static final String URL_ID = "url_id";
 	public static final String WORLDS = "worlds";
 	public static final String ACTIVE = "active";
 	public static final String WORLD_TYPE = "world_type";
@@ -64,8 +66,8 @@ public class GridGameManager {
 	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.QLEARNER_AGENT, GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
 
 	public HashMap<String,ArrayList<String>> gameTypesForIds = new HashMap<String,ArrayList< String>>();
-	
-	
+
+
 	/**
 	 * The Executor service which runs the games in threads
 	 */
@@ -530,6 +532,8 @@ public class GridGameManager {
 
 
 		String worldId = token.getString(GridGameManager.WORLD_ID);
+		String turk_id = token.getString(GridGameManager.URL_ID);
+
 		World world = this.collections.getWorld(worldId);
 		GridGameConfiguration configuration = null;
 		String activeId = null;
@@ -540,7 +544,7 @@ public class GridGameManager {
 		for(String id : configs.keySet()){
 			System.out.println("GTFI size: "+gameTypesForIds.size());
 			if(!configs.get(id).isFullyConfigured() && gameTypesForIds.get(worldId).contains(id)){ //&& check same type??){
-				
+
 				joinOnly = true;
 				activeId = id;
 				configuration = configs.get(id);
@@ -548,7 +552,7 @@ public class GridGameManager {
 			}
 		}
 
-
+		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 
 		if(!joinOnly){
 			//init_game message received
@@ -559,10 +563,10 @@ public class GridGameManager {
 				activeId = this.collections.getUniqueThreadId();
 				if(!gameTypesForIds.containsKey(worldId)){
 					gameTypesForIds.put(worldId, new ArrayList<String>());
-					
+
 				}
 				gameTypesForIds.get(worldId).add(activeId);
-				
+
 				this.collections.addConfiguration(activeId, configuration);
 				//this.collections.addConfiguration(worldId, configuration);
 				response.setString(STATUS, "Game " + worldId + " has been initialized");
@@ -576,13 +580,13 @@ public class GridGameManager {
 			//config_game message received
 			List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
 
-			for (String agentTypeStr : agentTypes) {
-				System.out.println("1 WI: "+worldId+" ATS: "+agentTypeStr);
-				boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
+			for (String agentTypeS : agentTypes) {
+				System.out.println("WI: "+worldId+" ATS: "+agentTypeS);
+				boolean isValidAgent = this.isValidAgent(worldId, agentTypeS);
 
 				if (!isValidAgent) {
 					response.setError(true);
-					response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
+					response.setString(WHY_ERROR, "An agent of type " + agentTypeS + " cannot be added to this game");
 					return;
 				}
 
@@ -593,7 +597,6 @@ public class GridGameManager {
 		}else{
 			//add agent to game
 
-			String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 
 			if (configuration == null) {
 				response.setError(true);
@@ -613,7 +616,9 @@ public class GridGameManager {
 
 
 		}
+
 		//join_game message received
+		String agentName = "unset";
 		if (configuration != null) {
 			GameHandler handler = new GameHandler(this, session, worldId);
 
@@ -621,19 +626,45 @@ public class GridGameManager {
 			configuration.addHandler(clientId, handler);
 			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
 
+
 			World baseWorld = configuration.getWorldWithAgents();
 			response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 			SGDomain domain = baseWorld.getDomain();
 			State startState = baseWorld.startingState();
-			String agentName = configuration.getAgentName(handler);
+			agentName = configuration.getAgentName(handler);
 			response.setString(GameHandler.AGENT, agentName);
 			response.setState(GameHandler.STATE, startState, domain);
 			response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
 			response.setString(GridGameManager.WORLD_ID, activeId);
 
 			response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
+
 			//this.updateConnected();
 		}
+		try {
+			FileWriter pw = new FileWriter(this.analysisDirectory +"/IDMap.csv", true);
+
+			pw.append(clientId);
+			pw.append(",");
+			pw.append(turk_id);
+			pw.append(",");
+			pw.append(agentName);
+			pw.append(",");
+			pw.append(agentTypeStr);
+			pw.append(",");
+			pw.append(configuration.getUniqueGameId());
+			pw.append("\n");
+
+			pw.flush();
+
+			pw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.println("CID: "+clientId+" TID: "+turk_id+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
+
 
 
 		//run_game
@@ -651,6 +682,7 @@ public class GridGameManager {
 		//map from futureId to agent name and turk id and experiment name
 
 		if (future == null) {
+
 			this.runGame(configuration, activeId, response);
 			System.out.println("___***___****Should have run a game****_____*****_____");
 		}
@@ -672,15 +704,17 @@ public class GridGameManager {
 		if (futureId != null) {
 			World world = this.collections.removeRunningWorld(futureId);
 			this.collections.removeFuture(futureId);
-			String path = this.analysisDirectory + "/episode" + futureId;
+			GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
+			String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId;
 			System.out.println("Writing to " + path);
 			StateJSONParser parser = new StateJSONParser(world.getDomain());
 			result.writeToFile(path, parser);
 
+
 			//print map here
 			//file name, agent names and url_client_ids, experiment name
-			
-			GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
+
+			configuration = this.collections.getConfiguration(futureId);
 			if (!configuration.hasReachedMaxIterations()) {
 				System.out.println("Continuing game");
 				List<GameHandler> handlers = this.collections.getHandlersWithGame(futureId);
@@ -724,8 +758,8 @@ public class GridGameManager {
 				String path = this.analysisDirectory + "/episode" + futureId;
 				StateJSONParser parser = new StateJSONParser(world.getDomain());
 				analysis.writeToFile(path, parser);
-				
-				
+
+
 			} catch (InterruptedException | ExecutionException e) {
 				e.printStackTrace();
 			}

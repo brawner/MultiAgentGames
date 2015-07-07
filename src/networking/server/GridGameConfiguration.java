@@ -1,11 +1,15 @@
 package networking.server;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,6 +41,12 @@ import burlap.oomdp.stochasticgames.World;
  *
  */
 public class GridGameConfiguration {
+	
+
+	/**
+	 * The base type of world for this configuration.
+	 */
+	private final String uniqueGameID;
 
 	/**
 	 * The base type of world for this configuration.
@@ -96,10 +106,11 @@ public class GridGameConfiguration {
 	private final AtomicInteger maxTurns;
 	
 	private static final int DEFAULT_MAX_TURNS = 10000;
-	private static final int DEFAULT_MAX_ITERATIONS = 5;
+	private static final int DEFAULT_MAX_ITERATIONS = 3;
 	
 	public GridGameConfiguration(World world) {
 		this.baseWorld = world;
+		this.uniqueGameID = generateUniqueID();
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
 		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, Agent>());
@@ -112,6 +123,16 @@ public class GridGameConfiguration {
 		this.maxTurns = new AtomicInteger(DEFAULT_MAX_TURNS);
 	}
 	
+	private String generateUniqueID() {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
+		Date date = new Date();
+		String dateStr = dateFormat.format(date);
+		Random rand = new Random();
+		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
+		
+		return dateStr+"_"+randVal;
+	}
+
 	/**
 	 * Generates a new id for an agent added to this configuration.
 	 * @return
@@ -559,5 +580,10 @@ public class GridGameConfiguration {
 	 */
 	public void setMaxTurns(int maxTurns) {
 		this.maxTurns.set(maxTurns);
+	}
+
+	public String getUniqueGameId() {
+		// TODO Auto-generated method stub
+		return uniqueGameID;
 	}
 }
