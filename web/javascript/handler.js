@@ -49,7 +49,6 @@ var GeneralHandler = function(_actions) {
 	this.addInteractionCallback = function(callback) {
 		interactionCallbacks.push(callback);
 	};
-
 	this.removeCallback = function(callback) {
 		if (callback in actionCallbacks) {
 			actionCallbacks.remove(callback);
