@@ -50,6 +50,13 @@ var MessageReader = function() {
 		updateMsg = {};
 		if (MessageFields.SCORE in update) {
 			updateMsg.score = update[MessageFields.SCORE];
+		}
+		if (MessageFields.ACTION in update){
+				
+			console.log("Joint actions:");
+			console.log(update[MessageFields.ACTION][MessageFields.JOINT_ACTION]);
+			updateMsg.action = update[MessageFields.ACTION][MessageFields.JOINT_ACTION];
+
 		} 
 		updateMsg.state = self.getStateFromMessage(update[MessageFields.STATE]);
 		return updateMsg;

@@ -36,6 +36,7 @@ public class GameHandler {
 	public final static String ACTION_REQUEST = "action_sorely_needed";
 	public final static String STATE = "state";
 	public final static String ACTION = "action";
+	public final static String ACTIONS = "actions";
 	public final static String ACTION_PARAMS = "action_params";
 	public final static String AGENT = "agent";
 	public final static String REWARD = "reward";

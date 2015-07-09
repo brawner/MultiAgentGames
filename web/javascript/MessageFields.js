@@ -44,6 +44,7 @@ MessageFields.AGENT_TYPE = "agent_type";
 MessageFields.ACTION_REQUEST = "action_sorely_needed";
 MessageFields.STATE = "state";
 MessageFields.ACTION = "action";
+MessageFields.JOINT_ACTION = "joint_action";
 MessageFields.ACTION_PARAMS = "action_params";
 MessageFields.AGENT = "agent";
 MessageFields.GOAL = "goal";

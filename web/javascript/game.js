@@ -9,6 +9,7 @@
 */
 function fnMain(jQuery) {
     "use strict";
+    console.log($('#task_display'));
     var game = new Game();
     game.go();    
 }
@@ -57,6 +58,8 @@ var Game = function() {
     }
 
     var client_id;
+    var marks_code = true;
+    var stephens_code = false;
 
     // Available actions to take
     var actions = {"North":"north", "South":"south", "East":"east", "West":"west", "Wait":"noop"};
@@ -130,48 +133,14 @@ var Game = function() {
 
             }*/
             
-var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
-        connection.Send(msg);
-        
-    };
-
-   
-
-	// sets up everything
-    this.go = function() {
-        
-        if (stephens_code) {
-            var context = document.getElementById("GGCanvas").getContext("2d");
-            context.fillStyle = "#FFFFFF";
-            context.fillRect(0,0,768,512);
-            handler = new GeneralHandler(actions);
-            handler.addActionCallback(onAction);
-            handler.addInteractionCallback(onInteraction);
-        }
-        if (marks_code) {
-            $(document).bind('keydown.gridworld', onActionPress);
-        }
-        connectToServer();
-        if(vars.length==0){
-
-            painter = new OpeningScreenPainter(768, 512);
-            
-            var inputDiv = document.createElement("div");
-            inputDiv.setAttribute("id", "divvyDiv");
-
-            var element = document.getElementById('text_box');
-            
-            var button = document.getElementById("submit_button");
-            
-            button.onclick = onSubmitClick;
-                
-            painter.draw(element, button);
-        }
+    //var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
+       // connection.Send(msg);
         
     };
 
     this.onActionPress = function (event) {
         var action;
+        $(document).unbind('keydown.gridworld');
         switch (event.which) {
             case 37:
                 action = 'west';
@@ -194,8 +163,43 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
         var msg = message_writer.updateActionMsg(client_id, action, agent_name);
         connection.Send(msg);
 
-        $(document).unbind('keydown.gridworld');
+        //$(document).unbind('keydown.gridworld');
     }
+
+	// sets up everything
+    this.go = function() {
+        
+        if (stephens_code) {
+            var context = document.getElementById("GGCanvas").getContext("2d");
+            context.fillStyle = "#FFFFFF";
+            context.fillRect(0,0,768,512);
+            handler = new GeneralHandler(actions);
+            handler.addActionCallback(onAction);
+            handler.addInteractionCallback(onInteraction);
+        }
+        if (marks_code) {
+            $(document).bind('keydown.gridworld', this.onActionPress);
+        }
+        connectToServer();
+        if(vars.length==0){
+
+            painter = new OpeningScreenPainter(768, 512);
+            
+            var inputDiv = document.createElement("div");
+            inputDiv.setAttribute("id", "divvyDiv");
+
+            var element = document.getElementById('text_box');
+            
+            var button = document.getElementById("submit_button");
+            
+            button.onclick = onSubmitClick;
+                
+            painter.draw(element, button);
+        }
+        
+    };
+
+    
 
     this.drawInitialState = function(){
         painter = new GamePainter(vars['t_id'], width, height);
@@ -336,20 +340,11 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
             //CALL MARK'S CODE HERE
             if (marks_code) {
                 //example gridworld and initState
-                var gridworld = {
-                    height : 3,
-                    width : 3,
-                    walls : [],
-                    goals : [{agent:'agent1', location: [0,0]}, {agent:'agent2', location: [2,2]}],
-                    agents : [{name : 'agent1'}, {name : 'agent2'}]
-                }
-                var initState = {
-                    agent1 : {name : 'agent1', location : [2,0], type : 'agent'},
-                    agent2 : {name : 'agent2', location : [0,2], type : 'agent'}
-                }
+                var gridworld = getGridworld(initMsg.state);
+                var initState = getAgentLocals(initMsg.state);
                 clientmdp = new ClientMDP(gridworld);
                 painter = new GridWorldPainter(gridworld);
-                painter.init('#task_display');
+                painter.init($('#task_display')[0]);
                 $(painter.paper.canvas).css({display :'block', margin : 'auto'}); //center the task
                 painter.drawState(initState);
                 previousState = initState;
@@ -360,19 +355,97 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
 
 
     var getGridworld = function(state){
-
-        var gridworld = {}
-        gridworld.height = state.
-        gridworld.width = state.
-        gridworld.walls = state.walls;
-        gridworld.goals = state.goals;
-        gridworld.agents = {}
-        for(a in state.Agents){
+        console.log(JSON.stringify(state));
+        var gridworld = {};
+        gridworld.height = getHeightFromState(state.Walls);
+        gridworld.width = getWidthFromState(state.Walls);
+        gridworld.walls = convertWalls(state.Walls,gridworld.width,gridworld.height);
+        console.log(gridworld.walls);
+        gridworld.goals = convertGoals(state.Goals,gridworld.width,gridworld.height);
+        gridworld.agents = [];
+        for(var a = 0;a<state.Agents.length; a++){
             var temp = {};
-            temp.name = a.Name;
-            agents.push(temp);
+            temp.name = state.Agents[a].Name;
+            gridworld.agents.push(temp);
         }
+        console.log(gridworld);
+        return gridworld;
         
+    }
+
+    var getHeightFromState = function(walls){
+        var maxY = 0;
+        
+        for(var w = 0; w<walls.length;w++){
+            if(walls[w].EndY > maxY){
+                maxY = walls[w].EndY;
+            }
+        }
+        return maxY;
+    }
+
+
+    var getWidthFromState = function(walls){
+        var maxX = 0;
+        for(var w = 0; w<walls.length;w++){
+            if(walls[w].EndX > maxX){
+                maxX = walls[w].EndX;
+            }
+        }
+        return maxX;
+    }
+
+    var convertWalls = function(walls,width,height){
+        var newWalls = [];
+
+        var wall;
+        for(var w = 0; w<walls.length;w++){
+            wall = walls[w];
+            if((wall.StartX== 0 && wall.EndX==0)||(wall.StartX== width && wall.EndX==width)
+                ||(wall.StartY== 0 && wall.EndY==0)||(wall.StartY== height && wall.EndY==height)){
+                //this is 
+               // console.log(height);
+                //console.log(width);
+                //console.log(wall);
+            }else{
+                    //add wall
+                    if(wall.StartX==wall.EndX){
+                        //make vertical walls
+                        for(i = wall.StartY;i < wall.EndY;i++){
+                            var vwr = [wall.StartX-1,i,'right'];
+                            var vwl = [wall.StartX,i,'left'];
+                            newWalls.push(vwr);
+                            newWalls.push(vwl);
+                        }
+                    }else if(wall.StartY==wall.EndY){
+                        //make horizontal wall
+                        for(i = wall.StartX;i < wall.EndX;i++){
+                            var hwu = [i,wall.StartY-1,'up'];
+                            var hwd = [i,wall.StartY,'down'];
+                            newWalls.push(hwu);
+                            newWalls.push(hwd);
+                        }
+                    }
+            }
+
+        }
+        return newWalls;
+
+    }
+
+    var convertGoals = function(goals,width,height){
+        var newGoals = [];
+        var goal;
+        for(var g = 0; g<goals.length;g++){
+            goal = goals[g];
+            var newGoal = {};
+            newGoal.agent = 'agent'+(goal.GoalType-1);
+            newGoal.location = [goal.X,goal.Y];
+            newGoals.push(newGoal);
+
+        }
+        return newGoals;
+
     }
 
     // Handle a game update, and update the state and visualization
@@ -391,7 +464,9 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
         
         //CALL MARK'S CODE HERE
         if (marks_code) {
-            var currentActions = updateMsg.actions;
+            console.log(" RUNNING MARKS UPDATE CODE");
+            if(updateMsg.action !=null){
+            var currentActions = convertActions(updateMsg.action);
 
             var nextState = getAgentLocals(updateMsg.state);
 
@@ -400,8 +475,9 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
               //      agent1 : {name : 'agent1', location : [1,0], type : 'agent'},
                //     agent2 : {name : 'agent2', location : [1,2], type : 'agent'}
                // }
-
-            var animation_time = painter.drawTransition(previousState, currentActions, nextState, this.clientmdp);
+            console.log("current actions:");
+            console.log(currentActions);
+            var animation_time = painter.drawTransition(previousState, currentActions, nextState, clientmdp);
             
             previousState = nextState;
             //note: you need a closure in order to properly reset
@@ -413,20 +489,35 @@ var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
 
             setTimeout(reset_key_handler, animation_time);
         }
+        }
         //receive next state data, actions, 
 
         //do line 56 of demos: should be its own method "update interface(lastState, actions)"
     };
 
+    var convertActions = function(taken_actions){
+
+        var jointaction = {};
+        for(var j = 0; j < taken_actions.length;j++){
+            var an = taken_actions[j]['agent'];
+            var a = taken_actions[j]['action'];
+            jointaction[an] = a;
+        }
+        return jointaction;
+    }
+
+
     var getAgentLocals = function(state){
 
         var locals = {}
-        for(a in state.Agents){
+        var agent;
+        for(var a = 0; a<state.Agents.length;a++){
             var temp = {};
-            temp.name = a.Name;
-            temp.location = [a.X,a.Y];
+            agent = state.Agents[a];
+            temp.name = agent.Name;
+            temp.location = [agent.X,agent.Y];
             temp.type = 'agent';
-            locals[a.Name] = temp;
+            locals[agent.Name] = temp;
         }
         return locals;
         
