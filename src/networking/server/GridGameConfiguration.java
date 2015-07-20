@@ -105,8 +105,8 @@ public class GridGameConfiguration {
 	 */
 	private final AtomicInteger maxTurns;
 	
-	private static final int DEFAULT_MAX_TURNS = 10000;
-	private static final int DEFAULT_MAX_ITERATIONS = 3;
+	private static final int DEFAULT_MAX_TURNS = 30;
+	private static final int DEFAULT_MAX_ITERATIONS = 5;
 	
 	public GridGameConfiguration(World world) {
 		this.baseWorld = world;
@@ -583,7 +583,12 @@ public class GridGameConfiguration {
 	}
 
 	public String getUniqueGameId() {
-		// TODO Auto-generated method stub
+		
 		return uniqueGameID;
+	}
+
+	public AtomicInteger getGameNum() {
+		
+		return iterationCount;
 	}
 }

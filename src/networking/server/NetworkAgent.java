@@ -81,6 +81,7 @@ public class NetworkAgent extends Agent {
 	public void observeOutcome(State s, JointAction jointAction,
 			Map<String, Double> jointReward, State sprime, boolean isTerminal) {
 		this.currentAction = null;
+		//System.out.println("Is terminal: "+isTerminal);
 		this.handler.updateClient(s, jointAction, jointReward, sprime, isTerminal);
 
 	}

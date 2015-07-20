@@ -58,6 +58,9 @@ var MessageReader = function() {
 			updateMsg.action = update[MessageFields.ACTION][MessageFields.JOINT_ACTION];
 
 		} 
+		//if (MessageFields.IS_TERMINAL in update){
+			//updateMsg.is_terminal = update[MessageFields.IS_TERMINAL];
+		//}
 		updateMsg.state = self.getStateFromMessage(update[MessageFields.STATE]);
 		return updateMsg;
 	};

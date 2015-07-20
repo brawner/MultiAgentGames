@@ -48,6 +48,7 @@ public class GameHandler {
 	public static final String CLOSE_GAME = "close_game";
 	public static final String SCORE = "score";
 	public static final String GAME_COMPLETED = "game_complete";
+	public static final String EXPERIMENT_COMPLETED = "experiment_complete";
 	public static final String CONFIG_GAME = "config_game";
 	public static final String RUN_URL_GAME = "run_url_game";
 	
@@ -86,10 +87,13 @@ public class GameHandler {
 	 */
 	public void onMessage(GridGameServerToken msg, GridGameServerToken response) {
 		try {
+			System.out.println("Response Type Before: "+response.getString(GridGameManager.MSG_TYPE));
+		
 			String msgType = msg.getString(GridGameManager.MSG_TYPE);
+			
 			if (msgType.equals(JOIN_GAME)) {
 				
-				
+				System.out.println("Running on Message at 88 GH "+msgType);
 				response.setString(GridGameManager.MSG_TYPE, INITIALIZE);
 				response.setString(GridGameManager.WORLD_ID, threadId);
 				
@@ -103,7 +107,13 @@ public class GameHandler {
 				GroundedSingleAction groundedAction = new GroundedSingleAction(agent.getAgentName(), action, params);
 				this.agent.setNextAction(groundedAction);
 				response.setString(RESULT, SUCCESS);
+				
+				
+			}else if(response.getString(GridGameManager.MSG_TYPE).equals(INITIALIZE)){
+				System.out.println("Found an Initialize response: "+msgType);
+				//response.setString(GridGameManager.MSG_TYPE, null);
 			}
+			System.out.println("Response Type After: "+response.getString(GridGameManager.MSG_TYPE));
 		} catch (TokenCastException e) {
 			response.setError(true);
 		}
@@ -125,6 +135,7 @@ public class GameHandler {
 	 * @param state
 	 */
 	public void updateClient(State state) {
+		System.out.println("updating client 136 method");
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, state, this.domain);
 		GridGameServerToken msg = new GridGameServerToken();
@@ -143,6 +154,7 @@ public class GameHandler {
 	 */
 	public void updateClient(State s, JointAction jointAction,
 			Map<String, Double> jointReward, State sprime, boolean isTerminal) {
+		System.out.println("updating client 153 method: "+jointAction.toString());
 		this.currentScore += jointReward.get(this.agent.getAgentName());
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, sprime, this.domain);
@@ -162,6 +174,7 @@ public class GameHandler {
 	 * @param message
 	 */
 	public void updateClient(GridGameServerToken message) {
+		System.out.println("updating client 175 method");
 		this.session.getRemote().sendStringByFuture(message.toJSONString());
 	}
 	
@@ -169,9 +182,11 @@ public class GameHandler {
 	 * Once a game has been completed, it's updated
 	 */
 	public void gameCompleted() {
+		System.out.println("Completing Game");
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setString(GridGameManager.MSG_TYPE, GAME_COMPLETED);
 		msg.setDouble(SCORE, this.currentScore);
+		
 		this.updateClient(msg);
 	}
 	
@@ -179,7 +194,12 @@ public class GameHandler {
 	 * When the game is finished, the handler notifies the client.
 	 */
 	public void shutdown() {
-		this.gameCompleted();
+		System.out.println("SHUTTING DOWN");
+		GridGameServerToken msg = new GridGameServerToken();
+		msg.setString(GridGameManager.MSG_TYPE, EXPERIMENT_COMPLETED);
+		msg.setDouble(SCORE, this.currentScore);
+		
+		this.updateClient(msg);
 	}
 	
 	/**
