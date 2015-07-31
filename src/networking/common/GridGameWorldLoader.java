@@ -12,6 +12,7 @@ import java.util.Map;
 
 import networking.common.messages.WorldFile;
 import networking.server.GridGameManager;
+import behavior.SpecifyNoopCostRewardFunction;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.StateAbstraction;
 import burlap.oomdp.core.ObjectClass;
@@ -69,6 +70,66 @@ public class GridGameWorldLoader {
 
 		return world;
 	}
+	
+	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop){
+		GridGame gridGame = new GridGame();
+		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
+		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
+		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
+		JointReward jointReward = GridGameExtreme.generateJointReward(domain, stepCost, reward, incurCostOnNoop);
+
+
+		World world = null;
+		try {
+			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
+			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
+
+			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
+			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
+			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
+			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
+
+			String description = token.getString(WorldFile.DESCRIPTION);
+			world.setDescription(description);
+
+		} catch (TokenCastException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		return world;
+	}
+	
+	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop, double noopCost){
+		GridGame gridGame = new GridGame();
+		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
+		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
+		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
+		JointReward jointReward = new SpecifyNoopCostRewardFunction(domain, stepCost, reward, reward, incurCostOnNoop, noopCost);
+
+
+		World world = null;
+		try {
+			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
+			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
+
+			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
+			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
+			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
+			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
+
+			String description = token.getString(WorldFile.DESCRIPTION);
+			world.setDescription(description);
+
+		} catch (TokenCastException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		return world;
+	}
+	
+	
 
 	public static World loadWorld(String filename) {
 		GridGameServerToken fileToken = GridGameWorldLoader.loadText(filename);

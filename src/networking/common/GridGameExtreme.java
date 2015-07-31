@@ -58,6 +58,10 @@ public class GridGameExtreme {
 	public static JointReward generateJointReward(SGDomain domain) {
 		return new GridGame.GGJointRewardFunction(domain);
 	};
+
+	public static JointReward generateJointReward(SGDomain domain, double stepCost, double reward, boolean incurCostOnNoop) {
+		return new GridGame.GGJointRewardFunction(domain, stepCost, reward, incurCostOnNoop);
+	};
 	
 	public static Visualizer getVisualizer(World world) {
 		State startState = world.startingState();
