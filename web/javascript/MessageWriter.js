@@ -37,7 +37,7 @@ var MessageWriter = function() {
 	};
 
 
-	this.configurationMsg = function(label, agentDescriptions) {
+	this.configurationMsg = function(label, agentDescriptions) {;
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.CONFIG_GAME;
 		msg[MessageFields.WORLD_ID] = label;
@@ -52,7 +52,7 @@ var MessageWriter = function() {
 		return msg;
 	};
 
-	this.urlJoinMsg = function(label,agentDescriptions,url_client_id){
+	this.urlJoinMsg = function(label,agentDescriptions,url_client_id,exp_name){
 		
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.RUN_URL_GAME;
@@ -60,6 +60,7 @@ var MessageWriter = function() {
 		msg[MessageFields.AGENTS] = agentDescriptions;
 		msg[MessageFields.AGENT_TYPE] = "human";
 		msg[MessageFields.URL_ID] = url_client_id;
+		msg[MessageFields.EXP_NAME] = exp_name;
 
 		return msg;
 
