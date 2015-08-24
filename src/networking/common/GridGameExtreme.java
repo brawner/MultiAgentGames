@@ -31,6 +31,7 @@ public class GridGameExtreme {
 	public static String PFINREWARD = "in_reward";
 	
 	public static SGDomain generateDomain(GridGame gridGame) {
+		//gridGame.setMaxDim(5);
 		SGDomain domain = (SGDomain) gridGame.generateDomain();
 		Attribute xAtt = domain.getAttribute(GridGame.ATTX);
 		Attribute yAtt = domain.getAttribute(GridGame.ATTY);

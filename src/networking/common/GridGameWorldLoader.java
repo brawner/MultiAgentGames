@@ -103,6 +103,19 @@ public class GridGameWorldLoader {
 	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop, double noopCost){
 		GridGame gridGame = new GridGame();
 		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
+		try {
+			int max = Integer.valueOf(token.getInt("width"));
+			int maxh = Integer.valueOf(token.getInt("height"));
+			if(maxh>max){
+				max = maxh;
+			}
+			gridGame.setMaxDim(max);
+			
+		} catch (TokenCastException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
 		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
 		JointReward jointReward = new SpecifyNoopCostRewardFunction(domain, stepCost, reward, reward, incurCostOnNoop, noopCost);
