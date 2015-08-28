@@ -1,0 +1,27 @@
+{
+	"description":"Two agents, Two goals each, four corners, crossed walls",
+	"width":5,
+	"height":5,
+	"agents": [
+	{"x":2, "y":4},
+	{"x":2, "y":0}
+	],
+	"goals": [
+	{"x":1, "y":1, "gt":1},
+	{"x":3, "y":1, "gt":1},
+	{"x":1, "y":3, "gt":2},
+	{"x":3, "y":3, "gt":2}
+	],
+	"horizontal_walls": [
+	{"pos": 1, "end1": 1, "end2": 3},
+	{"pos": 2, "end1": 1, "end2": 3},
+	{"pos": 3, "end1": 1, "end2": 3},
+	{"pos": 4, "end1": 1, "end2": 3}
+	],
+	"vertical_walls": [
+	{"pos": 1, "end1": 2, "end2": 2},
+	{"pos": 2, "end1": 1, "end2": 3},
+	{"pos": 3, "end1": 1, "end2": 3},
+	{"pos": 4, "end1": 2, "end2": 2}
+	]
+}
