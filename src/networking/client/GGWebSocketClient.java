@@ -131,6 +131,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 
 	@Override
 	public GridGameServerToken onMessage(GridGameServerToken msg) {
+		System.out.println("Running on Message at 133 GGWSC");
 		GridGameServerToken response = new GridGameServerToken();
 		try {
 			

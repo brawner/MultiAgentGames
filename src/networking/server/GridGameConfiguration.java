@@ -1,5 +1,7 @@
 package networking.server;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -106,7 +108,7 @@ public class GridGameConfiguration {
 	private final AtomicInteger maxTurns;
 	
 	private static final int DEFAULT_MAX_TURNS = 30;
-	private static final int DEFAULT_MAX_ITERATIONS = 5;
+	private static final int DEFAULT_MAX_ITERATIONS = 8;
 	
 	public GridGameConfiguration(World world) {
 		this.baseWorld = world;
@@ -495,7 +497,7 @@ public class GridGameConfiguration {
 	}
 	
 	/**
-	 * Get the game hendler with the specified client id.
+	 * Get the game handler with the specified client id.
 	 * @param id
 	 * @return
 	 */
@@ -591,4 +593,11 @@ public class GridGameConfiguration {
 		
 		return iterationCount;
 	}
+
+	public Map<String, GameHandler> getHandlerLookup() {
+		
+		return handlerLookup;
+	}
+	
+
 }

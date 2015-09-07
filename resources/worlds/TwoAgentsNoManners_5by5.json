@@ -13,10 +13,10 @@
 	{"x":3, "y":3, "gt":2}
 	],
 	"horizontal_walls": [
-	{"pos": 1, "end1": 1, "end2": 3},
+	{"pos": 1, "end1": 2, "end2": 2},
 	{"pos": 2, "end1": 1, "end2": 3},
 	{"pos": 3, "end1": 1, "end2": 3},
-	{"pos": 4, "end1": 1, "end2": 3}
+	{"pos": 4, "end1": 2, "end2": 2}
 	],
 	"vertical_walls": [
 	{"pos": 1, "end1": 2, "end2": 2},

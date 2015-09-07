@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -70,11 +71,18 @@ public class GridGameManager {
 	public static final String QLEARNER_AGENT = "qlearner";
 	public static final String HUMAN_AGENT = "human";
 	public static final String EXP_NAME = "exp_name";
-	String COMMA_DELIMITER = ",";
+	public static final String 	AGENT_NAME = "agent_name";
+	public static final String REACTION_TIME = "reaction_time";
+	public static final String ACTION_NUMBER = "action_number";
+	public static final String GAME_NUMBER = "game_number";
+	public static final String IS_READY = "is_ready";
+	public static final String COMMA_DELIMITER = ",";
 
 	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.QLEARNER_AGENT, GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
 
 	public HashMap<String,ArrayList<String>> gameTypesForIds = new HashMap<String,ArrayList< String>>();
+
+	//add a logging string here that is pushed at end of game with episode data??
 
 
 	/**
@@ -294,6 +302,8 @@ public class GridGameManager {
 		} 
 		return response;
 	}
+
+	
 
 	/**
 	 * Whenever a new game is initialized, or configured the clients should be updated so they can see and modify it.
@@ -554,8 +564,8 @@ public class GridGameManager {
 		System.out.println("worldId: "+worldId);
 		//config_game message received
 		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
-		
-		
+
+
 		if(worldId == null){
 			agentTypes = new ArrayList<String>();
 			agentTypes.add(HUMAN_AGENT);
@@ -704,6 +714,7 @@ public class GridGameManager {
 			response.setString(GameHandler.AGENT, agentName);
 			response.setState(GameHandler.STATE, startState, domain);
 			response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
+			response.setString(GridGameManager.IS_READY,"true");
 			response.setString(GridGameManager.WORLD_ID, activeId);
 
 			response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
@@ -744,6 +755,7 @@ public class GridGameManager {
 			System.out.println("Not Fully Configured");
 			response.setError(true);
 			response.setString(WHY_ERROR, "This game has not been fully connected, or it is awaiting humans to join");
+			response.setString(GridGameManager.IS_READY,"false");
 			return;
 		}
 		//SEND BACK INITIALIZE MESSAGE STATE PAINTED HERE
@@ -776,21 +788,45 @@ public class GridGameManager {
 		String futureId = this.collections.getFutureId(future);
 		System.out.println("_______________Processing Game Completion in GGM___________________");
 		if (futureId != null) {
+
+			GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
+			//configuration.getHandlers
+			
+			String rt_path = analysisDirectory+"/"+configuration.getUniqueGameId()+"_reactionTimes_episode" + futureId+"_"+configuration.getGameNum()+".csv";
+			try {
+				FileWriter writer = new FileWriter(rt_path);
+
+				Map<String, GameHandler> handlers = configuration.getHandlerLookup();
+				Set<String> c_ids = handlers.keySet();
+				for(String c_id : c_ids){
+					writer.write(handlers.get(c_id).getActionRecord());
+					writer.flush();
+					handlers.get(c_id).clearActionRecord();
+				}
+
+				writer.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 			System.out.println("Logging in GGM: futureId: "+futureId);
 			World world = this.collections.removeRunningWorld(futureId);
 			this.collections.removeFuture(futureId);
-			GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
+
 			String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
 			System.out.println("Writing to " + path);
 			StateJSONParser parser = new StateJSONParser(world.getDomain());
 			result.writeToFile(path, parser);
 
 
+
 			//print map here
 			//file name, agent names and url_client_ids, experiment name
 
 			configuration = this.collections.getConfiguration(futureId);
-			if (!configuration.hasReachedMaxIterations()) {
+			if (!configuration.hasReachedMaxIterations())
+			{
 
 				List<GameHandler> handlers = this.collections.getHandlersWithGame(futureId);
 				System.out.println("Continuing game in GGM: "+handlers.size());

@@ -45,6 +45,8 @@ var GameConnect = function(){
 
     this.Open = function() {
         websocket = new WebSocket(wsurl);
+
+        
         
         websocket.onopen = function() {
             OnOpen();
@@ -87,10 +89,13 @@ var GameConnect = function(){
     var OnOpen = function() {
         console.log("Connection to websocket opened!");
 
+        
         for (var i = 0; i < callbacks.length; i++) {
             callbacks[i].onOpen();
         }
         isOpen = true;
+
+
     };
 
     var OnMessage = function(evt) {
@@ -158,4 +163,9 @@ var GameConnect = function(){
         };
         this.Send(token);
     };
+
+
+
+    
+
 }

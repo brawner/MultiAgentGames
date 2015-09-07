@@ -12,6 +12,18 @@ var MessageWriter = function() {
 		return msg;
 	};
 
+	this.log_reaction_time = function(client_id, agent_name, t_id, rt, game_number, action_number){
+		var msg = {};
+		msg[MessageFields.MSG_TYPE] = MessageFields.REACTION_TIME;
+		msg[MessageFields.CLIENT_ID] = client_id;
+		msg[MessageFields.AGENT_NAME] = agent_name;
+		msg[MessageFields.URL_ID] = t_id;
+		msg[MessageFields.REACTION_TIME] = rt;
+		msg[MessageFields.GAME_NUMBER] = game_number;
+		msg[MessageFields.ACTION_NUMBER] = action_number;
+		return msg;
+	}
+
 	this.startGameURLMsg = function(label, id, url_client) {
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.JOIN_GAME;

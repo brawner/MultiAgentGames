@@ -354,6 +354,34 @@ GridWorldPainter.prototype.draw_finalscreen = function () {
 	this.scoreboard_text = this.paper.add([text_params])[0];
 }
 
+GridWorldPainter.prototype.draw_waiting = function () {
+	var scoreboard_params = {
+		type : 'rect',
+		x : 0,
+		y : 0,
+		width : this.width,
+		height : this.height,
+		stroke : 'black',
+		fill : 'black'
+	};
+	this.scoreboard_background = this.paper.add([scoreboard_params])[0];
+
+	var text_params = {
+		type: 'text', 
+		x : this.width/2,
+		y : this.height/2,
+		text : 'Waiting for partner to join...',
+		'font-size' : this.width/30,
+		fill : 'white'
+	}
+	this.scoreboard_text = this.paper.add([text_params])[0];
+}
+
+GridWorldPainter.prototype.hide_waiting = function () {
+	this.scoreboard_background.animate({opacity : 0}, 250);
+	this.scoreboard_text.animate({opacity :0}, 250)
+}
+
 GridWorldPainter.prototype.hide_score = function () {
 	this.scoreboard_background.animate({opacity : 0}, 250);
 	this.scoreboard_text.animate({opacity :0}, 250)

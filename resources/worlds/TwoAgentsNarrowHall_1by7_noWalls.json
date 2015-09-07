@@ -1,0 +1,13 @@
+{
+	"description":"Two agents, One Dimension, Two goals. Width 7",
+	"width":7,
+	"height":1,
+	"agents": [
+	{"x":5, "y":0},
+	{"x":6, "y":0}
+	],
+	"goals": [
+	{"x":0, "y":0, "gt":1},
+	{"x":2, "y":0, "gt":2}
+	]
+}

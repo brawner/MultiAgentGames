@@ -1,5 +1,6 @@
 package networking.server;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -48,37 +49,49 @@ public class GameHandler {
 	public static final String CLOSE_GAME = "close_game";
 	public static final String SCORE = "score";
 	public static final String GAME_COMPLETED = "game_complete";
+	public static final String LOG_REACTION_TIME = "log_reation_time";
 	public static final String EXPERIMENT_COMPLETED = "experiment_complete";
 	public static final String CONFIG_GAME = "config_game";
 	public static final String RUN_URL_GAME = "run_url_game";
-	
+	public static final String AGENT_NAME = "agent_name";
+	public static final String REACTION_TIME = "reaction_time";
+	public static final String ACTION_NUMBER = "action_number";
+	public static final String GAME_NUMBER = "game_number";
+	public static final String COMMA_DELIMITER = ",";
+	public static final String CLIENT_ID = "client_id";
+	public static final String URL_ID = "url_id";
+
+	private String actionRecord = ""; 
 	/**
 	 * The websocket session for this connection.
 	 */
 	private Session session;
-	
+
 	/**
 	 * The associated network agent associated with this connection. Currently, it only handles a single agent for each connection.
 	 */
 	private NetworkAgent agent;
-	
+
 	/**
 	 * The thread id this game handler is running with.
 	 */
 	private String threadId;
-	
+
+	private GridGameManager server;
+
 	/**
 	 * The connected users current score. This is probably not where this should be tracked.
 	 */
 	private double currentScore;
 	private SGDomain domain;
-	
+
 	public GameHandler(GridGameManager server, Session session, String threadId) {
+		this.server = server;
 		this.session = session;
 		this.threadId = threadId;
 		this.currentScore = 0.0;
 	}
-	
+
 	/**
 	 * When a message is received by the server, it is also processed here. Pretty much only handles action updates, that are sent to the
 	 * associated NetworkAgent.
@@ -87,19 +100,35 @@ public class GameHandler {
 	 */
 	public void onMessage(GridGameServerToken msg, GridGameServerToken response) {
 		try {
-			System.out.println("Response Type Before: "+response.getString(GridGameManager.MSG_TYPE));
-		
+
 			String msgType = msg.getString(GridGameManager.MSG_TYPE);
-			
+
+
 			if (msgType.equals(JOIN_GAME)) {
-				
+
 				System.out.println("Running on Message at 88 GH "+msgType);
 				response.setString(GridGameManager.MSG_TYPE, INITIALIZE);
 				response.setString(GridGameManager.WORLD_ID, threadId);
-				
+
 				response.setString(RESULT, SUCCESS);
-				
+			}else if(msgType.equals(GridGameManager.REACTION_TIME)){
+
+
+				String agent_name = msg.getString(AGENT_NAME);
+
+				String client_id = msg.getString(CLIENT_ID);
+				String url_id = msg.getString(URL_ID);
+				int reaction_time = msg.getInt(REACTION_TIME);
+				int action_number = msg.getInt(ACTION_NUMBER);
+				int game_number = msg.getInt(GAME_NUMBER);
+
+				actionRecord+=client_id+COMMA_DELIMITER+agent_name+COMMA_DELIMITER+url_id+
+						COMMA_DELIMITER+game_number+COMMA_DELIMITER+action_number+COMMA_DELIMITER+reaction_time+"\n";
+				System.out.println("action Record: "+actionRecord);
+
 			} else if (msgType.equals(TAKE_ACTION)) {
+				System.out.println("Here 4");
+				System.out.flush();
 				String actionName = msg.getString(ACTION);
 				List<String> actionParams = msg.getStringList(ACTION_PARAMS);
 				String[] params = actionParams.toArray(new String[actionParams.size()]);
@@ -107,14 +136,20 @@ public class GameHandler {
 				GroundedSingleAction groundedAction = new GroundedSingleAction(agent.getAgentName(), action, params);
 				this.agent.setNextAction(groundedAction);
 				response.setString(RESULT, SUCCESS);
-				
-				
-			}else if(response.getString(GridGameManager.MSG_TYPE).equals(INITIALIZE)){
+
+
+			}else if(msgType.equals(INITIALIZE)){
+
 				System.out.println("Found an Initialize response: "+msgType);
 				//response.setString(GridGameManager.MSG_TYPE, null);
+			}else{
+				System.out.println("Here 6");
+				System.out.flush();
+				System.out.println("HERE in GH");
 			}
-			System.out.println("Response Type After: "+response.getString(GridGameManager.MSG_TYPE));
 		} catch (TokenCastException e) {
+
+			System.out.flush();
 			response.setError(true);
 		}
 	}
@@ -129,7 +164,7 @@ public class GameHandler {
 		request.setState(STATE, s, this.domain);
 		this.session.getRemote().sendStringByFuture(request.toJSONString());
 	}
-	
+
 	/**
 	 * When any update happens to the state, the client needs to be notified.
 	 * @param state
@@ -162,13 +197,13 @@ public class GameHandler {
 		token.setToken(ACTION, GridGameServerToken.tokenFromJointAction(jointAction));
 		token.setObject(REWARD, jointReward);
 		token.setBoolean(IS_TERMINAL, isTerminal);
-		
+
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
 		this.session.getRemote().sendStringByFuture(msg.toJSONString());
 	}
-	
+
 	/**
 	 * If any other message needs to be sent to the client, it is send here.
 	 * @param message
@@ -177,7 +212,7 @@ public class GameHandler {
 		System.out.println("updating client 175 method");
 		this.session.getRemote().sendStringByFuture(message.toJSONString());
 	}
-	
+
 	/**
 	 * Once a game has been completed, it's updated
 	 */
@@ -186,10 +221,11 @@ public class GameHandler {
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setString(GridGameManager.MSG_TYPE, GAME_COMPLETED);
 		msg.setDouble(SCORE, this.currentScore);
-		
+
 		this.updateClient(msg);
+
 	}
-	
+
 	/**
 	 * When the game is finished, the handler notifies the client.
 	 */
@@ -198,10 +234,10 @@ public class GameHandler {
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setString(GridGameManager.MSG_TYPE, EXPERIMENT_COMPLETED);
 		msg.setDouble(SCORE, this.currentScore);
-		
+
 		this.updateClient(msg);
 	}
-	
+
 	/**
 	 * Adds a new NetworkAgent to the world.
 	 * @param world
@@ -209,23 +245,33 @@ public class GameHandler {
 	public void addNetworkAgent(World world) {
 		this.agent = new NetworkAgent(this);
 		this.domain = world.getDomain();
-		
+
 		AgentType agentType = 
 				new AgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getSingleActions());
-		
+
 		agent.joinWorld(world, agentType);
 	}
 
 	public boolean isConnected() {
 		return this.session.isOpen();
 	}
-	
+
 	public NetworkAgent getNetworkAgent(){
 		return agent;
 	}
-	
+
 	public String getThreadId(){
 		return threadId;
+	}
+
+	public String getActionRecord() {
+
+		return actionRecord;
+	}
+
+	public void clearActionRecord() {
+		actionRecord = "";
+
 	}
 
 }

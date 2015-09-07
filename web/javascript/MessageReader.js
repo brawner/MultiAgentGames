@@ -31,6 +31,7 @@ var MessageReader = function() {
 		initializationMsg.agent_name = message[MessageFields.AGENT];
 		initializationMsg.state = self.getStateFromMessage(message[MessageFields.STATE]);
 		initializationMsg.world_type = message[MessageFields.WORLD_TYPE];
+		initializationMsg.ready = message[MessageFields.IS_READY];
 		return initializationMsg;
 
 	}

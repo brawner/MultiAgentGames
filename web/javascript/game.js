@@ -49,8 +49,16 @@ var Game = function() {
         previousState;
 
     var round_ended = false;
+    var step_start_time = 0;
     var more_games = true;
     var END_OF_ROUND_PAUSE = 5000;
+    var redirect_page;
+
+
+    var heartbeatSender;
+
+
+    var agent_waited = false;
 
     var vars = [], hash;
     var q = document.URL.split('?')[1];
@@ -64,6 +72,7 @@ var Game = function() {
     }
 
     var client_id;
+    var url_client_id;
     var marks_code = true;
     var stephens_code = false;
     var is_initialized = false;
@@ -76,6 +85,9 @@ var Game = function() {
     var self = this;
     var width = 768,
         height = 512;
+
+    var action_number =0;
+    var game_number = 0;
         
     var isGameIdValid = function(text) {
         return !isNaN(text);
@@ -99,7 +111,8 @@ var Game = function() {
             console.log(" running on URL");
             //if the game exists, have agent join game
             
-            var url_client_id = vars['t_id'];
+            url_client_id = vars['t_id'];
+            redirect_page = vars['redirect']+"/?"+"SID="+vars['SID']+"&t_id="+url_client_id;
 
             if(vars['human']!= null && vars['game']!=null){
                 var label = vars['game'];
@@ -161,6 +174,7 @@ var Game = function() {
         var action;
         console.log("On action press");
         //$(document).unbind('keydown.gridworld');
+        action_number++;
         switch (event.which) {
             case 37: //87: //
                 action = 'west';
@@ -180,6 +194,15 @@ var Game = function() {
             default:
                 return;
         }
+
+        //get reaction time
+        var rt = (+new Date) - step_start_time;
+        console.log("reaction time");
+        console.log(rt);
+        //client_id, agent_name, t_id, rt, game_number, action_number
+        var rt_msg = message_writer.log_reaction_time(client_id, agent_name, url_client_id, rt, game_number,action_number);
+        connection.Send(rt_msg);
+
         $(document).unbind('keydown.gridworld');
         var msg = message_writer.updateActionMsg(client_id, action, agent_name);
 
@@ -191,15 +214,10 @@ var Game = function() {
         }
 
          var send_action = $.proxy(function () {
+            console.log(msg);
+            connection.Send(msg); 
                     
-            var send_msg = $.proxy(function () {
-                            
-            }, this);
-            setTimeout(send_msg, END_OF_ROUND_PAUSE/3);
-                console.log(msg);
-                connection.Send(msg);
-                    
-            }, this);
+        }, this);
 
         setTimeout(send_action, END_OF_ROUND_PAUSE/4);
 
@@ -308,9 +326,6 @@ var Game = function() {
             case MessageFields.EXPERIMENT_COMPLETE:
                 experiment_complete(msg);
                 break;
-            case MessageFields.EXPERIMENT_COMPLETE:
-                experiment_complete(msg);
-                break;
             default:
                 break;
         }
@@ -324,7 +339,7 @@ var Game = function() {
 
     // Called when the websocket closes
     this.onClose = function(msg) {
-          connection_painter.draw(false, connection.URL(), 10, height + 10);
+          //connection_painter.draw(false, connection.URL(), 10, height + 10);
           //CALL MARK'S CODE HERE OR REMOVE THIS CODE
     };
 
@@ -336,7 +351,7 @@ var Game = function() {
     // Called when the websocket connects
     this.onOpen = function(msg) {
         console.log("Connected to server");
-        connection_painter.draw(true, connection.URL(), 10, height + 10);
+        //connection_painter.draw(true, connection.URL(), 10, height + 10);
         //CALL MARK'S CODE HERE OR REMOVE THIS CODE
     };
 
@@ -366,6 +381,16 @@ var Game = function() {
             console.log("No games initialized. Initialize some game first");
 
         }
+
+        var heartbeat = function(){
+
+            var msg = {};
+            msg[MessageFields.MSG_TYPE] = MessageFields.HEARTBEAT;
+            console.log(msg);
+            connection.Send(msg);
+        }
+
+        heartbeatSender = setInterval(heartbeat, 10000);
     };
 
     // When receiving an initialization message from the server, initialize a new game
@@ -401,13 +426,21 @@ var Game = function() {
                 painter.drawState(initState);
                 previousState = initState;
 
-                score_board = $('#score_board')
-                score_board.html('End of round')
-                score_board.hide();
+                step_start_time = +new Date;
+
+                //score_board = $('#score_board')
+                //score_board.html('End of round')
+                //score_board.hide();
 
                 text_messages = $('#messages');
                 text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore +"<br>      "+"<br>        "+"<br>        ");
 
+                // show waiting board here if only one
+                if(initMsg.ready == "false"){
+                    agent_waited = true;
+                    painter.draw_waiting();
+                    
+                }
                 is_initialized = true;
             }
         }
@@ -516,6 +549,10 @@ var Game = function() {
 
     // Handle a game update, and update the state and visualization
     this.update_game = function(msg) {
+        if(agent_waited){
+            painter.hide_waiting();
+            agent_waited = false;
+        }
         console.log("Running update_game with msg below");
         console.log(msg);
         var updateMsg = message_reader.getUpdateMsg(msg);
@@ -590,6 +627,7 @@ var Game = function() {
                 }, this);*/
 
                 var load_next_step = $.proxy(function () {
+                    step_start_time = +new Date;
                     if (round_ended) {
                         var draw_score = $.proxy(function () {
                             painter.draw_score()
@@ -630,6 +668,7 @@ var Game = function() {
                 var load_next_round = (function (initState) {
                     return function () {
                         painter.drawState(initState);
+                        step_start_time = +new Date;
                         previousState = initState;
 
                         text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        ");
@@ -706,7 +745,8 @@ var Game = function() {
                 round_ended = true;
                
                 console.log(round_ended);
-                
+                game_number++;
+                action_number = 0;
 
             }
            
@@ -722,20 +762,33 @@ var Game = function() {
             if(marks_code){
                 
                 console.log("In experiment_complete");
+
+                var closeAlert = function(){
+                    return 'Please do not close or reload this window before completing the task. Doing so will invalidate your responses!'
+                    }
+                $(window).bind('beforeunload',closeAlert);
+
                  var load_next_step = $.proxy(function () {
                     
                         var draw_finalscreen = $.proxy(function () {
                             painter.draw_finalscreen()
                         }, this)
-                        
+                        var go_to_next_url = $.proxy(function () {
+                            $(location).attr('href',redirect_page);
+                        }, this)
+
                         setTimeout(draw_finalscreen, END_OF_ROUND_PAUSE);
+                        setTimeout(go_to_next_url, END_OF_ROUND_PAUSE*2);
+                        //add timeout for redirect
+
+
 
                 }, this);
+                $(window).unbind('beforeunload');
 
                 setTimeout(load_next_step, END_OF_ROUND_PAUSE/3);
             }
-           
-            //CALL MARK'S CODE HERE
+
         
     }
 
