@@ -40,9 +40,9 @@ public class GridGameServerCollections {
 	private final AtomicLong clientIdCounter;
 	
 	public GridGameServerCollections() {
-		this.threadIdCounter = new AtomicLong();
-		this.activeIdCounter = new AtomicLong();
-		this.clientIdCounter = new AtomicLong();
+		this.threadIdCounter = new AtomicLong(0);
+		this.activeIdCounter = new AtomicLong(1000);
+		this.clientIdCounter = new AtomicLong(1000000);
 		
 		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
 		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());

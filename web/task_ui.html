@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+	#experiment {
+	    width: 60%;
+	    margin: 0 auto;
+	}
+
+	#message_outer {
+		background-color:black;
+	}
+
+	#messages {
+		font-size: 30px;
+		background-color:black;
+		color:white;
+		text-align : left;
+	    margin-left: 50px;
+	}
+	</style>
+	<!--utility libraries-->
+	<script src="./js/jquery.js"></script>
+	<script src="./js/tiny-pubsub.js"></script>
+	<script src="./js/raphael.js"></script>
+	<script src="./js/underscore.js"></script>
+
+	<!--experiment libraries-->
+	<script src="./js/gridworld_painter.js"></script>
+	<script src="./js/clientMDP.js"></script>
+
+	<script src="./js/demos.js"></script>
+
+	<script type='text/javascript'>
+	"use strict"
+		$(document).ready(function () {
+			var blocks = [demo0, demo1, demo2, demo3, demo4, demo5, demo6, endDemo];
+			var curBlock;
+
+			var startNextBlock = function (event) {
+				if (event.which == 13) {
+					$(document).unbind('keydown.continue');
+					$.publish('killtimers');
+					if (typeof curBlock !== 'undefined') {
+						curBlock.end();
+					}
+					curBlock = blocks.shift();
+					curBlock.start();
+					if (blocks.length > 0) {
+						setTimeout(function () {
+							$(document).bind('keydown.continue', startNextBlock);
+						}, 1)
+					}
+				}
+			}
+
+			$(document).bind('keydown.continue', startNextBlock);
+		});
+	</script>
+</head>
+<body>
+	<div id = 'experiment'>
+		<div id='message_outer'>
+			<div id='messages'>
+				<br> 
+			Press enter to start<br>
+			<br> 
+			</div>
+		</div>
+		<br>
+		<div id="task_display"></div>
+	</div>
+</body>
+</html>

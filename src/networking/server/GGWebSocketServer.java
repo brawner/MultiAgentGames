@@ -41,7 +41,9 @@ public class GGWebSocketServer extends WebSocketAdapter{
     public void onWebSocketText(String message)
     {
         super.onWebSocketText(message);
-        System.out.println("Received TEXT message: " + message);
+        if (!message.contains(GameHandler.HEARTBEAT)) {
+            System.out.println("Received TEXT message: " + message);        	
+        }
         GridGameServerToken token = GridGameServerToken.tokenFromJSONString(message);
         GridGameServerToken response = this.server.onMessage(token);
         try {

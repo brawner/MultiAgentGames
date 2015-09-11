@@ -34,6 +34,7 @@ public class GameHandler {
 	public final static String LOAD_WORLDS = "load_worlds";
 	public final static String REMOVE_GAME = "remove_game";
 	public final static String AGENT_TYPE = "agent_type";
+	public final static String HEARTBEAT = "heartbeat";
 	public final static String ACTION_REQUEST = "action_sorely_needed";
 	public final static String STATE = "state";
 	public final static String ACTION = "action";
@@ -142,10 +143,11 @@ public class GameHandler {
 
 				System.out.println("Found an Initialize response: "+msgType);
 				//response.setString(GridGameManager.MSG_TYPE, null);
-			}else{
-				System.out.println("Here 6");
-				System.out.flush();
-				System.out.println("HERE in GH");
+			}else if (msgType.equals(HEARTBEAT)){
+				
+			}else {
+				System.out.println("Unhandled message type: " + msgType);
+				
 			}
 		} catch (TokenCastException e) {
 
@@ -236,6 +238,8 @@ public class GameHandler {
 		msg.setDouble(SCORE, this.currentScore);
 
 		this.updateClient(msg);
+		
+		this.session.close();
 	}
 
 	/**
