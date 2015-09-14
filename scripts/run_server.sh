@@ -18,13 +18,13 @@ if [ -n "$PIDS_NOT_BEING_KILLED" ]
 	then
 	echo "There are java processes run by another user that need to be killed."
 	echo "Please kill them manually."
-	echo "Offending PIDs: $PIDS_NOT_BEING_KILLED"
+	echo "Offending PIDs:$PIDS_NOT_BEING_KILLED"
 	exit 1
 fi
 
 if [ -n "$PIDS_TO_KILL" ]
 	then
-	echo "Killing your user processes: $PIDS_TO_KILL"
+	echo "Killing your user processes:$PIDS_TO_KILL"
 	kill $PIDS_TO_KILL
 fi
 
