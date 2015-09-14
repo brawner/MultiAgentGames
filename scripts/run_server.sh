@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+source ~/.profile
 
 PIDS_TO_KILL=""
 PIDS_NOT_BEING_KILLED=""

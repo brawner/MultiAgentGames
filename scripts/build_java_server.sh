@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+source ~/.profile
 
 cd ~/workspace/burlap
 ant dist
