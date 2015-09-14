@@ -164,7 +164,7 @@ public class GameHandler {
 		GridGameServerToken request = new GridGameServerToken();
 		request.setString(GridGameManager.MSG_TYPE, ACTION_REQUEST);
 		request.setState(STATE, s, this.domain);
-		this.session.getRemote().sendStringByFuture(request.toJSONString());
+		this.updateClient(request);
 	}
 
 	/**
@@ -178,7 +178,7 @@ public class GameHandler {
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
-		this.session.getRemote().sendStringByFuture(msg.toJSONString());
+		this.updateClient(msg);
 	}
 
 	/**
@@ -203,7 +203,7 @@ public class GameHandler {
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
-		this.session.getRemote().sendStringByFuture(msg.toJSONString());
+		this.updateClient(msg);
 	}
 
 	/**
@@ -212,7 +212,9 @@ public class GameHandler {
 	 */
 	public void updateClient(GridGameServerToken message) {
 		System.out.println("updating client 175 method");
-		this.session.getRemote().sendStringByFuture(message.toJSONString());
+		if (this.session.isOpen()) {
+			this.session.getRemote().sendStringByFuture(message.toJSONString());
+		}
 	}
 
 	/**

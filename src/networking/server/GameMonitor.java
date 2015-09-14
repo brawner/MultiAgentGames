@@ -29,6 +29,12 @@ public class GameMonitor implements Callable<Boolean>{
 			this.futures.add(future);
 		}
 	}
+	
+	public void removeFuture(Future<GameAnalysis> future) {
+		synchronized(this.futures) {
+			this.futures.remove(future);
+		}
+	}
 	@Override
 	public Boolean call() throws Exception {
 		try {

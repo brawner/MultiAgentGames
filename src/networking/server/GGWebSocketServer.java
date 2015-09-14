@@ -18,14 +18,16 @@ import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 public class GGWebSocketServer extends WebSocketAdapter{
 	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
 	private static final String OUTPUT_DIRECTORY = System.getProperty("user.home") + "/grid_games/results";
+	private static final String EXPERIMENT_DIRECTORY = System.getProperty("user.home") + "/grid_games/experiments/";
 	private GridGameManager server;
 	private Session session;
+	
 	
 	public GGWebSocketServer() {
 		this.server = GridGameManager.connect();
 	}
-	public GGWebSocketServer(String gameDirectory, String outputDirectory) {
-		this.server = GridGameManager.connect(gameDirectory, outputDirectory);
+	public GGWebSocketServer(String gameDirectory, String outputDirectory, String experimentDirectory) {
+		this.server = GridGameManager.connect(gameDirectory, outputDirectory, experimentDirectory);
 	}
 	
 	@Override
@@ -34,6 +36,9 @@ public class GGWebSocketServer extends WebSocketAdapter{
         super.onWebSocketConnect(sess);
         System.out.println("Socket Connected: " + sess);
         this.server.onConnect(sess);
+        if (this.session != null && this.session != sess) {
+        	throw new RuntimeException("Overwriting existing session");
+        }
         this.session = sess;
     }
     
@@ -47,7 +52,7 @@ public class GGWebSocketServer extends WebSocketAdapter{
         GridGameServerToken token = GridGameServerToken.tokenFromJSONString(message);
         GridGameServerToken response = this.server.onMessage(token);
         try {
-        	if (!response.isEmpty()) {
+        	if (!response.isEmpty() && this.session.isOpen()) {
 				this.session.getRemote().sendString(response.toJSONString());
 			}
 		} catch (IOException e) {
@@ -76,6 +81,7 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	public static void main(String[] args) {
 		String gameDirectory = WORLD_DIRECTORY;
 		String outputDirectoryRoot = OUTPUT_DIRECTORY;
+		String experimentDirectory = EXPERIMENT_DIRECTORY;
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 		Date date = new Date();
@@ -91,7 +97,7 @@ public class GGWebSocketServer extends WebSocketAdapter{
 			outputDirectory = args[1];
 		}
 		
-		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory);
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, experimentDirectory);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8787);
