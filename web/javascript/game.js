@@ -17,6 +17,9 @@ function fnMain(jQuery) {
 /**
 * This handles the coordination for an interactive game.
 */
+
+
+
 var Game = function() {
     "use strict";
     
@@ -88,6 +91,7 @@ var Game = function() {
 
     var action_number =0;
     var game_number = 0;
+    var last_msg;
         
     var isGameIdValid = function(text) {
         return !isNaN(text);
@@ -259,6 +263,11 @@ var Game = function() {
                 
             painter.draw(element, button);
         }
+
+        $(window).focus(function() {
+            console.log("Printing again %O", currentState);
+            painter.drawState(currentState);
+        });
         
     };
 
@@ -568,6 +577,8 @@ var Game = function() {
             }
             currentAction = undefined;
         }
+
+    
         if (stephens_code) {
             painter.draw(currentState, currentScore, currentAction);    
         }
