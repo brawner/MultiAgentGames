@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+	#experiment {
+	    width: 60%;
+	    margin: 0 auto;
+	}
+
+	#message_outer {
+		background-color:black;
+	}
+
+	#messages {
+		font-size: 30px;
+		background-color:black;
+		color:white;
+		text-align : left;
+	    margin-left: 50px;
+	}
+	</style>
+	 <title>Game</title>
+	
+
+	
+	
+</head>
+<body>
+	<!--utility libraries-->
+	<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
+    <script src="javascript/jquery.js"></script>
+	<script src="javascript/game.js"></script>	<!-- Handles websocket connections -->
+	<script src="javascript/connect.js"></script>
+	<script src="javascript/handler.js"></script>
+	<script src="javascript/MessageReader.js"></script>
+	<script src="javascript/MessageWriter.js"></script>
+	<script src="javascript/MessageFields.js"></script>
+	<script src="javascript/objects.js"></script>
+	<script src="javascript/painter.js"></script>
+	<script src="javascript/config.js"></script>
+	<script src="javascript/clientMDP.js"></script>
+	<script src="javascript/demos.js"></script>
+	<script src="javascript/gridworld_painter.js"></script>
+	<script src="javascript/raphael.js"></script>
+	<script src="javascript/tiny-pubsub.js"></script>
+	<script src="javascript/underscore.js"></script>
+	<script>
+		$(document).ready(fnMain);
+		
+	</script>
+	<div id = 'experiment'>
+		<div id='message_outer'>
+			<div id='messages'>
+				
+			</div>
+		</div>
+		<br>
+		<div id="task_display"></div>
+	</div>
+</body>
+</html>

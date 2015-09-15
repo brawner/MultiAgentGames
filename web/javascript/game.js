@@ -14,6 +14,8 @@ function fnMain(jQuery) {
     game.go();    
 }
 
+window['fnMain'] = fnMain;
+
 /**
 * This handles the coordination for an interactive game.
 */
