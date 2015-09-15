@@ -5,4 +5,4 @@ source ~/.profile
 cd ~/workspace/MultiAgentGames
 bash scripts/build_java_server.sh
 
-bash scripts/run_server.sh
+nohup bash scripts/run_server.sh &

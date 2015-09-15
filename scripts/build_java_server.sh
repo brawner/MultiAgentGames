@@ -16,4 +16,6 @@ mkdir -p ~/grid_games/results
 
 rsync -avz ./resources/ ~/grid_games/
 rsync -avz ./web/ /var/www/multi_grid_games/
+sudo chown $USER:www-data -R /var/www/multi_grid_games
+sudo chmod 750 -R /var/www/multi_grid_games
 
