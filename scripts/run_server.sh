@@ -11,6 +11,7 @@ while read -r line; do
 		then 
 		PIDS_TO_KILL=$PIDS_TO_KILL" $PID"
 	else 
+		echo "User: $P_USER, Process: $PID"
 		PIDS_NOT_BEING_KILLED=$PIDS_NOT_BEING_KILLED" $PID"
 	fi
 done < <(ps -f -C java |grep multi-agent-games.jar)
@@ -29,5 +30,5 @@ if [ -n "$PIDS_TO_KILL" ]
 	kill $PIDS_TO_KILL
 fi
 
-echo "Staring java process"
+echo "Starting java process"
 nohup java multi-agent-games.jar networking.server.GGWebSocketServer &
