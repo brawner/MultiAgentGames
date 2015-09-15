@@ -264,9 +264,15 @@ var Game = function() {
             painter.draw(element, button);
         }
 
+        var refresh_game = $.proxy(function () {
+            var initState = getAgentLocals(currentState);
+            console.log("Printing again %O", initState);
+            painter.drawState(initState);
+        });
+
         $(window).focus(function() {
-            console.log("Printing again %O", currentState);
-            painter.drawState(currentState);
+            
+            setTimeout(refresh_game, 10);
         });
         
     };
@@ -677,6 +683,7 @@ var Game = function() {
                     }
                 }*/
             } 
+
             if(round_ended){
                 //if its an initial state, wait a bit to load
                 var initState = getAgentLocals(updateMsg.state);
@@ -690,11 +697,11 @@ var Game = function() {
                         text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        ");
                         round_ended = false;
                     }
-                }) (initState)
+                }) (initState);
 
-                load_next_round = $.proxy(load_next_round, this)
+                load_next_round = $.proxy(load_next_round, this);
 
-                setTimeout(load_next_round, END_OF_ROUND_PAUSE)
+                setTimeout(load_next_round, END_OF_ROUND_PAUSE);
             }
         }
         //receive next state data, actions, 
@@ -754,18 +761,16 @@ var Game = function() {
     var game_complete = function(msg) {
         var closeMsg = message_reader.getCloseMsg(msg);
         if (typeof closeMsg !== 'undefined') {
+            
             if (stephens_code) {
                 painter.drawEnd(currentState, closeMsg.score);    
             }
-            if(marks_code){
-                round_ended = true;
+            
+            round_ended = true;
                
-                console.log("Round " + game_number + " ended");
-                game_number++;
-                action_number = 0;
-
-            }
-           
+            console.log("Round " + game_number + " ended");
+            game_number++;
+            action_number = 0;
             //CALL MARK'S CODE HERE
         }
     };
