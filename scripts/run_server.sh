@@ -5,7 +5,7 @@ source ~/.profile
 PIDS_TO_KILL=""
 PIDS_NOT_BEING_KILLED=""
 while read -r line; do
-	P_USER=$(echo line | awk '{print $1}')
+	P_USER=$(echo $line | awk '{print $1}')
 	PID=$(echo $line | awk '{print $2}')
 	if [ "$P_USER" == "$USER" ] 
 		then 
