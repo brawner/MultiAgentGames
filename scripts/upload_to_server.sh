@@ -16,4 +16,4 @@ cd ~/workspace/MultiAgentGames
 git checkout $MAG_BRANCH
 git pull
 rsync -avz --exclude '.git' ./ $SERVER:~/workspace/MultiAgentGames
-ssh -t $SERVER "bash ~/workspace/MultiAgentGames/scripts/build_and_run.sh"
+ssh $SERVER "~/workspace/MultiAgentGames/scripts/build_and_run.sh"
