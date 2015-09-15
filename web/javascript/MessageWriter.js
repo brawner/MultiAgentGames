@@ -64,7 +64,7 @@ var MessageWriter = function() {
 		return msg;
 	};
 
-	this.urlJoinMsg = function(label,agentDescriptions,url_client_id,exp_name){
+	this.urlJoinMsg = function(label,agentDescriptions,url_client_id,exp_name, vars){
 		
 		var msg = {};
 		msg[MessageFields.MSG_TYPE] = MessageFields.RUN_URL_GAME;
@@ -73,6 +73,16 @@ var MessageWriter = function() {
 		msg[MessageFields.AGENT_TYPE] = "human";
 		msg[MessageFields.URL_ID] = url_client_id;
 		msg[MessageFields.EXP_NAME] = exp_name;
+
+		var other_vars = {}
+		for (var key in vars) {
+			if (key in msg) {
+				continue;
+			}
+			other_vars[key] = vars[key];
+		}
+
+		msg[MessageFields.OTHER_VARS] = other_vars;
 
 		return msg;
 

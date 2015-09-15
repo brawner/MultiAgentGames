@@ -68,12 +68,15 @@ public class GridGameManager {
 	public static final String IS_READY = "is_ready";
 	public static final String COMMA_DELIMITER = ",";
 	public static final String CLOSED_PLAYER_LEAVING = "closed_by_player_leaving";
+	public static final String DEBUG = "debug";
+	public static final String OTHER_VARS = "other_vars";
 	
 	public static final List<String> ALLOWED_AGENTS = 
 			Arrays.asList(GridGameManager.QLEARNER_AGENT, 
 						  GridGameManager.COOPERATIVE_AGENT, 
 						  GridGameManager.RANDOM_AGENT, 
 						  GridGameManager.HUMAN_AGENT);
+	
 	
 
 	public HashMap<String,ArrayList<String>> gameTypesForIds = new HashMap<String,ArrayList< String>>();
@@ -571,6 +574,13 @@ public class GridGameManager {
 		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		String worldId = token.getString(GridGameManager.WORLD_ID);
 		String experimentType = token.getString(EXP_NAME);
+		GridGameServerToken otherVars = token.getToken(OTHER_VARS);
+		Boolean runDebug = false;
+		if (otherVars != null) {
+			String runDebugStr = otherVars.getString(GridGameManager.DEBUG);
+			runDebug = (runDebugStr == null) ? false : Boolean.parseBoolean(runDebugStr);
+		}
+		
 		System.out.println("Client " + clientId + " with turk id: " + turk_id + " is starting a game. " +
 				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
 		
@@ -651,7 +661,9 @@ public class GridGameManager {
 			//init_game message received
 			if (world != null) {
 				configuration = new GridGameConfiguration(world.copy());
-
+				if (runDebug) {
+					configuration.setMaxIterations(2);
+				}
 				activeId = this.collections.getUniqueThreadId();
 				if(!gameTypesForIds.containsKey(worldId)){
 					gameTypesForIds.put(worldId, new ArrayList<String>());

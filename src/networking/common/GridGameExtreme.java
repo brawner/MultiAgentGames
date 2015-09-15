@@ -10,6 +10,7 @@ import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanics;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer.CellPainter;
+import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.Attribute;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.GroundedProp;
@@ -30,9 +31,13 @@ public class GridGameExtreme {
 	public static String ATTVALUE = "value";
 	public static String PFINREWARD = "in_reward";
 	
-	public static SGDomain generateDomain(GridGame gridGame) {
+	public static SGDomain generateDomain(GridGame gridGame, boolean randomlyBreakTies) {
 		//gridGame.setMaxDim(5);
 		SGDomain domain = (SGDomain) gridGame.generateDomain();
+		if (!randomlyBreakTies) {
+			domain.setJointActionModel(new GridGameStandardMechanicsWithoutTieBreaking(domain, gridGame.getSemiWallProb()));
+		}
+		
 		Attribute xAtt = domain.getAttribute(GridGame.ATTX);
 		Attribute yAtt = domain.getAttribute(GridGame.ATTY);
 		Attribute cost = new Attribute(domain, ATTVALUE, Attribute.AttributeType.INT);
@@ -45,6 +50,10 @@ public class GridGameExtreme {
 		
 		AgentInReward agentInReward = new AgentInReward(PFINREWARD, domain);
 		return domain;
+	}
+	
+	public static SGDomain generateDomain(GridGame gridGame) {
+		return generateDomain(gridGame, true);
 	}
 	
 	public static JointActionModel generateJointActionModel(Domain domain) {

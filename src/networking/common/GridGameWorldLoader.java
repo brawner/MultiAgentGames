@@ -45,13 +45,21 @@ public class GridGameWorldLoader {
 	public static World loadWorld(GridGameServerToken token) {
 		GridGame gridGame = new GridGame();
 
-		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
-		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
-		JointReward jointReward = GridGameExtreme.generateJointReward(domain);
+		
 
 
 		World world = null;
 		try {
+			Boolean randomlyBreakTies = token.getBoolean(WorldFile.RANDOM_TIE_BREAKS);
+			SGDomain domain;
+			if (randomlyBreakTies == null) {
+				domain = GridGameExtreme.generateDomain(gridGame);
+			} else {
+				domain = GridGameExtreme.generateDomain(gridGame, randomlyBreakTies);
+			}
+			TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
+			JointReward jointReward = GridGameExtreme.generateJointReward(domain);
+			
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
 

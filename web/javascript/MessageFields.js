@@ -83,3 +83,5 @@ MessageFields.ACTION_NUMBER = "action_number";
 MessageFields.AGENT_NAME = "agent_name";
 MessageFields.IS_READY = "is_ready";
 MessageFields.HEARTBEAT = "heartbeat";
+MessageFields.SERVER = "server";
+MessageFields.OTHER_VARS = "other_vars";

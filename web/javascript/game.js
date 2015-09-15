@@ -63,17 +63,23 @@ var Game = function() {
 
     var agent_waited = false;
 
-    var vars = [], hash;
+    var vars = {};
     var q = document.URL.split('?')[1];
     if(q != undefined){
         q = q.split('&');
         for(var i = 0; i < q.length; i++){
-            hash = q[i].split('=');
-            vars.push(hash[1]);
+            var hash = q[i].split('=');
+            //vars.push(hash[1]);
             vars[hash[0]] = hash[1];
             }
     }
+    vars.length=q.length;
+    console.log("Vars: %O", vars);
 
+    var preferred_url;
+    if (MessageFields.SERVER in vars){
+        preferred_url = vars[MessageFields.SERVER];
+    }
     var client_id;
     var url_client_id;
     var marks_code = true;
@@ -129,13 +135,12 @@ var Game = function() {
                 var label = null;
                 var exp_name = vars['exp_name'];
                 agents = null;
-
-
             }
+
             console.log("Running based on URL");
             
 
-            var msg = message_writer.urlJoinMsg(label,agents,url_client_id, exp_name);
+            var msg = message_writer.urlJoinMsg(label,agents,url_client_id, exp_name, vars);
             console.log(msg)
             connection.Send(msg);
             /*
@@ -311,6 +316,9 @@ var Game = function() {
     
     // Initial conenction to server method
     var connectToServer = function() {
+        if (connection.IsValidUrl(preferred_url)) {
+                connection.SetUrl(preferred_url);
+        }     
         connection.AddCallback(self);
         connection.Open();
     };

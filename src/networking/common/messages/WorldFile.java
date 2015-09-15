@@ -12,4 +12,5 @@ public class WorldFile {
 	public static final String REWARDS = "rewards";
 	public static final String GOALS_PER_AGENT = "goals_per_agent";
 	public static final String NUM_AGENTS = "num_agents";
+	public static final String RANDOM_TIE_BREAKS = "random_tie_breaks";
 }

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
-
+TIMESTAMP=$(date +"%m_%d_%y__%M_%k")
+SERVER_OUT_DIR="~/grid_games/server_out/$TIMESTAMP"
+mkdir -p $SERVER_OUT_DIR
 DEFAULT_SERVER="elzar"
 BURLAP_BRANCH="multi_agent_games"
 MAG_BRANCH="master"
@@ -16,4 +18,4 @@ cd ~/workspace/MultiAgentGames
 git checkout $MAG_BRANCH
 git pull
 rsync -avz --exclude '.git' ./ $SERVER:~/workspace/MultiAgentGames
-ssh -t $SERVER "~/workspace/MultiAgentGames/scripts/build_and_run.sh"
+ssh -t $SERVER "~/workspace/MultiAgentGames/scripts/build_and_run.sh 2> $SERVER_OUT_DIR/std.err > $SERVER_OUT_DIR/std.out"

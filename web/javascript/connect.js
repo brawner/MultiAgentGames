@@ -40,6 +40,36 @@ var GameConnect = function(){
     };
 
     this.IsValidUrl = function(url) {
+        if (typeof url !== 'string') {
+            console.log("URL value is not a string");
+            return false;
+        }
+        var split_values = url.split(":");
+        if (split_values.length !== 3) {
+            console.log("URL needs to be of the form ws://server_url:port/web_socket_handler_name/");
+            return false;
+        }
+        if (split_values[0] !== "ws") {
+            console.log("URL needs to be a websocket address (use ws://)");
+            return false;
+        }
+
+        var port_events = split_values[2];
+        var port_split = port_events.split("/");
+        if (port_split.length < 2) {
+            console.log("URL needs a port and a events handler name");
+            return false;
+        }
+
+        if (isNaN(port_split[0])) {
+            console.log("URL does not contain a valid port");
+            return false;
+        }
+
+        if (port_split[1].length == 0) {
+            console.log("URL does not contain an appropriate events handler name");
+            return false;
+        }
         return true;
     };
 
