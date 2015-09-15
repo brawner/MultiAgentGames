@@ -100,6 +100,7 @@ public class GridGameWorldLoader {
 		return world;
 	}
 	
+	
 	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop, double noopCost){
 		GridGame gridGame = new GridGame();
 		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
@@ -142,8 +143,8 @@ public class GridGameWorldLoader {
 		return world;
 	}
 	
-	
 
+	
 	public static World loadWorld(String filename) {
 		GridGameServerToken fileToken = GridGameWorldLoader.loadText(filename);
 		return GridGameWorldLoader.loadWorld(fileToken);
@@ -238,6 +239,8 @@ public class GridGameWorldLoader {
 		private static final long serialVersionUID = 3175358082484906501L;
 
 	}
+
+
 
 
 
