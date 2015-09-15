@@ -1,19 +1,32 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="utf-8" />
-    <title>Game</title>
- 
-    <!-- CSS -->
-    <style></style>
+	<style>
+	#experiment {
+	    width: 60%;
+	    margin: 0 auto;
+	}
+
+	#message_outer {
+		background-color:black;
+	}
+
+	#messages {
+		font-size: 30px;
+		background-color:black;
+		color:white;
+		text-align : left;
+	    margin-left: 50px;
+	}
+	</style>
+	 <title>Game</title>
+	
+
+	
+	
 </head>
 <body>
-	<canvas id="GGCanvas" width="768" height="512" style="position: absolute;z-index:1;border:1px solid #000000">
-</canvas>
-    <input id="text_box" type="text" align="center" style="z-index:2; position:absolute; left: 240px; top: 200px; align: center"/>
-    <button id="submit_button" style="z-index:2; position:absolute; left: 240px; top: 230px; align:center">Submit</button>
-	
-    <!-- Preload Scripts -->
+	<!--utility libraries-->
 	<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
     <script src="javascript/jquery.js"></script>
 	<script src="javascript/game.js"></script>	<!-- Handles websocket connections -->
@@ -35,5 +48,14 @@
 		$(document).ready(fnMain);
 		
 	</script>
+	<div id = 'experiment'>
+		<div id='message_outer'>
+			<div id='messages'>
+				
+			</div>
+		</div>
+		<br>
+		<div id="task_display"></div>
+	</div>
 </body>
 </html>
