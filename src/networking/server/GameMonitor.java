@@ -38,10 +38,18 @@ public class GameMonitor implements Callable<Boolean>{
 	@Override
 	public Boolean call() throws Exception {
 		try {
+			long count = 0;
+			int previousNumber = 0;
 		while(true) {
 			List<Future<GameAnalysis>> toRemove = new ArrayList<Future<GameAnalysis>>();
 			List<GameAnalysis> analyses = new ArrayList<GameAnalysis>();
 			synchronized(this.futures){ 
+				count++;
+				if (this.futures.size() != previousNumber) {
+					System.out.println("Number of active games currently running " + this.futures.size());
+					previousNumber = this.futures.size();
+				}
+
 				for (Future<GameAnalysis> future : this.futures) {
 					try {
 						GameAnalysis analysis = future.get(0, TimeUnit.SECONDS);
