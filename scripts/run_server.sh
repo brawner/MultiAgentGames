@@ -31,4 +31,4 @@ if [ -n "$PIDS_TO_KILL" ]
 fi
 
 echo "Starting java process"
-nohup java multi-agent-games.jar networking.server.GGWebSocketServer &
+nohup java -cp ~/workspace/MultiAgentGames/multi-agent-games.jar networking.server.GGWebSocketServer &
