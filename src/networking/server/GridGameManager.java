@@ -5,12 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -26,21 +28,9 @@ import networking.common.messages.WorldFile;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.behavior.statehashing.NameDependentStateHashFactory;
-import burlap.behavior.statehashing.StateHashFactory;
 import burlap.behavior.stochasticgame.GameAnalysis;
-import burlap.behavior.stochasticgame.PolicyFromJointPolicy;
-import burlap.behavior.stochasticgame.agents.RandomAgent;
-import burlap.behavior.stochasticgame.agents.mavf.MultiAgentVFPlanningAgent;
-import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.MaxQ;
-import burlap.behavior.stochasticgame.mavaluefunction.policies.EGreedyMaxWellfare;
-import burlap.behavior.stochasticgame.mavaluefunction.vfplanners.MAValueIteration;
-import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.common.StateJSONParser;
 import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.AgentType;
-import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 
@@ -77,8 +67,14 @@ public class GridGameManager {
 	public static final String GAME_NUMBER = "game_number";
 	public static final String IS_READY = "is_ready";
 	public static final String COMMA_DELIMITER = ",";
-
-	public static final List<String> ALLOWED_AGENTS = Arrays.asList(GridGameManager.QLEARNER_AGENT, GridGameManager.COOPERATIVE_AGENT, GridGameManager.RANDOM_AGENT, GridGameManager.HUMAN_AGENT);
+	public static final String CLOSED_PLAYER_LEAVING = "closed_by_player_leaving";
+	
+	public static final List<String> ALLOWED_AGENTS = 
+			Arrays.asList(GridGameManager.QLEARNER_AGENT, 
+						  GridGameManager.COOPERATIVE_AGENT, 
+						  GridGameManager.RANDOM_AGENT, 
+						  GridGameManager.HUMAN_AGENT);
+	
 
 	public HashMap<String,ArrayList<String>> gameTypesForIds = new HashMap<String,ArrayList< String>>();
 
@@ -93,6 +89,7 @@ public class GridGameManager {
 
 	private final String gameDirectory;
 	private final String analysisDirectory;
+	private final String experimentDirectory;
 
 	/**
 	 * The game monitor constantly polls the running worlds to find which ones finish, and report their completion
@@ -111,12 +108,12 @@ public class GridGameManager {
 	 * @param gameDirectory
 	 * @param analysisDirectory
 	 */
-	private GridGameManager(String gameDirectory, String analysisDirectory) {
+	private GridGameManager(String gameDirectory, String analysisDirectory, String experimentDirectory) {
 		this.collections = new GridGameServerCollections();
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.gameDirectory = gameDirectory;
 		this.analysisDirectory = analysisDirectory;
-
+		this.experimentDirectory = experimentDirectory;
 		this.collections.addWorldTokens(this.loadWorlds(null));
 
 		this.monitor = new GameMonitor(this);
@@ -142,9 +139,9 @@ public class GridGameManager {
 	 * @param outputDirectory
 	 * @return
 	 */
-	public static GridGameManager connect(String gameDirectory, String outputDirectory) {
+	public static GridGameManager connect(String gameDirectory, String outputDirectory, String experimentDirectory) {
 		if (GridGameManager.singleton == null) {
-			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory);
+			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory, experimentDirectory);
 			GridGameManager.singleton = singleton;
 		}
 		return GridGameManager.singleton;
@@ -197,7 +194,30 @@ public class GridGameManager {
 	 * @param session
 	 */
 	public void onWebSocketClose(Session session) {
-		this.collections.removeSession(session);
+		String clientId = this.collections.getClientId(session);
+		if (clientId != null) {
+			this.processClientExiting(clientId);
+		}		
+	}
+	
+	private void processClientExiting(String clientId) {
+		String activeId = this.collections.getClientsGame(clientId);
+		if (activeId == null) {
+			throw new RuntimeException("Your active Id is null");
+		}
+		GameHandler exitedHandler = this.collections.getHandler(clientId);
+		
+		GridGameConfiguration configuration = this.collections.getConfiguration(activeId);
+		Collection<GameHandler> handlers = configuration.getHandlerLookup().values();
+		handlers.remove(exitedHandler);
+		this.informExperimentOver(configuration, activeId, handlers, true);
+		
+		this.collections.removeSession(clientId);
+		this.collections.removeHandlers(activeId);
+		this.collections.removeConfiguration(activeId);
+		this.collections.removeRunningWorld(activeId);
+		Future<GameAnalysis> future = this.collections.removeFuture(activeId);
+		this.monitor.removeFuture(future);
 	}
 
 	/**
@@ -292,7 +312,7 @@ public class GridGameManager {
 				handler.onMessage(token, response);
 			}
 
-			if (session != null) {
+			if (session != null && session.isOpen()) {
 				session.getRemote().sendStringByFuture(response.toJSONString());
 			}
 
@@ -322,8 +342,9 @@ public class GridGameManager {
 		List<Session> sessions = this.collections.getSessions();
 
 		for (Session session : sessions) {
-			System.out.println("Broadcasting to: " + session.toString());
-			session.getRemote().sendStringByFuture(token.toJSONString());
+			if (session.isOpen()) {
+				session.getRemote().sendStringByFuture(token.toJSONString());
+			}
 		}
 	}
 
@@ -494,7 +515,7 @@ public class GridGameManager {
 	 * @param id
 	 * @param response
 	 */
-	private void runGame(GridGameConfiguration configuration, String id, GridGameServerToken response) {
+	private void runGame(GridGameConfiguration configuration, String activeId, GridGameServerToken response) {
 		try {
 			if (this.monitorFuture.get(0, TimeUnit.SECONDS) != null) {
 				System.err.println("Game monitor has exited, restarting");
@@ -503,38 +524,28 @@ public class GridGameManager {
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 
 		}
-		System.out.println("In RunGame at 1");
 		configuration.close();
 		configuration.incrementIterations();
 
 		World world = configuration.getWorldWithAgents();
 
-		this.collections.addRunningWorld(id, world);
+		this.collections.addRunningWorld(activeId, world);
 
 		Callable<GameAnalysis> callable = this.generateCallable(world, configuration.getMaxTurns());
-		this.submitCallable(id, callable);
-		System.out.println("In RunGame at 2");
-		response.setString(STATUS, "Game " + id + " has now been started with " + world.getRegisteredAgents().size() + " agents");
-		this.updateConnected();
-		System.out.println("In RunGame at 3");
+		this.submitCallable(activeId, callable);
+		response.setString(STATUS, "Game " + activeId + " has now been started with " + world.getRegisteredAgents().size() + " agents");
 	}
 
 	/**
 	 * Restarts a game when it has finished and runs it.
 	 * @param configuration
-	 * @param id
+	 * @param activeId
 	 * @param handlers
 	 */
-	private void restartGame(GridGameConfiguration configuration, String id, List<GameHandler> handlers) {
+	private void restartGame(GridGameConfiguration configuration, String activeId, Collection<GameHandler> handlers) {
+		System.out.println("Game " + activeId + ": Restarting game: ");
 		GridGameServerToken message = new GridGameServerToken();
-		System.out.println("Trying to restart game 509 GGM");
-		this.runGame(configuration, id, message);
-		try {
-			System.out.println("Msg: "+message.getString(MSG_TYPE));
-		} catch (TokenCastException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.runGame(configuration, activeId, message);
 		for (GameHandler handler : handlers) {
 			handler.updateClient(message);
 		}
@@ -554,64 +565,69 @@ public class GridGameManager {
 
 	private void runUrlGame(GridGameServerToken token, String clientId, Session session,
 			GridGameServerToken response) throws TokenCastException{
-		System.out.println("***Running URL Code***");
-
 		//if a game of the type exists, join that game
 
 		String turk_id = token.getString(GridGameManager.URL_ID);
 		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		String worldId = token.getString(GridGameManager.WORLD_ID);
-		System.out.println("worldId: "+worldId);
+		String experimentType = token.getString(EXP_NAME);
+		System.out.println("Client " + clientId + " with turk id: " + turk_id + " is starting a game. " +
+				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
+		
 		//config_game message received
 		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
 
+		if (worldId == null && experimentType == null) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The world or experiment must be specified");
+			return;
+		}
 
-		if(worldId == null){
+		if(experimentType != null){
 			agentTypes = new ArrayList<String>();
 			agentTypes.add(HUMAN_AGENT);
 			agentTypeStr = HUMAN_AGENT;
-
-			String fileName = "/home/betsy/cognitive_hierarchy/MultiAgentGames/"+token.getString(EXP_NAME)+".csv";
+			
+			Path fileName = Paths.get(this.experimentDirectory, experimentType + ".csv").toAbsolutePath();
 			// read these two strings from a human written json file here??
 
+			BufferedReader reader;
+			FileReader fileReader;
+			try {
+				fileReader = 
+						new FileReader(fileName.toString());
+			} catch (FileNotFoundException e) {
+				response.setError(true);
+				response.setString(WHY_ERROR, "The experiment " + experimentType + " does not exist on this server");
+				return;
+			}
 
-			BufferedReader fileReader = null;
-
-			String oponentType = "random";
+			String opponentType = "random";
 			worldId = "TwoAgentsHall_3by5_noWalls";
 
 			try {
-
-				//Create a new list of student to be filled by CSV file data
-
-
 				String line = "";
 
-				fileReader = new BufferedReader(new FileReader(fileName));
+				reader = new BufferedReader(fileReader);
 
-				while ((line = fileReader.readLine()) != null) {
+				while ((line = reader.readLine()) != null) {
 					//Get all tokens available in line
 					String[] tokens = line.split(COMMA_DELIMITER);
 					if (tokens.length >=2) {
 						worldId = tokens[0];
-						oponentType = tokens[1];
+						opponentType = tokens[1];
 					}
 				}
-			}catch (FileNotFoundException e) {
-				e.printStackTrace();
+				reader.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+				response.setError(true);
+				response.setString(WHY_ERROR, "Reading the experiment " + experimentType + " file failed");
+				return;
+			} 
 
-			//System.out.println("oponentType: "+oponentType);
-			agentTypes.add(oponentType);
-		}else{
-			//System.out.println("Agents sm url: "+agentTypes.toString());
+			agentTypes.add(opponentType);
 		}
-		//System.out.println("Agent Types: "+agentTypes.toString());
-
-
+		
 		World world = this.collections.getWorld(worldId);
 
 		GridGameConfiguration configuration = null;
@@ -619,7 +635,7 @@ public class GridGameManager {
 
 		boolean joinOnly = false;
 
-		Map<String,GridGameConfiguration>configs = collections.getConfigurations();
+		Map<String,GridGameConfiguration> configs = collections.getConfigurations();
 		for(String id : configs.keySet()){
 			System.out.println("GTFI size: "+gameTypesForIds.size());
 			if(!configs.get(id).isFullyConfigured() && gameTypesForIds.get(worldId).contains(id)){ //&& check same type??){
@@ -631,11 +647,8 @@ public class GridGameManager {
 			}
 		}
 
-
-
 		if(!joinOnly){
 			//init_game message received
-			System.out.println("Setting up First Agent");
 			if (world != null) {
 				configuration = new GridGameConfiguration(world.copy());
 
@@ -647,18 +660,15 @@ public class GridGameManager {
 				gameTypesForIds.get(worldId).add(activeId);
 
 				this.collections.addConfiguration(activeId, configuration);
-				//this.collections.addConfiguration(worldId, configuration);
 				response.setString(STATUS, "Game " + worldId + " has been initialized");
-				this.updateConnected();
 			} else {
 				response.setError(true);
 				response.setString(WHY_ERROR, "The desired world id does not exist");
 				return;
 			}
 
-
+			int count = 1;
 			for (String agentTypeToAdd : agentTypes) {
-				System.out.println("Adding agent to WI: "+worldId+" of type ATS: "+agentTypeToAdd);
 				boolean isValidAgent = this.isValidAgent(worldId, agentTypeToAdd);
 
 				if (!isValidAgent) {
@@ -666,24 +676,18 @@ public class GridGameManager {
 					response.setString(WHY_ERROR, "An agent of type " + agentTypeToAdd + " cannot be added to this game");
 					return;
 				}
-				System.out.println("Agent being added: "+agentTypeToAdd);
+				System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeToAdd);
 				configuration.addAgentType(agentTypeToAdd);
-
-
 			}
-
-
 		}else{
 			//add agent to game
-			System.out.println("Setting up Second Agent");
-
 			if (configuration == null) {
 				response.setError(true);
 				response.setString(WHY_ERROR, "Add agent: The desired world id does not exist");
 				return;
 			}
-
-			System.out.println("2ndAgent-- WI: "+worldId+" ATS: "+agentTypeStr);
+			int count = configuration.getNumberAgents() + 1;
+			System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeStr);
 			boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
 			if (!isValidAgent) {
 				response.setError(true);
@@ -691,65 +695,41 @@ public class GridGameManager {
 				return;
 			}
 			configuration.addAgentType(agentTypeStr);
-
-
-
 		}
 
 		//join_game message received
 		String agentName = "unset";
-		if (configuration != null) {
-			GameHandler handler = new GameHandler(this, session, worldId);
+		GameHandler handler = new GameHandler(this, session, worldId);
 
-			this.collections.addHandler(clientId, worldId, handler);
-			configuration.addHandler(clientId, handler);
-			response.setString(STATUS, "Client " + clientId + " has been added to game " + worldId);
+		this.collections.addHandler(clientId, activeId, handler);
+		configuration.addHandler(clientId, handler);
+		response.setString(STATUS, "Client " + clientId + " has been added to game " + activeId);
 
+		World baseWorld = configuration.getWorldWithAgents();
+		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
+		SGDomain domain = baseWorld.getDomain();
+		State startState = baseWorld.startingState();
+		agentName = configuration.getAgentName(handler);
+		response.setString(GameHandler.AGENT, agentName);
+		response.setState(GameHandler.STATE, startState, domain);
+		response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
+		response.setString(GridGameManager.IS_READY,"true");
+		response.setString(GridGameManager.WORLD_ID, activeId);
 
-			World baseWorld = configuration.getWorldWithAgents();
-			response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
-			SGDomain domain = baseWorld.getDomain();
-			State startState = baseWorld.startingState();
-			agentName = configuration.getAgentName(handler);
-			response.setString(GameHandler.AGENT, agentName);
-			response.setState(GameHandler.STATE, startState, domain);
-			response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
-			response.setString(GridGameManager.IS_READY,"true");
-			response.setString(GridGameManager.WORLD_ID, activeId);
-
-			response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
-			System.out.println("Made an initialization message");
-
-			//this.updateConnected();
-		}
-		System.out.println("Before logging");
+		response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
+		
 		try {
 			FileWriter pw = new FileWriter(this.analysisDirectory +"/IDMap.csv", true);
 
-			pw.append(clientId);
-			pw.append(",");
-			pw.append(turk_id);
-			pw.append(",");
-			pw.append(agentName);
-			pw.append(",");
-			pw.append(agentTypeStr);
-			pw.append(",");
-			pw.append(configuration.getUniqueGameId());
+			pw.append(clientId).append(",").append(turk_id).append(",").append(agentName);
+			pw.append(",").append(agentTypeStr).append(",").append(configuration.getUniqueGameId());
 			pw.append("\n");
-
-			pw.flush();
-
 			pw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		System.out.println("CID: "+clientId+" TID: "+turk_id+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
-
-
-
-		//run_game
 
 		if (!configuration.isFullyConfigured()) {
 			System.out.println("Not Fully Configured");
@@ -758,25 +738,17 @@ public class GridGameManager {
 			response.setString(GridGameManager.IS_READY,"false");
 			return;
 		}
-		//SEND BACK INITIALIZE MESSAGE STATE PAINTED HERE
-		//System.out.println("Updating Connected from CID: "+clientId);
-		//this.updateConnected();
-
+		
 		Future<GameAnalysis> future = this.collections.getFuture(activeId);
-		String futureId = this.collections.getFutureId(future);
 		//map from futureId to agent name and turk id and experiment name
 
-		System.out.println("Future: "+future);
 		if (future == null) {
-			System.out.println("Before Running game");
+			System.out.println("Game " + activeId + ": starting game");
 			this.runGame(configuration, activeId, response);
-			System.out.println("___***___****Should have run a game****___***___");
 		}
-
-
-
-
-
+		if (this.collections.getHandlersWithGame(activeId).size() == 0) {
+			throw new RuntimeException("We've started very poorly here");
+		}
 	}
 
 	/**
@@ -786,83 +758,73 @@ public class GridGameManager {
 	 */
 	public void processGameCompletion(Future<GameAnalysis> future, GameAnalysis result) {
 		String futureId = this.collections.getFutureId(future);
-		System.out.println("_______________Processing Game Completion in GGM___________________");
-		if (futureId != null) {
+		if (futureId == null) {
+			System.err.println("Future " + future.toString() + " was not found in the collection");
+			return;
+		}
+		
+		System.out.println("Game " + futureId + ": processing for completion");
+		Integer beforeSize = this.collections.getHandlersWithGame(futureId).size();
+		
+		if (beforeSize == 0) {
+			throw new RuntimeException("We've lost them, Jim " + futureId);
+		}
+		
+		GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
+		Collection<GameHandler> handlers = configuration.getHandlerLookup().values();
+		String rt_path = analysisDirectory+"/"+configuration.getUniqueGameId()+"_reactionTimes_episode" + futureId+"_"+configuration.getGameNum()+".csv";
+		try {
+			FileWriter writer = new FileWriter(rt_path);
 
-			GridGameConfiguration configuration = this.collections.getConfiguration(futureId);
-			//configuration.getHandlers
-			
-			String rt_path = analysisDirectory+"/"+configuration.getUniqueGameId()+"_reactionTimes_episode" + futureId+"_"+configuration.getGameNum()+".csv";
-			try {
-				FileWriter writer = new FileWriter(rt_path);
-
-				Map<String, GameHandler> handlers = configuration.getHandlerLookup();
-				Set<String> c_ids = handlers.keySet();
-				for(String c_id : c_ids){
-					writer.write(handlers.get(c_id).getActionRecord());
-					writer.flush();
-					handlers.get(c_id).clearActionRecord();
-				}
-
-				writer.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			for (GameHandler handler : handlers) {
+				writer.write(handler.getActionRecord());
+				handler.clearActionRecord();
 			}
+			
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
-			System.out.println("Logging in GGM: futureId: "+futureId);
-			World world = this.collections.removeRunningWorld(futureId);
-			this.collections.removeFuture(futureId);
+		World world = this.collections.removeRunningWorld(futureId);
+		this.collections.removeFuture(futureId);
 
-			String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
-			System.out.println("Writing to " + path);
-			StateJSONParser parser = new StateJSONParser(world.getDomain());
-			result.writeToFile(path, parser);
+		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
+		System.out.println("Game " + futureId + ": Writing game result to " + path);
+		StateJSONParser parser = new StateJSONParser(world.getDomain());
+		result.writeToFile(path, parser);
 
+		//print map here
+		//file name, agent names and url_client_ids, experiment name
 
-
-			//print map here
-			//file name, agent names and url_client_ids, experiment name
-
-			configuration = this.collections.getConfiguration(futureId);
-			if (!configuration.hasReachedMaxIterations())
-			{
-
-				List<GameHandler> handlers = this.collections.getHandlersWithGame(futureId);
-				System.out.println("Continuing game in GGM: "+handlers.size());
-				this.restartGame(configuration, futureId, handlers);
-
-			} else {
-
-				List<GameHandler> handlers = this.collections.getHandlersWithGame(futureId);
-
-				this.informExperimentOver(configuration, futureId, handlers);
-
-				handlers = this.collections.removeHandlers(futureId);
-				for (GameHandler handler : handlers) {
-					handler.shutdown();
-				}
-
+		configuration = this.collections.getConfiguration(futureId);
+		if (!configuration.hasReachedMaxIterations())
+		{
+			this.restartGame(configuration, futureId, handlers);
+			if (this.collections.getHandlersWithGame(futureId).size() != beforeSize) {
+				throw new RuntimeException("These were not reset. Whoops");
 			}
 		} else {
-			System.err.println("Future was not found in the collection");
+			this.informExperimentOver(configuration, futureId, handlers, false);
+			for (GameHandler handler : handlers) {
+				this.collections.removeHandler(handler.getThreadId());	
+			}
+			handlers = this.collections.removeHandlers(futureId);
 		}
+		
+	
 	}
 
 	private void informExperimentOver(GridGameConfiguration configuration,
-			String futureId, List<GameHandler> handlers) {
+			String futureId, Collection<GameHandler> handlers, boolean closedByPlayerLeaving) {
 		GridGameServerToken msg = new GridGameServerToken();
-		System.out.println("Trying to Inform Game is Over");
-
-
-
+		
 		msg.setString(GridGameManager.MSG_TYPE, GameHandler.EXPERIMENT_COMPLETED);
-		this.broadcastMessage(msg);
-
-		//for (GameHandler handler : handlers) {
-		//handler.updateClient(msg);
-		//}
-
+		msg.setBoolean(GridGameManager.CLOSED_PLAYER_LEAVING, closedByPlayerLeaving);
+		
+		for (GameHandler handler : handlers) {
+			handler.updateClient(msg);
+		}
 	}
 
 	/**
@@ -871,18 +833,18 @@ public class GridGameManager {
 	 * @param force
 	 */
 	public void closeGame(String futureId, boolean force) {
-		System.out.println("Attempting to shutdown game " + futureId);
+		System.out.println("Game " + futureId + ": Attempting to shutdown game ");
 		Future<GameAnalysis> future = this.collections.removeFuture(futureId);
 		World world = this.collections.removeRunningWorld(futureId);
 		List<GameHandler> handlers = this.collections.removeHandlers(futureId);
 
 		if (future == null) {
-			System.out.println("This thread does not currently seem to be running");
+			System.out.println("Game " + futureId + ": This thread does not currently seem to be running");
 			return;
 		}
 
 		if (world == null) {
-			System.out.println("This world does not exist");
+			System.out.println("Game " + futureId + ": This world does not exist");
 			return;
 		}
 
@@ -898,7 +860,7 @@ public class GridGameManager {
 				e.printStackTrace();
 			}
 		} else {
-			System.out.println("Using force to bring down the game");
+			System.out.println("Game " + futureId + ": Using force to bring down the game");
 			for (GameHandler handler : handlers) {
 				handler.shutdown();
 			}

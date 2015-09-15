@@ -99,11 +99,11 @@ var GameConnect = function(){
     };
 
     var OnMessage = function(evt) {
-        
+        if (JSON.stringify(evt.data) === '"{}"') {
+            return;
+        }
         var msg = JSON.parse(evt.data);
-        
         console.log("Websocket Message from server %O", msg);
-
 
         if (MessageFields.CLIENT_ID in msg) {
             clientId = msg[MessageFields.CLIENT_ID];
@@ -133,7 +133,9 @@ var GameConnect = function(){
     this.Send = function(msg){
         msg[MessageFields.CLIENT_ID] = clientId;
         var msgString = JSON.stringify(msg);
-        console.log("Sending: " + msgString);
+        if (msg[MessageFields.MSG_TYPE] !== MessageFields.HEARTBEAT) {
+            console.log("Sending: " + msgString);
+        }
         websocket.send(msgString);
     };
 

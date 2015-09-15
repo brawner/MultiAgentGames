@@ -17,6 +17,9 @@ function fnMain(jQuery) {
 /**
 * This handles the coordination for an interactive game.
 */
+
+
+
 var Game = function() {
     "use strict";
     
@@ -88,6 +91,7 @@ var Game = function() {
 
     var action_number =0;
     var game_number = 0;
+    var last_msg;
         
     var isGameIdValid = function(text) {
         return !isNaN(text);
@@ -219,7 +223,8 @@ var Game = function() {
                     
         }, this);
 
-        setTimeout(send_action, END_OF_ROUND_PAUSE/4);
+        send_action();
+        //setTimeout(send_action, END_OF_ROUND_PAUSE/4);
 
 
         
@@ -258,6 +263,17 @@ var Game = function() {
                 
             painter.draw(element, button);
         }
+
+        var refresh_game = $.proxy(function () {
+            var initState = getAgentLocals(currentState);
+            console.log("Printing again %O", initState);
+            painter.drawState(initState);
+        });
+
+        $(window).focus(function() {
+            
+            setTimeout(refresh_game, 10);
+        });
         
     };
 
@@ -305,8 +321,12 @@ var Game = function() {
             console.log(msg[MessageFields.WHY_ERROR]);
         }
         var msgType = message_reader.getMessageType(msg);
+        if (msgType == null || typeof msgType === 'undefined') {
+            return;
+        }
         var worlds = message_reader.getWorlds(msg);
         var active = message_reader.getActiveWorlds(msg);
+
         console.log(msgType);
         switch(msgType) {
             case MessageFields.HELLO_MESSAGE:
@@ -315,9 +335,9 @@ var Game = function() {
             case MessageFields.INITIALIZE:
                 initialize_game(msg);
                 break;
+            case MessageFields.ACTION_REQUEST:
+                break;
             case MessageFields.UPDATE:
-                //console.log("GOT THIS UPDATE MSG");
-                console.log(msg);
                 this.update_game(msg);
                 break;
             case MessageFields.GAME_COMPLETE:
@@ -327,6 +347,7 @@ var Game = function() {
                 experiment_complete(msg);
                 break;
             default:
+                console.log("Unknown message type " + msgType);
                 break;
         }
 
@@ -355,7 +376,7 @@ var Game = function() {
         //CALL MARK'S CODE HERE OR REMOVE THIS CODE
     };
 
-    // When receiving a helo message from the server, start things
+    // When receiving a hello message from the server, start things
     var hello = function(msg) {
         console.log("Running hello: vars length "+vars.length);
 
@@ -386,7 +407,6 @@ var Game = function() {
 
             var msg = {};
             msg[MessageFields.MSG_TYPE] = MessageFields.HEARTBEAT;
-            console.log(msg);
             connection.Send(msg);
         }
 
@@ -563,6 +583,8 @@ var Game = function() {
             }
             currentAction = undefined;
         }
+
+    
         if (stephens_code) {
             painter.draw(currentState, currentScore, currentAction);    
         }
@@ -661,6 +683,7 @@ var Game = function() {
                     }
                 }*/
             } 
+
             if(round_ended){
                 //if its an initial state, wait a bit to load
                 var initState = getAgentLocals(updateMsg.state);
@@ -674,11 +697,11 @@ var Game = function() {
                         text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        ");
                         round_ended = false;
                     }
-                }) (initState)
+                }) (initState);
 
-                load_next_round = $.proxy(load_next_round, this)
+                load_next_round = $.proxy(load_next_round, this);
 
-                setTimeout(load_next_round, END_OF_ROUND_PAUSE)
+                setTimeout(load_next_round, END_OF_ROUND_PAUSE);
             }
         }
         //receive next state data, actions, 
@@ -738,18 +761,16 @@ var Game = function() {
     var game_complete = function(msg) {
         var closeMsg = message_reader.getCloseMsg(msg);
         if (typeof closeMsg !== 'undefined') {
+            
             if (stephens_code) {
                 painter.drawEnd(currentState, closeMsg.score);    
             }
-            if(marks_code){
-                round_ended = true;
+            
+            round_ended = true;
                
-                console.log(round_ended);
-                game_number++;
-                action_number = 0;
-
-            }
-           
+            console.log("Round " + game_number + " ended");
+            game_number++;
+            action_number = 0;
             //CALL MARK'S CODE HERE
         }
     };
@@ -771,14 +792,18 @@ var Game = function() {
                  var load_next_step = $.proxy(function () {
                     
                         var draw_finalscreen = $.proxy(function () {
+                            console.log("Drawing final screen");
                             painter.draw_finalscreen()
                         }, this)
                         var go_to_next_url = $.proxy(function () {
+                            console.log("Redirecting to: " + redirect_page);
                             $(location).attr('href',redirect_page);
                         }, this)
 
                         setTimeout(draw_finalscreen, END_OF_ROUND_PAUSE);
+                        console.log("Drawing done");
                         setTimeout(go_to_next_url, END_OF_ROUND_PAUSE*2);
+                        console.log("Redirecting done");
                         //add timeout for redirect
 
 

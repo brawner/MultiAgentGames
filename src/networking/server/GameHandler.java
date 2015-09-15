@@ -34,6 +34,7 @@ public class GameHandler {
 	public final static String LOAD_WORLDS = "load_worlds";
 	public final static String REMOVE_GAME = "remove_game";
 	public final static String AGENT_TYPE = "agent_type";
+	public final static String HEARTBEAT = "heartbeat";
 	public final static String ACTION_REQUEST = "action_sorely_needed";
 	public final static String STATE = "state";
 	public final static String ACTION = "action";
@@ -61,7 +62,7 @@ public class GameHandler {
 	public static final String CLIENT_ID = "client_id";
 	public static final String URL_ID = "url_id";
 
-	private String actionRecord = ""; 
+	private StringBuffer actionRecord = new StringBuffer(""); 
 	/**
 	 * The websocket session for this connection.
 	 */
@@ -100,35 +101,16 @@ public class GameHandler {
 	 */
 	public void onMessage(GridGameServerToken msg, GridGameServerToken response) {
 		try {
-
 			String msgType = msg.getString(GridGameManager.MSG_TYPE);
 
-
 			if (msgType.equals(JOIN_GAME)) {
-
-				System.out.println("Running on Message at 88 GH "+msgType);
 				response.setString(GridGameManager.MSG_TYPE, INITIALIZE);
 				response.setString(GridGameManager.WORLD_ID, threadId);
-
 				response.setString(RESULT, SUCCESS);
 			}else if(msgType.equals(GridGameManager.REACTION_TIME)){
-
-
-				String agent_name = msg.getString(AGENT_NAME);
-
-				String client_id = msg.getString(CLIENT_ID);
-				String url_id = msg.getString(URL_ID);
-				int reaction_time = msg.getInt(REACTION_TIME);
-				int action_number = msg.getInt(ACTION_NUMBER);
-				int game_number = msg.getInt(GAME_NUMBER);
-
-				actionRecord+=client_id+COMMA_DELIMITER+agent_name+COMMA_DELIMITER+url_id+
-						COMMA_DELIMITER+game_number+COMMA_DELIMITER+action_number+COMMA_DELIMITER+reaction_time+"\n";
-				System.out.println("action Record: "+actionRecord);
+				this.appendToActionRecord(msg);
 
 			} else if (msgType.equals(TAKE_ACTION)) {
-				System.out.println("Here 4");
-				System.out.flush();
 				String actionName = msg.getString(ACTION);
 				List<String> actionParams = msg.getStringList(ACTION_PARAMS);
 				String[] params = actionParams.toArray(new String[actionParams.size()]);
@@ -140,17 +122,35 @@ public class GameHandler {
 
 			}else if(msgType.equals(INITIALIZE)){
 
-				System.out.println("Found an Initialize response: "+msgType);
-				//response.setString(GridGameManager.MSG_TYPE, null);
-			}else{
-				System.out.println("Here 6");
-				System.out.flush();
-				System.out.println("HERE in GH");
+			}else if (msgType.equals(HEARTBEAT)){
+				
+			}else {
+				System.out.println("Unhandled message type: " + msgType);
+				
 			}
 		} catch (TokenCastException e) {
 
 			System.out.flush();
 			response.setError(true);
+		}
+	}
+
+	private void appendToActionRecord(GridGameServerToken msg) {
+		String agent_name;
+		try {
+			agent_name = msg.getString(AGENT_NAME);
+			String client_id = msg.getString(CLIENT_ID);
+			String url_id = msg.getString(URL_ID);
+			
+			int reaction_time = msg.getInt(REACTION_TIME);
+			int action_number = msg.getInt(ACTION_NUMBER);
+			int game_number = msg.getInt(GAME_NUMBER);
+			
+			this.actionRecord.append(client_id).append(COMMA_DELIMITER).append(agent_name).append(COMMA_DELIMITER);
+			this.actionRecord.append(url_id).append(COMMA_DELIMITER).append(game_number).append(COMMA_DELIMITER);
+			this.actionRecord.append(action_number).append(COMMA_DELIMITER).append(reaction_time).append("\n");
+		} catch (TokenCastException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -162,7 +162,7 @@ public class GameHandler {
 		GridGameServerToken request = new GridGameServerToken();
 		request.setString(GridGameManager.MSG_TYPE, ACTION_REQUEST);
 		request.setState(STATE, s, this.domain);
-		this.session.getRemote().sendStringByFuture(request.toJSONString());
+		this.updateClient(request);
 	}
 
 	/**
@@ -170,13 +170,12 @@ public class GameHandler {
 	 * @param state
 	 */
 	public void updateClient(State state) {
-		System.out.println("updating client 136 method");
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, state, this.domain);
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
-		this.session.getRemote().sendStringByFuture(msg.toJSONString());
+		this.updateClient(msg);
 	}
 
 	/**
@@ -189,7 +188,6 @@ public class GameHandler {
 	 */
 	public void updateClient(State s, JointAction jointAction,
 			Map<String, Double> jointReward, State sprime, boolean isTerminal) {
-		System.out.println("updating client 153 method: "+jointAction.toString());
 		this.currentScore += jointReward.get(this.agent.getAgentName());
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, sprime, this.domain);
@@ -201,7 +199,7 @@ public class GameHandler {
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
-		this.session.getRemote().sendStringByFuture(msg.toJSONString());
+		this.updateClient(msg);
 	}
 
 	/**
@@ -209,21 +207,20 @@ public class GameHandler {
 	 * @param message
 	 */
 	public void updateClient(GridGameServerToken message) {
-		System.out.println("updating client 175 method");
-		this.session.getRemote().sendStringByFuture(message.toJSONString());
+		if (this.session.isOpen()) {
+			this.session.getRemote().sendStringByFuture(message.toJSONString());
+		}
 	}
 
 	/**
 	 * Once a game has been completed, it's updated
 	 */
 	public void gameCompleted() {
-		System.out.println("Completing Game");
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setString(GridGameManager.MSG_TYPE, GAME_COMPLETED);
 		msg.setDouble(SCORE, this.currentScore);
 
 		this.updateClient(msg);
-
 	}
 
 	/**
@@ -236,6 +233,8 @@ public class GameHandler {
 		msg.setDouble(SCORE, this.currentScore);
 
 		this.updateClient(msg);
+		
+		this.session.close();
 	}
 
 	/**
@@ -266,11 +265,11 @@ public class GameHandler {
 
 	public String getActionRecord() {
 
-		return actionRecord;
+		return actionRecord.toString();
 	}
 
 	public void clearActionRecord() {
-		actionRecord = "";
+		actionRecord.setLength(0);
 
 	}
 
