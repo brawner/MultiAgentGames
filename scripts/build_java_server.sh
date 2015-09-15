@@ -16,7 +16,10 @@ echo "Syncing grid games files"
 mkdir -p ~/grid_games/results
 
 rsync -avz ./resources/ ~/grid_games/
-rsync -vz ./web/* /var/www/multi_grid_games/
+cp ./web/index_with_closure.html /var/www/multi_grid_games/index.html
+cp ./web/task_ui_with_closure.html /var/www/multi_grid_games/task_ui.html
+cp ./web/all.js /var/www/multi_grid_games/index.html
+rsync -avz ./web/ /var/www/multi_grid_games/
 sudo chown $USER:www-data -R /var/www/multi_grid_games
 sudo chmod 750 -R /var/www/multi_grid_games
 
