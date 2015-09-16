@@ -2,6 +2,10 @@
 set -e
 source ~/.profile
 
+TIMESTAMP=$(date +"%m_%d_%y__%M_%k")
+SERVER_OUT_DIR="~/grid_games/server_out/$TIMESTAMP"
+mkdir -p $SERVER_OUT_DIR
+
 PIDS_TO_KILL=""
 PIDS_NOT_BEING_KILLED=""
 while read -r line; do
@@ -31,4 +35,4 @@ if [ -n "$PIDS_TO_KILL" ]
 fi
 
 echo "Starting java process"
-nohup java -cp ~/workspace/MultiAgentGames/multi-agent-games.jar networking.server.GGWebSocketServer &
+nohup java -cp ~/workspace/MultiAgentGames/multi-agent-games.jar networking.server.GGWebSocketServer 2> "$SERVER_OUT_DIR/std.err" > "$SERVER_OUT_DIR/std.out"&
