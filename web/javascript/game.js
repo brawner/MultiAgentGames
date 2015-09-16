@@ -815,10 +815,9 @@ var Game = function() {
                     painter.draw_finalscreen()
                 }, this)
                 var go_to_next_url = $.proxy(function () {
-                    var url = redirect_page;
-                    if (partnerTimeout) {
-                        url += "&found_partner=false";
-                    }
+                    var found_partner = !partnerTimeout;
+                    var url = redirect_page + "&found_partner=" + found_partner.toString();
+
                     console.log("Redirecting to: " + url);
                     $(location).attr('href',url);
                 }, this)
