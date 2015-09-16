@@ -1,4 +1,8 @@
+/**
+ * @constructor
+ */
 var GridWorldPainter = function (gridworld) {
+	"use strict";
 	this.TILE_SIZE = 150;
 	this.COLORS = ['blue', 'green', 'red'];
 	this.PRIMARY_AGENT_COLOR = 'orange';
@@ -19,6 +23,7 @@ var GridWorldPainter = function (gridworld) {
 }
 
 GridWorldPainter.prototype.init = function (container, this_agent_name) {
+	"use strict";
 	this_agent_name = typeof this_agent_name !== 'undefined' ? this_agent_name : 'agent1';
 	this.width = this.TILE_SIZE*this.gridworld.width;
 	this.height = this.TILE_SIZE*this.gridworld.height;
@@ -28,7 +33,7 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 	this.AGENT_COLORS = {};
 	var j = 0;
 	for (var i = 0; i < this.gridworld.agents.length; i++){
-		if(this.gridworld.agents[i]['name']==this_agent_name){
+		if(this.gridworld.agents[i].name==this_agent_name){
 			this.AGENT_COLORS[this.gridworld.agents[i].name] = this.PRIMARY_AGENT_COLOR;
 		}else{
 			this.AGENT_COLORS[this.gridworld.agents[i].name] = this.COLORS[j];
@@ -102,6 +107,7 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 }
 
 GridWorldPainter.prototype.drawState = function (state) {
+	"use strict";
 	//paper.getPaper(this.canvas);
 	for (var object in state) {
 		if (!state.hasOwnProperty(object)) {
@@ -120,7 +126,7 @@ GridWorldPainter.prototype.drawState = function (state) {
 				agent_params.type = 'circle';
 				agent_params.fill = this.AGENT_COLORS[object.name];
 				agent_params.r = this.AGENT_WIDTH;
-				agent_params['stroke'] = 'white';
+				agent_params.stroke = 'white';
 				agent_params['stroke-width'] = 1;
 
 				var objectImage = this.paper.add([agent_params])[0];
@@ -137,7 +143,9 @@ GridWorldPainter.prototype.drawState = function (state) {
 //hit edge of world
 //hit another agent (1) who waits; (2) who is also moving to the same tile
 
-GridWorldPainter.prototype.drawTransition = function (state, action, nextState, mdp, goal_callback) {
+GridWorldPainter.prototype.drawTransition
+ = function (state, action, nextState, mdp, goal_callback) {
+ 	"use strict";
 	console.log('------------')
 	this.drawState(state);
 	var animation_time = 0;
@@ -194,12 +202,14 @@ GridWorldPainter.prototype.drawTransition = function (state, action, nextState, 
 		}
 		//normal movement
 		else {
-			console.log(agent + ' makes normal movement')
+			console.log(agent + ' makes normal movement');
+			console.log("object images %O", this.objectImages);
 			var movement = Raphael.animation({cx : (nextState[agent].location[0] + .5)*this.TILE_SIZE,
 											  cy : (this.gridworld.height - nextState[agent].location[1] - .5)*this.TILE_SIZE}, 
 											 this.ACTION_ANIMATION_TIME, 'easeInOut');
 			this.objectImages[agent].animate(movement);
-			$.subscribe('killtimers', this.makeTimerKiller(this.objectImages[agent], movement))
+
+			$.subscribe('killtimers', this.makeTimerKiller(this.objectImages[agent], movement));
 		}
 	}
 	animation_time += this.ACTION_ANIMATION_TIME;
@@ -219,8 +229,8 @@ GridWorldPainter.prototype.drawTransition = function (state, action, nextState, 
 			return function () {
 				goal_callback(painter, location, agent);
 			}
-		})(this, nextState[agent]['location'], agent)
-		if (mdp.inGoal(nextState[agent]['location'], agent)) {
+		})(this, nextState[agent].location, agent)
+		if (mdp.inGoal(nextState[agent].location, agent)) {
 			var th = setTimeout(goal_animation, this.ACTION_ANIMATION_TIME);
 			$.subscribe('killtimers', (function (th) {
 					return function () {clearTimeout(th)}
@@ -238,6 +248,7 @@ GridWorldPainter.prototype.drawTransition = function (state, action, nextState, 
 }
 
 GridWorldPainter.prototype.showReward = function (loc, agent, text) {
+	"use strict";
 	var params = {type : 'text',
 							 x : (loc[0] + .5)*this.TILE_SIZE, 
 							 y : (this.gridworld.height - loc[1] - .5)*this.TILE_SIZE, 
@@ -253,6 +264,7 @@ GridWorldPainter.prototype.showReward = function (loc, agent, text) {
 }
 
 GridWorldPainter.prototype.drawWaiting = function (agent) {
+	"use strict";
 	var expand = (
 		function (painter, agentImage, original_size, time) {
 			return function () {
@@ -271,6 +283,7 @@ GridWorldPainter.prototype.drawWaiting = function (agent) {
 }
 
 GridWorldPainter.prototype.drawTryAndFail = function (agent, intendedLocation, state, SUBACTION_PROPORTION, SUBACTION_DISTANCE) {
+	"use strict";
 	var moveBack = (
 		function (painter, agentImage, original_x, original_y, time) {
 			return function () {
@@ -299,16 +312,19 @@ GridWorldPainter.prototype.drawTryAndFail = function (agent, intendedLocation, s
 }
 
 GridWorldPainter.prototype.makeTimerKiller = function (element, animation) {
+	"use strict";
 		return function () {
 			element.stop(animation);
 		}
 	} 
 
 GridWorldPainter.prototype.remove = function () {
+	"use strict";
 	this.paper.remove();
 }
 
 GridWorldPainter.prototype.draw_score = function () {
+	"use strict";
 	var scoreboard_params = {
 		type : 'rect',
 		x : 0,
@@ -332,6 +348,7 @@ GridWorldPainter.prototype.draw_score = function () {
 }
 
 GridWorldPainter.prototype.draw_finalscreen = function () {
+	"use strict";
 	var scoreboard_params = {
 		type : 'rect',
 		x : 0,
@@ -355,6 +372,7 @@ GridWorldPainter.prototype.draw_finalscreen = function () {
 }
 
 GridWorldPainter.prototype.draw_waiting = function () {
+	"use strict";
 	var scoreboard_params = {
 		type : 'rect',
 		x : 0,
@@ -378,11 +396,13 @@ GridWorldPainter.prototype.draw_waiting = function () {
 }
 
 GridWorldPainter.prototype.hide_waiting = function () {
+	"use strict";
 	this.scoreboard_background.animate({opacity : 0}, 250);
 	this.scoreboard_text.animate({opacity :0}, 250)
 }
 
 GridWorldPainter.prototype.hide_score = function () {
+	"use strict";
 	this.scoreboard_background.animate({opacity : 0}, 250);
 	this.scoreboard_text.animate({opacity :0}, 250)
 }

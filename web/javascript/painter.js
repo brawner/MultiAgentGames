@@ -2,6 +2,9 @@
 // painters actually interact with the html, they also have to set the callback functions, which is weird.
 
 // Main game painter, calls the painters below it.
+/**
+ * @constructor
+ */
 var GamePainter = function(agent_name, _width, _height) {
     "use strict";
     var canvas = document.getElementById("GGCanvas");
@@ -111,6 +114,9 @@ var GamePainter = function(agent_name, _width, _height) {
 };
 
 // Button object, useful to get bounding boxes
+/**
+ * @constructor
+ */
 var Button = function(_name, _x, _y, _width, _height) {
     "use strict";
     var name = _name;
@@ -164,6 +170,9 @@ var Button = function(_name, _x, _y, _width, _height) {
 };
 
 // Paints a new state based on the object passed to it.
+/**
+ * @constructor
+ */
 var StatePainter = function(context, name, color1, color2) {
     "use strict";
     
@@ -258,6 +267,9 @@ var StatePainter = function(context, name, color1, color2) {
 
 
 // Draws cells, either rectangles or circles.
+/**
+ * @constructor
+ */
 var CellPainter = function(context, shape) {
     "use strict";
     
@@ -294,6 +306,9 @@ var CellPainter = function(context, shape) {
 };
 
 // Draws walls. Does not currently draw semi-walls.
+/**
+ * @constructor
+ */
 var WallPainter = function(context) {
     "use strict";
     
@@ -331,6 +346,9 @@ var WallPainter = function(context) {
 
 
 // Draws chosen action over screen
+/**
+ * @constructor
+ */
 var ActionStatusPainter = function(context, agentColor) {
     "use strict";
     
@@ -360,6 +378,9 @@ var ActionStatusPainter = function(context, agentColor) {
 };
 
 // Paints actions so they can be clicked
+/**
+ * @constructor
+ */
 var ActionPainter = function(_canvas, _context, agentColor) {
     "use strict";
     
@@ -445,6 +466,9 @@ var ActionPainter = function(_canvas, _context, agentColor) {
 };
 
 // Displays score, agent color, and available keyboard commands. 
+/**
+ * @constructor
+ */
 var StatusPainter = function(context, agentColor) {
     "use strict";
     var textColor = "black";
@@ -462,6 +486,9 @@ var StatusPainter = function(context, agentColor) {
 };
 
 // Unused
+/**
+ * @constructor
+ */
 var WorldsPainter = function(context) {
     "use strict";
     
@@ -473,6 +500,9 @@ var WorldsPainter = function(context) {
 };
 
 // Unused
+/**
+ * @constructor
+ */
 var ActiveWorldsPainter = function(context) {
     "use strict";
     
@@ -484,6 +514,9 @@ var ActiveWorldsPainter = function(context) {
 };
 
 // Paints black screen with text box and submit button
+/**
+ * @constructor
+ */
 var OpeningScreenPainter = function(width, height) {
     "use strict";
     var canvas = document.getElementById("GGCanvas");
@@ -504,6 +537,9 @@ var OpeningScreenPainter = function(width, height) {
 };
 
 // Paints the game complete screen.
+/**
+ * @constructor
+ */
 var EndScreenPainter = function(width, height, context) {
     "use strict";
     var textColor = "white";
@@ -521,6 +557,9 @@ var EndScreenPainter = function(width, height, context) {
 };
 
 // Draws the world and active games buttons for the admin page
+/**
+ * @constructor
+ */
 var AdminPagePainter = function(onWorldClick, onActiveClick) {
     "use strict";
     var worldButtons = {};
@@ -631,6 +670,9 @@ var AdminPagePainter = function(onWorldClick, onActiveClick) {
 };
 
 // Draws a specific configuration for an active game.
+/**
+ * @constructor
+ */
 var GameConfigPainter = function(_label, _description, _agents, _submitConfigCallback, _onRunCallback, _onRemoveCallback) {
     "use strict";
 
@@ -818,6 +860,9 @@ var GameConfigPainter = function(_label, _description, _agents, _submitConfigCal
 
 
 // Should draw the necessary items for the visualization of the connection.
+/**
+ * @constructor
+ */
 var ConnectionStatusPainter = function(tryConnectCallback, disconnectCallback, offsetX, offsetY) {
         var allElements = [];
         var tryConnect = tryConnectCallback;

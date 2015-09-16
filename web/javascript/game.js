@@ -21,7 +21,9 @@ window['fnMain'] = fnMain;
 */
 
 
-
+/**
+ * @constructor
+ */
 var Game = function() {
     "use strict";
     
@@ -56,7 +58,8 @@ var Game = function() {
     var round_ended = false;
     var step_start_time = 0;
     var more_games = true;
-    var END_OF_ROUND_PAUSE = 5000;
+    var END_OF_ROUND_PAUSE = 1000 * 5;
+    var WAIT_FOR_PARTNER = 1000 * 60 * 5;
     var redirect_page;
 
 
@@ -354,7 +357,7 @@ var Game = function() {
                 game_complete(msg);
                 break;
             case MessageFields.EXPERIMENT_COMPLETE:
-                experiment_complete(msg);
+                experiment_complete(false);
                 break;
             default:
                 console.log("Unknown message type " + msgType);
@@ -402,8 +405,8 @@ var Game = function() {
         }else{
 
             //var active = message_reader.getActiveWorlds(msg);
-            for (var i = 0; i < active.length; i++) {
-                var label = active[i].Label;
+            for (var key in active) {
+                var label = active[key].Label;
             
                 return;
             }
@@ -422,6 +425,12 @@ var Game = function() {
 
         heartbeatSender = setInterval(heartbeat, 10000);
     };
+
+    var waitForOtherAgent = function() {
+        if (agent_waited) {
+            experiment_complete(true);
+        }
+    }
 
     // When receiving an initialization message from the server, initialize a new game
     var initialize_game = function(msg) {
@@ -469,7 +478,7 @@ var Game = function() {
                 if(initMsg.ready == "false"){
                     agent_waited = true;
                     painter.draw_waiting();
-                    
+                    setTimeout(waitForOtherAgent, WAIT_FOR_PARTNER);
                 }
                 is_initialized = true;
             }
@@ -785,46 +794,45 @@ var Game = function() {
         }
     };
 
-    var experiment_complete = function(msg) {
+    var experiment_complete = function(partnerTimeout) {
         
-            if (stephens_code) {
-                painter.drawEnd(currentState, closeMsg.score);    
-            }
-            if(marks_code){
+        if (stephens_code) {
+            painter.drawEnd(currentState, closeMsg.score);    
+        }
+        if(marks_code){
+            
+            console.log("In experiment_complete");
+
+            var closeAlert = function(){
+                return 'Please do not close or reload this window before completing the task. Doing so will invalidate your responses!'
+                }
+            $(window).bind('beforeunload',closeAlert);
+
+             var load_next_step = $.proxy(function () {
                 
-                console.log("In experiment_complete");
-
-                var closeAlert = function(){
-                    return 'Please do not close or reload this window before completing the task. Doing so will invalidate your responses!'
+                var draw_finalscreen = $.proxy(function () {
+                    console.log("Drawing final screen");
+                    painter.draw_finalscreen()
+                }, this)
+                var go_to_next_url = $.proxy(function () {
+                    var url = redirect_page;
+                    if (partnerTimeout) {
+                        url += "&found_partner=false";
                     }
-                $(window).bind('beforeunload',closeAlert);
+                    console.log("Redirecting to: " + url);
+                    $(location).attr('href',url);
+                }, this)
 
-                 var load_next_step = $.proxy(function () {
-                    
-                        var draw_finalscreen = $.proxy(function () {
-                            console.log("Drawing final screen");
-                            painter.draw_finalscreen()
-                        }, this)
-                        var go_to_next_url = $.proxy(function () {
-                            console.log("Redirecting to: " + redirect_page);
-                            $(location).attr('href',redirect_page);
-                        }, this)
+                setTimeout(draw_finalscreen, END_OF_ROUND_PAUSE);
+                console.log("Drawing done");
+                setTimeout(go_to_next_url, END_OF_ROUND_PAUSE*2);
+                console.log("Redirecting done");
+                    //add timeout for redirect
+            }, this);
 
-                        setTimeout(draw_finalscreen, END_OF_ROUND_PAUSE);
-                        console.log("Drawing done");
-                        setTimeout(go_to_next_url, END_OF_ROUND_PAUSE*2);
-                        console.log("Redirecting done");
-                        //add timeout for redirect
-
-
-
-                }, this);
-                $(window).unbind('beforeunload');
-
-                setTimeout(load_next_step, END_OF_ROUND_PAUSE/3);
-            }
-
-        
+            $(window).unbind('beforeunload');
+            setTimeout(load_next_step, END_OF_ROUND_PAUSE/3);
+        }
     }
 
     // Callback function for the Action Handler when someone presses a button or enters a key action

@@ -1,7 +1,9 @@
 /* 
 	Basic functionality for BURLAP gridworld MDP for testing on client.
 */
-
+/**
+ * @constructor
+ */
 var ClientMDP = function (gridworld) {
 	this.gridworld = gridworld;
 }

@@ -11,6 +11,9 @@
 //  to connect.
 //////////////////////////////////////////////////////
 
+/**
+ * @constructor
+ */
 var GameConnect = function(){
     "use strict";
 

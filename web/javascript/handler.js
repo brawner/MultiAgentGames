@@ -4,6 +4,9 @@
 
 // Handles all key and button interactions for the game. If you want to add different key interactions, do it here.
 // shouldn't be to hard to map arrows or other keys to the actions.
+/**
+ * @constructor
+ */
 var GeneralHandler = function(_actions) {
 	"use strict";
 	    //Start game

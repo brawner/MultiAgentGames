@@ -1,5 +1,9 @@
 
 // Allows of reading from a a json message. Really, it doesn't do much, just helps being explicit.
+
+/**
+ * @constructor
+ */
 var MessageReader = function() {
 	"use strict";
 	var self = this;

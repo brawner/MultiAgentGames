@@ -1,6 +1,9 @@
 // Any explicit objects are specified here. Used for state descriptions, world descriptions, 
 // game descriptions, and agent descriptions
 
+/**
+ * @constructor
+ */ 
 var Agent = function(name, playerNum, posX, posY) {
     "use strict";
 
@@ -10,6 +13,9 @@ var Agent = function(name, playerNum, posX, posY) {
     this.Y = posY;
 };
 
+/**
+ * @constructor
+ */
 var Goal = function(name, goalType, posX, posY) {
     "use strict";
 
@@ -19,6 +25,9 @@ var Goal = function(name, goalType, posX, posY) {
     this.Y = posY;
 };
 
+/**
+ * @constructor
+ */
 var Wall = function(name, wallType, startX, startY, endX, endY) {
     "use strict";
 
@@ -29,6 +38,9 @@ var Wall = function(name, wallType, startX, startY, endX, endY) {
     this.EndY = endY;
 };
 
+/**
+ * @constructor
+ */
 var Toll = function(name, cost, posX, posY) {
     "use strict";
 
@@ -38,6 +50,9 @@ var Toll = function(name, cost, posX, posY) {
     this.Y = posY;
 };
 
+/**
+ * @constructor
+ */
 var State = function(agents, goals, walls, tolls) {
     "use strict";
 
@@ -47,6 +62,9 @@ var State = function(agents, goals, walls, tolls) {
     this.Tolls = tolls;
 };
 
+/**
+ * @constructor
+ */
 var World = function(label, description, maxAgents) {
     "use strict";
 
@@ -55,6 +73,9 @@ var World = function(label, description, maxAgents) {
     this.NumAgents = maxAgents;
 };
 
+/**
+ * @constructor
+ */
 var ActiveWorld = function(label, description, agents, maxAgents) {
     "use strict";
 
@@ -64,6 +85,9 @@ var ActiveWorld = function(label, description, agents, maxAgents) {
     this.NumAgents = maxAgents;
 }
 
+/**
+ * @constructor
+ */
 var AgentConfig = function(type, number) {
     "use strict";
 

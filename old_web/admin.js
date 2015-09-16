@@ -202,8 +202,8 @@ var Admin = function() {
     var hello = function(msg) {
 
         var active = message_reader.getActiveWorlds(msg);
-        for (var i = 0; i < active.length; i++) {
-            var label = active[i].Label;
+        for (var key in active) {
+            var label = active[key].Label;
             
             return;
         }
