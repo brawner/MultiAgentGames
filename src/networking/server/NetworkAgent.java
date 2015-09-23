@@ -4,17 +4,19 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
 
 /**
  * A subclass of the StochasticGames agent. This implements the required methods for the World to call when running a game
  * @author brawner
  *
  */
-public class NetworkAgent extends Agent {
+public class NetworkAgent extends SGAgent {
 	/**
 	 * The current action specified by the connected person
 	 */
-	private GroundedSingleAction currentAction;
+	private GroundedSGAgentAction currentAction;
 	
 	/**
 	 * To protect concurrent access
@@ -52,9 +54,9 @@ public class NetworkAgent extends Agent {
 	 * Attempts to get an action from the connected user. If no action has been specified, then it asks the user for a new action.
 	 */
 	@Override
-	public GroundedSingleAction getAction(State s) {
+	public GroundedSGAgentAction getAction(State s) {
 		this.lock.readLock().lock();
-		GroundedSingleAction action = this.currentAction;
+		GroundedSGAgentAction action = this.currentAction;
 		this.lock.readLock().unlock();
 		
 		if (action == null) {
@@ -97,7 +99,7 @@ public class NetworkAgent extends Agent {
 	 * Sets the client's requested action for the next turn.
 	 * @param action
 	 */
-	public void setNextAction(GroundedSingleAction action) {
+	public void setNextAction(GroundedSGAgentAction action) {
 		this.lock.writeLock().lock();
 		this.currentAction = action;
 		this.lock.writeLock().unlock();

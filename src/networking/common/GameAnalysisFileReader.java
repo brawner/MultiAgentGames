@@ -34,7 +34,7 @@ public class GameAnalysisFileReader {
 			}
 			Visualizer visualizer = GGVisualizer.getVisualizer(5, 6);
 			
-			GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, domain, parser, current.getAbsolutePath());
+			GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, domain, current.getAbsolutePath());
 			sequenceVisualizer.initGUI();
 			return true;
 		}

@@ -25,6 +25,7 @@ import burlap.oomdp.core.states.State;
 import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
 
 
 public class Analysis {
@@ -116,8 +117,8 @@ public class Analysis {
 		for (int i = 0; i < actions.size(); i++) {
 			JointAction action = actions.get(i);
 			State state = states.get(i);
-			GroundedSingleAction agent1Action = action.action("agent0");
-			GroundedSingleAction agent2Action = action.action("agent1");
+			GroundedSGAgentAction agent1Action = action.action("agent0");
+			GroundedSGAgentAction agent2Action = action.action("agent1");
 			Turn turn = new Turn();
 			turn.agent1.name = agent1Action.actingAgent;
 			turn.agent1.action = agent1Action.actionName();

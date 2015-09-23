@@ -9,6 +9,7 @@ import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
@@ -36,7 +37,7 @@ public class OneDimensionalTwoGoals {
 		
 		return new SGStateGenerator() {
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 3, 2, 2, width, 1);
 				int startX1 = width - 4;
 				int startX2 = width - 3;
@@ -61,7 +62,7 @@ public class OneDimensionalTwoGoals {
 		JointReward jointReward = OneDimensionalTwoGoals.generateJointReward(domain);
 		
 		SGStateGenerator stateGenerator = OneDimensionalTwoGoals.generateStateGenerator(domain, width);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		world.setDescription("Two agents, One dimension, Three goals. Width:" + width);
 		
 		return world;

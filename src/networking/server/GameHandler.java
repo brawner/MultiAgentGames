@@ -11,8 +11,12 @@ import org.eclipse.jetty.websocket.api.Session;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.ObParamSGAgentAction.GroundedObParamSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
 
 /**
  * Handles direct game management with the connected client.
@@ -109,8 +113,8 @@ public class GameHandler {
 				String actionName = msg.getString(ACTION);
 				List<String> actionParams = msg.getStringList(ACTION_PARAMS);
 				String[] params = actionParams.toArray(new String[actionParams.size()]);
-				SingleAction action = this.domain.getSingleAction(actionName);
-				GroundedSingleAction groundedAction = new GroundedSingleAction(agent.getAgentName(), action, params);
+				SGAgentAction action = this.domain.getSingleAction(actionName);
+				GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent.getAgentName(), action, params);
 				this.agent.setNextAction(groundedAction);
 				response.setString(RESULT, SUCCESS);
 
@@ -240,8 +244,8 @@ public class GameHandler {
 		this.agent = new NetworkAgent(this);
 		this.domain = world.getDomain();
 
-		AgentType agentType = 
-				new AgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getSingleActions());
+		SGAgentType agentType = 
+				new SGAgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getAgentActions());
 
 		agent.joinWorld(world, agentType);
 	}

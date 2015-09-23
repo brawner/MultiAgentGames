@@ -21,6 +21,9 @@ import burlap.oomdp.core.states.State;
 import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.ObParamSGAgentAction.GroundedObParamSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -402,13 +405,13 @@ public class GridGameServerToken extends LinkedHashMap<String, Object> {
 	public static GridGameServerToken tokenFromJointAction(JointAction jointAction) {
 		GridGameServerToken token = new GridGameServerToken();
 		List<Object> actions = new ArrayList<Object>();
-		for (Map.Entry<String, GroundedSingleAction> entry : jointAction.actions.entrySet()) {
-			GroundedSingleAction action = entry.getValue();
+		for (Map.Entry<String, GroundedSGAgentAction> entry : jointAction.actions.entrySet()) {
+			GroundedSGAgentAction action = entry.getValue();
 			GridGameServerToken actionToken = new GridGameServerToken();
 			actionToken.setString(GameHandler.ACTION, action.actionName());
 			String agentName = entry.getKey();
 			actionToken.setString(GameHandler.AGENT, agentName);
-			actionToken.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.params));
+			actionToken.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.getParametersAsString()));
 			
 			actions.add(actionToken);
 		}
@@ -433,8 +436,8 @@ public class GridGameServerToken extends LinkedHashMap<String, Object> {
 				String actionName = action.getString(GameHandler.ACTION);
 				String agent = action.getString(GameHandler.AGENT);
 				List<String> params = action.getStringList(GameHandler.ACTION_PARAMS);
-				SingleAction singleAction = domain.getSingleAction(actionName);
-				GroundedSingleAction groundedAction = new GroundedSingleAction(agent, singleAction, params.toArray(new String[params.size()]));
+				SGAgentAction singleAction = domain.getSingleAction(actionName);
+				GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent, singleAction, params.toArray(new String[params.size()]));
 				jointAction.addAction(groundedAction);
 			}
 		} catch (TokenCastException e) {

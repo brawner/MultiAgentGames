@@ -14,6 +14,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
+import burlap.behavior.stochasticgames.agents.RandomSGAgent;
+import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
 import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
@@ -21,7 +23,11 @@ import burlap.behavior.stochasticgames.madynamicprogramming.policies.EGreedyMaxW
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.statehashing.HashableStateFactory;
+import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 
@@ -54,7 +60,7 @@ public class GridGameConfiguration {
 	 * If an Agent needs to precompute a policy and should be recycled from each run, then it should be a repeated agent. Becareful to make sure
 	 * that any repeated agent is not shared with a different game, and all data members are fully copied when added to this configuration.
 	 */
-	private final Map<String, Agent> repeatedAgents;
+	private final Map<String, SGAgent> repeatedAgents;
 	
 	/**
 	 * If a simple agent can be regenerated anytime a new game is started, or when this game is restarted then it would be a regenerated agent.
@@ -105,7 +111,7 @@ public class GridGameConfiguration {
 		this.uniqueGameID = generateUniqueID();
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
-		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, Agent>());
+		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, SGAgent>());
 		this.networkAgents = Collections.synchronizedMap(new HashMap<String, GameHandler>());
 		this.handlerLookup = Collections.synchronizedMap(new HashMap<String, GameHandler>());
 		this.scores = Collections.synchronizedMap(new HashMap<String, Double>());
@@ -197,15 +203,15 @@ public class GridGameConfiguration {
 	 */
 	private void addAgentToWorld(World world, String agentName) {
 		if (this.repeatedAgents.containsKey(agentName)) {
-			Agent agent = this.repeatedAgents.get(agentName);
-			AgentType agentType = agent.getAgentType();
+			SGAgent agent = this.repeatedAgents.get(agentName);
+			SGAgentType agentType = agent.getAgentType();
 			agent.joinWorld(world, agentType);
 			
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
-			Agent agent = this.getNewAgentForWorld(world, agentTypeStr);
-			AgentType agentType = 
-					new AgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getSingleActions());
+			SGAgent agent = this.getNewAgentForWorld(world, agentTypeStr);
+			SGAgentType agentType = 
+					new SGAgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
 			agent.joinWorld(world, agentType);
 			
 		} else if (this.networkAgents.containsKey(agentName)) {
@@ -220,7 +226,7 @@ public class GridGameConfiguration {
 	 * @param agentType
 	 * @return
 	 */
-	private Agent getNewAgentForWorld(World world, String agentType) {
+	private SGAgent getNewAgentForWorld(World world, String agentType) {
 		switch(agentType) {
 		case GridGameManager.RANDOM_AGENT:
 			return this.getNewRandomAgent();
@@ -236,8 +242,8 @@ public class GridGameConfiguration {
 	 * Constructs a new Random agent
 	 * @return
 	 */
-	private Agent getNewRandomAgent() {
-		return new RandomAgent();
+	private SGAgent getNewRandomAgent() {
+		return new RandomSGAgent();
 	}
 	
 	/**
@@ -245,17 +251,17 @@ public class GridGameConfiguration {
 	 * @param world
 	 * @return
 	 */
-	private Agent getNewMAVIAgent(World world) {
+	private SGAgent getNewMAVIAgent(World world) {
 		
 		SGDomain domain = world.getDomain();
 		EGreedyMaxWellfare ja0 = new EGreedyMaxWellfare(0.0);
 		ja0.setBreakTiesRandomly(false);
 		JointReward rf = world.getRewardModel();
-		StateHashFactory hashingFactory = new NameDependentStateHashFactory();
+		HashableStateFactory hashingFactory = new SimpleHashableStateFactory(false);
 		MAValueIteration vi = 
-				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
+				new MAValueIteration((SGDomain) domain, rf, world.getTF(), 
 						0.95, hashingFactory, 0., new MaxQ(), 0.00015, 50);
-		return new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
+		return new MultiAgentDPPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
 		
 	}
 	
@@ -264,14 +270,14 @@ public class GridGameConfiguration {
 	 * @param world
 	 * @return
 	 */
-	private Agent getNewQAgent(World world) {
+	private SGAgent getNewQAgent(World world) {
 		
 		SGDomain domain = world.getDomain();
 		
 		JointReward rf = world.getRewardModel();
-		StateHashFactory hashingFactory = new NameDependentStateHashFactory();
+		HashableStateFactory hashingFactory = new SimpleHashableStateFactory(false);
 		
-		Agent agent = new SGNaiveQLAgent(domain, .95, .9, 0.0, hashingFactory);
+		SGAgent agent = new SGNaiveQLAgent(domain, .95, .9, 0.0, hashingFactory);
 		
 		return agent;
 		
@@ -341,7 +347,7 @@ public class GridGameConfiguration {
 	 * worlds.
 	 * @param agent
 	 */
-	public void addAgent(Agent agent) {
+	public void addAgent(SGAgent agent) {
 		if (!this.canAddAgent()) {
 			return;
 		}
@@ -543,7 +549,7 @@ public class GridGameConfiguration {
 		for (String agentName : this.orderedAgents) {
 			String agentType = null;
 			if (this.repeatedAgents.containsKey(agentName)) {
-				Agent agent = this.repeatedAgents.get(agentName);
+				SGAgent agent = this.repeatedAgents.get(agentName);
 				agentType = agent.getClass().getSimpleName();
 				
 			} else if (this.regeneratedAgents.containsKey(agentName)) {

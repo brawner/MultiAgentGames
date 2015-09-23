@@ -803,7 +803,7 @@ public class GridGameManager {
 		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		StateJSONParser parser = new StateJSONParser(world.getDomain());
-		result.writeToFile(path, parser);
+		result.writeToFile(path);
 
 		//print map here
 		//file name, agent names and url_client_ids, experiment name
@@ -864,7 +864,7 @@ public class GridGameManager {
 				GameAnalysis analysis = future.get();
 				String path = this.analysisDirectory + "/episode" + futureId;
 				StateJSONParser parser = new StateJSONParser(world.getDomain());
-				analysis.writeToFile(path, parser);
+				analysis.writeToFile(path);
 
 
 			} catch (InterruptedException | ExecutionException e) {

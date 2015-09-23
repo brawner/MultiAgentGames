@@ -8,6 +8,7 @@ import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
@@ -36,7 +37,7 @@ public class MultiPlayerChicken {
 		
 		return new SGStateGenerator() {
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, numberAgents, numberAgents, 2, 2, width, height);
 				int maxX = width - 1;
 				int maxY = height - 1;
@@ -64,7 +65,7 @@ public class MultiPlayerChicken {
 		JointReward jointReward = new GridGame.GGJointRewardFunction(domain); //this.generateJointReward();
 		
 		SGStateGenerator stateGenerator = MultiPlayerChicken.generateStateGenerator(domain, numberAgents, width, height);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		world.setDescription(numberAgents + " player chicken");
 		return world;
 	}

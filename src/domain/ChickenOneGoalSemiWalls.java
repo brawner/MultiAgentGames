@@ -10,6 +10,7 @@ import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
@@ -38,7 +39,7 @@ public class ChickenOneGoalSemiWalls {
 		return new SGStateGenerator() {
 			private final Random random = new Random();
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 1, 4, 2, 3, 3);
 				int startOne = startA;
 				int startTwo = startB;
@@ -65,7 +66,7 @@ public class ChickenOneGoalSemiWalls {
 		JointReward jointReward = new GridGame.GGJointRewardFunction(domain);
 		
 		SGStateGenerator stateGenerator = ChickenOneGoalSemiWalls.generateStateGenerator(domain, startA, startB, randomize);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		world.setDescription("Chicken, one goal A:" + startA + " B:" + startB + " randomize: " + randomize);
 		
 		return world;

@@ -9,16 +9,15 @@ import java.util.Map;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanics;
-import burlap.domain.stochasticgames.gridgame.GGVisualizer.CellPainter;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.Attribute;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.GroundedProp;
 import burlap.oomdp.core.ObjectClass;
-import burlap.oomdp.core.ObjectInstance;
 import burlap.oomdp.core.PropositionalFunction;
-import burlap.oomdp.core.State;
 import burlap.oomdp.core.TerminalFunction;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
@@ -86,8 +85,8 @@ public class GridGameExtreme {
 		ObjectInstance bottomWall = horizontalWalls.get(0);
 		ObjectInstance topWall = horizontalWalls.get(1);
 		
-		int width = rightWall.getDiscValForAttribute(GridGame.ATTP) - leftWall.getDiscValForAttribute(GridGame.ATTP);
-		int height = topWall.getDiscValForAttribute(GridGame.ATTP) - bottomWall.getDiscValForAttribute(GridGame.ATTP); 
+		int width = rightWall.getIntValForAttribute(GridGame.ATTP) - leftWall.getIntValForAttribute(GridGame.ATTP);
+		int height = topWall.getIntValForAttribute(GridGame.ATTP) - bottomWall.getIntValForAttribute(GridGame.ATTP); 
 		
 		Visualizer visualizer = GGVisualizer.getVisualizer(width, height);
 		List<Color> colors = Arrays.asList(Color.RED);
@@ -255,7 +254,7 @@ public class GridGameExtreme {
 				return this.pGoalReward;
 			}
 			
-			int pn = s.getObject(agentName).getDiscValForAttribute(GridGame.ATTPN);
+			int pn = s.getObject(agentName).getIntValForAttribute(GridGame.ATTPN);
 			return this.personalGoalRewards.get(pn);
 			
 		}
@@ -279,12 +278,12 @@ public class GridGameExtreme {
 		public boolean isTrue(State s, String[] params) {
 			
 			ObjectInstance agent = s.getObject(params[0]);
-			int ax = agent.getDiscValForAttribute(GridGame.ATTX);
-			int ay = agent.getDiscValForAttribute(GridGame.ATTY);
+			int ax = agent.getIntValForAttribute(GridGame.ATTX);
+			int ay = agent.getIntValForAttribute(GridGame.ATTY);
 			
 			ObjectInstance reward = s.getObject(params[1]);
-			int rx = reward.getDiscValForAttribute(GridGame.ATTX);
-			int ry = reward.getDiscValForAttribute(GridGame.ATTY);
+			int rx = reward.getIntValForAttribute(GridGame.ATTX);
+			int ry = reward.getIntValForAttribute(GridGame.ATTY);
 			
 			return (ax == rx && ay == ry);
 		}

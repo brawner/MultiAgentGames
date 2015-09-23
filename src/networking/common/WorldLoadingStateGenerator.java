@@ -11,8 +11,10 @@ import networking.common.GridGameWorldLoader.WorldLoaderException;
 import networking.common.messages.WorldFile;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.ObjectClass;
+import burlap.oomdp.core.objects.MutableObjectInstance;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 
@@ -36,7 +38,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		List<ObjectInstance> res = new ArrayList<ObjectInstance>();
 		Map<Integer, List<ObjectInstance>> goalsByAgent = new HashMap<Integer, List<ObjectInstance>>();
 		for (ObjectInstance goal : goals) {
-			int goalType = goal.getDiscValForAttribute(GridGame.ATTGT);
+			int goalType = goal.getIntValForAttribute(GridGame.ATTGT);
 			List<ObjectInstance> agentsGoals = goalsByAgent.get(goalType);
 			if (agentsGoals == null) {
 				agentsGoals = new ArrayList<ObjectInstance>();
@@ -198,7 +200,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			int y = reward.get(1);
 			int value = reward.get(2);
 			ObjectClass rewardClass = domain.getObjectClass(GridGameExtreme.CLASSREWARD);
-			ObjectInstance rewardObject = new ObjectInstance(rewardClass, "reward" + i);
+			ObjectInstance rewardObject = new MutableObjectInstance(rewardClass, "reward" + i);
 			rewardObject.setValue(GridGame.ATTX, x);
 			rewardObject.setValue(GridGame.ATTY, y);
 			rewardObject.setValue(GridGameExtreme.ATTVALUE, value);
@@ -209,7 +211,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 	}
 
 	@Override
-	public State generateState(List<Agent> agents) {
+	public State generateState(List<SGAgent> agents) {
 		
 		State copy = this.noGoalsUnsetAgents.copy();
 		List<ObjectInstance> goals = this.allGoalsUnsetAgents.getObjectsOfClass(GridGame.CLASSGOAL);
@@ -221,7 +223,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		
 		List<ObjectInstance> agentObjects = copy.getObjectsOfClass(GridGame.CLASSAGENT);
 		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
-			Agent agent = agents.get(i);
+			SGAgent agent = agents.get(i);
 			ObjectInstance agentObject = agentObjects.get(i);
 			copy.renameObject(agentObject.getName(), agent.getAgentName());
 		}

@@ -4,6 +4,7 @@ import java.util.Map;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
+import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.CoCoQ;
 import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
@@ -18,9 +19,13 @@ import burlap.oomdp.core.states.State;
 import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.legacy.StateParser;
 import burlap.oomdp.legacy.StateYAMLParser;
+import burlap.oomdp.statehashing.HashableStateFactory;
+import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
@@ -51,8 +56,8 @@ public class Chicken {
 				for (int i = 0; i < agents.size(); i++) {
 					ObjectInstance agent = agents.get(i);
 					ObjectInstance goal = goals.get(i);
-					if (agent.getDiscValForAttribute(GridGame.ATTX) != goal.getDiscValForAttribute(GridGame.ATTX) || 
-							agent.getDiscValForAttribute(GridGame.ATTY) != goal.getDiscValForAttribute(GridGame.ATTY)) {
+					if (agent.getIntValForAttribute(GridGame.ATTX) != goal.getIntValForAttribute(GridGame.ATTX) || 
+							agent.getIntValForAttribute(GridGame.ATTY) != goal.getIntValForAttribute(GridGame.ATTY)) {
 						return false;
 					}
 				}
@@ -81,7 +86,7 @@ public class Chicken {
 		
 		return new SGStateGenerator() {
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, numberAgents, numberAgents, 2, 2, width, height);
 				int maxX = width - 1;
 				int maxY = height - 1;
@@ -108,7 +113,7 @@ public class Chicken {
 		JointReward jointReward = new GridGame.GGJointRewardFunction(domain); //this.generateJointReward();
 		
 		SGStateGenerator stateGenerator = this.generateStateGenerator(domain, numberAgents, width, height);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		return world;
 	}
 	
@@ -119,24 +124,24 @@ public class Chicken {
 		ja0.setBreakTiesRandomly(false);
 		ja1.setBreakTiesRandomly(false);
 		JointReward rf = world.getRewardModel();
-		StateHashFactory hashingFactory = new DiscreteStateHashFactory();
+		HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 		MAValueIteration vi0 = 
-				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
+				new MAValueIteration((SGDomain) domain, rf, world.getTF(), 
 						0.95, hashingFactory, 0., new CoCoQ(), 0.00015, 50);
 		MAValueIteration vi1 = 
-				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
+				new MAValueIteration((SGDomain) domain, rf, world.getTF(), 
 						0.95, hashingFactory, 0., new CoCoQ(), 0.00015, 50);
 		
-		MultiAgentVFPlanningAgent a0 = new MultiAgentVFPlanningAgent((SGDomain) domain, vi0, new PolicyFromJointPolicy(ja0));
-		MultiAgentVFPlanningAgent a1 = new MultiAgentVFPlanningAgent((SGDomain) domain, vi1, new PolicyFromJointPolicy(ja1));
-		AgentType agentType0 = new AgentType(GridGame.CLASSAGENT, domain.getObjectClass(GridGame.CLASSAGENT), domain.getSingleActions());
-		AgentType agentType1 = new AgentType(GridGame.CLASSAGENT, domain.getObjectClass(GridGame.CLASSAGENT), domain.getSingleActions());
+		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent((SGDomain) domain, vi0, new PolicyFromJointPolicy(ja0));
+		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent((SGDomain) domain, vi1, new PolicyFromJointPolicy(ja1));
+		SGAgentType agentType0 = new SGAgentType(GridGame.CLASSAGENT, domain.getObjectClass(GridGame.CLASSAGENT), domain.getAgentActions());
+		SGAgentType agentType1 = new SGAgentType(GridGame.CLASSAGENT, domain.getObjectClass(GridGame.CLASSAGENT), domain.getAgentActions());
 		
 		for (int i = 0; i < numSmart; i++) {
 			MAValueIteration vi = 
-					new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
+					new MAValueIteration((SGDomain) domain, rf, world.getTF(), 
 							0.95, hashingFactory, 0., new CoCoQ(), 0.00015, 50);
-			MultiAgentVFPlanningAgent a = new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
+			MultiAgentDPPlanningAgent a = new MultiAgentDPPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
 			a.joinWorld(world, agentType0);
 		}
 		//RandomAgent a0 = new RandomAgent();
@@ -168,8 +173,8 @@ public class Chicken {
 		StateParser parser = new StateYAMLParser(domain);
 		StateJSONParser json;
 		String path = "/Users/brawner/";
-		analysis.writeToFile(path + "episode1", parser);
-		GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, (SGDomain)domain, parser, path);
+		analysis.writeToFile(path + "episode1");
+		GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, (SGDomain)domain, path);
 		
 		
 	}

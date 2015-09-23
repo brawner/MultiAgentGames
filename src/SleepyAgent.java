@@ -1,7 +1,9 @@
+import burlap.behavior.stochasticgames.agents.RandomSGAgent;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
 
 
-public class SleepyAgent extends RandomAgent {
+public class SleepyAgent extends RandomSGAgent {
 	private double sleepyTime;
 	public SleepyAgent(double sleepyTime) {
 		super();
@@ -14,8 +16,8 @@ public class SleepyAgent extends RandomAgent {
 	}
 
 	@Override
-	public GroundedSingleAction getAction(State s) {
-		GroundedSingleAction randomAction = super.getAction(s);
+	public GroundedSGAgentAction getAction(State s) {
+		GroundedSGAgentAction randomAction = super.getAction(s);
 		try {
 			Thread.sleep((long)(this.sleepyTime * 1000));
 		} catch (InterruptedException e) {
