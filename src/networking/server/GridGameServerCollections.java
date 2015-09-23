@@ -7,14 +7,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import networking.common.GridGameServerToken;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.behavior.stochasticgame.GameAnalysis;
+import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.oomdp.stochasticgames.World;
 
 /**

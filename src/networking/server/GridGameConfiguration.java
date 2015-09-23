@@ -1,7 +1,5 @@
 package networking.server;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,22 +13,14 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import burlap.behavior.singleagent.learning.LearningAgent;
-import burlap.behavior.singleagent.learning.tdmethods.QLearning;
-import burlap.behavior.statehashing.NameDependentStateHashFactory;
-import burlap.behavior.statehashing.StateHashFactory;
-import burlap.behavior.stochasticgame.PolicyFromJointPolicy;
-import burlap.behavior.stochasticgame.agents.RandomAgent;
-import burlap.behavior.stochasticgame.agents.mavf.MultiAgentVFPlanningAgent;
-import burlap.behavior.stochasticgame.agents.naiveq.SGNaiveQLAgent;
-import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.MaxQ;
-import burlap.behavior.stochasticgame.mavaluefunction.policies.EGreedyMaxWellfare;
-import burlap.behavior.stochasticgame.mavaluefunction.vfplanners.MAValueIteration;
+import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
+import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
+import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
+import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
+import burlap.behavior.stochasticgames.madynamicprogramming.policies.EGreedyMaxWellfare;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.AgentType;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;

@@ -19,10 +19,9 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;

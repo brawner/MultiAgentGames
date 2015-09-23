@@ -1,18 +1,13 @@
 package domain;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanics;
 import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
 import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;

@@ -2,9 +2,7 @@ package networking.server;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 
 /**

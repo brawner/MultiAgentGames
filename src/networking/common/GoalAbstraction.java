@@ -5,9 +5,8 @@ import java.util.List;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.StateAbstraction;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
 
 /**
  * Abstracts the goals away, so that an agent cannot tell which goal another agent is attempting to go to.

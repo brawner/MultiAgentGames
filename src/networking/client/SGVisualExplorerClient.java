@@ -1,6 +1,5 @@
 package networking.client;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -8,8 +7,7 @@ import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.server.GameHandler;
 import networking.server.GridGameManager;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.SGDomain;

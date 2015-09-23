@@ -16,13 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 import networking.server.GameHandler;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
 import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.SingleAction;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;

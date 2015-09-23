@@ -11,9 +11,8 @@ import networking.common.GridGameWorldLoader.WorldLoaderException;
 import networking.common.messages.WorldFile;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.ObjectClass;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 

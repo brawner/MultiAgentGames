@@ -1,6 +1,5 @@
 package networking.server;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -28,9 +27,9 @@ import networking.common.messages.WorldFile;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.behavior.stochasticgame.GameAnalysis;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
-import burlap.oomdp.core.State;
+import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 

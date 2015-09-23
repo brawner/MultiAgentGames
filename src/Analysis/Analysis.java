@@ -19,11 +19,10 @@ import java.util.List;
 import java.util.Map;
 
 import networking.common.GridGameExtreme;
-import burlap.behavior.stochasticgame.GameAnalysis;
+import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
 
@@ -109,7 +108,7 @@ public class Analysis {
 			e.printStackTrace();
 			return null;
 		}	
-		GameAnalysis analysis = GameAnalysis.parseStringIntoGameAnalysis(text, domain, sp);
+		GameAnalysis analysis = GameAnalysis.legacyParseStringIntoGameAnalysis(text, domain, sp);
 		List<JointAction> actions = analysis.getJointActions();
 		List<State> states = analysis.getStates();
 		Round round = new Round();

@@ -1,7 +1,5 @@
 package networking.server;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -11,12 +9,9 @@ import networking.common.TokenCastException;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.AgentType;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.SingleAction;
 import burlap.oomdp.stochasticgames.World;
 
 /**

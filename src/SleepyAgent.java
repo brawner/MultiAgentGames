@@ -1,6 +1,4 @@
-import burlap.behavior.stochasticgame.agents.RandomAgent;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 
 
 public class SleepyAgent extends RandomAgent {
