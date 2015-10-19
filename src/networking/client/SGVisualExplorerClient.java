@@ -81,6 +81,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 				
 			}
 		} catch (TokenCastException e) {
+			e.printStackTrace();
 			response.setError(true);
 		}
 	

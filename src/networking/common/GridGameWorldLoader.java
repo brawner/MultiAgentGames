@@ -9,6 +9,7 @@ import java.util.List;
 import networking.common.messages.WorldFile;
 import networking.server.GridGameManager;
 import behavior.SpecifyNoopCostRewardFunction;
+import burlap.domain.stochasticgames.gridgame.GGStandardMechanicsImmutableState;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.StateAbstraction;
 import burlap.oomdp.core.TerminalFunction;
@@ -31,12 +32,13 @@ public class GridGameWorldLoader {
 	private static WorldLoadingStateGenerator generateStateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent) throws TokenCastException {
 		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent);
 	}
-
-	public static World loadWorld(GridGameServerToken token) {
+	
+	private static WorldLoadingStateGenerator generateStateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent, boolean useImmutableStates) throws TokenCastException {
+		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent, useImmutableStates);
+	}
+	
+	public static World loadWorld(GridGameServerToken token, boolean useImmutableStates) {
 		GridGame gridGame = new GridGame();
-
-		
-
 
 		World world = null;
 		try {
@@ -47,13 +49,18 @@ public class GridGameWorldLoader {
 			} else {
 				domain = GridGameExtreme.generateDomain(gridGame, randomlyBreakTies);
 			}
+			if (useImmutableStates) {
+				domain.setJointActionModel(new GGStandardMechanicsImmutableState(domain, gridGame.getSemiWallProb()));
+			}
 			TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
 			JointReward jointReward = GridGameExtreme.generateJointReward(domain);
 			
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
+			
 
-			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
+			WorldLoadingStateGenerator stateGenerator = 
+					GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent, useImmutableStates);
 			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
 			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
 			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
@@ -68,40 +75,43 @@ public class GridGameWorldLoader {
 
 		return world;
 	}
+
+	public static World loadWorld(GridGameServerToken token) {
+		return GridGameWorldLoader.loadWorld(token, false);
+	}
+	
+	
 	
 	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop){
 		GridGame gridGame = new GridGame();
 		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
 		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
-		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
 		JointReward jointReward = GridGameExtreme.generateJointReward(domain, stepCost, reward, incurCostOnNoop);
-
-
-		World world = null;
-		try {
-			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
-			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
-
-			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
-			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
-			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
-			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
-
-			String description = token.getString(WorldFile.DESCRIPTION);
-			world.setDescription(description);
-
-		} catch (TokenCastException e) {
-			e.printStackTrace();
-			return null;
-		}
-
-		return world;
+		
+		
+		return GridGameWorldLoader.loadWorld(token, domain, jointReward, false);
 	}
 	
-	
 	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop, double noopCost){
+		return GridGameWorldLoader.loadWorld(filename, stepCost, reward, incurCostOnNoop, noopCost, false);
+	}
+	
+	public static World loadWorld(String filename, double stepCost, double reward, boolean incurCostOnNoop, double noopCost, boolean useImmutableStates){
 		GridGame gridGame = new GridGame();
 		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
+		
+		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
+		if (useImmutableStates) {
+			domain.setJointActionModel(new GGStandardMechanicsImmutableState(domain, gridGame.getSemiWallProb()));
+		}
+		JointReward jointReward = new SpecifyNoopCostRewardFunction(domain, stepCost, reward, reward, incurCostOnNoop, noopCost);
+		return GridGameWorldLoader.loadWorld(token, domain, jointReward, useImmutableStates);
+	}
+	
+	public static World loadWorld(GridGameServerToken token, SGDomain domain, JointReward jointReward, boolean useImmutableStates){
+		World world = null;
+		
+		GridGame gridGame = new GridGame();
 		try {
 			int max = Integer.valueOf(token.getInt("width"));
 			int maxh = Integer.valueOf(token.getInt("height"));
@@ -110,36 +120,30 @@ public class GridGameWorldLoader {
 			}
 			gridGame.setMaxDim(max);
 			
-		} catch (TokenCastException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
-		TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
-		JointReward jointReward = new SpecifyNoopCostRewardFunction(domain, stepCost, reward, reward, incurCostOnNoop, noopCost);
-
-
-		World world = null;
-		try {
+			TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
+			
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
 
-			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent);
+			WorldLoadingStateGenerator stateGenerator = GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent, useImmutableStates);
 			StateAbstraction abstraction = new GoalAbstraction(stateGenerator.generateAbstractedState());
 			int numAgents = token.getTokenList(WorldFile.AGENTS).size();
 			world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator, abstraction, numAgents);
 
 			String description = token.getString(WorldFile.DESCRIPTION);
 			world.setDescription(description);
-
+			
 		} catch (TokenCastException e) {
 			e.printStackTrace();
-			return null;
 		}
 
 		return world;
+	
 	}
+		
+	
+	
+	
 	
 
 	

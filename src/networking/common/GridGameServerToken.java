@@ -104,7 +104,7 @@ public class GridGameServerToken extends LinkedHashMap<String, Object> {
 	}
 	
 	public static GridGameServerToken tokenFromFile(String filename) {
-		System.out.println("Processing " + filename);
+		//System.out.println("Processing " + filename);
 		Path path = Paths.get(filename);
 		if (!Files.exists(path)) {
 			System.err.println(filename + " does not exist");

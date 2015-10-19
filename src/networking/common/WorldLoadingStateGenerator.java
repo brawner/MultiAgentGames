@@ -13,6 +13,8 @@ import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.ObjectClass;
 import burlap.oomdp.core.objects.MutableObjectInstance;
 import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.FixedSizeImmutableState;
+import burlap.oomdp.core.states.ImmutableState;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
@@ -22,12 +24,14 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 	private final State allGoalsUnsetAgents;
 	private final State noGoalsUnsetAgents;
 	private final int goalsPerAgent;
+	private final boolean useImmutableStates;
 	
-	private WorldLoadingStateGenerator(State allGoalsUnsetAgents, State noGoalsUnsetAgents, int goalsPerAgent) {
+	private WorldLoadingStateGenerator(State allGoalsUnsetAgents, State noGoalsUnsetAgents, int goalsPerAgent, boolean useImmutableStates) {
 		super();
 		this.allGoalsUnsetAgents = allGoalsUnsetAgents;
 		this.noGoalsUnsetAgents = noGoalsUnsetAgents;
 		this.goalsPerAgent = goalsPerAgent;
+		this.useImmutableStates = useImmutableStates;
 	}
 	
 	private static List<ObjectInstance> pruneGoals(List<ObjectInstance> goals, int goalsPerAgent) {
@@ -59,6 +63,10 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 	}
 	
 	public static WorldLoadingStateGenerator stateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent) throws TokenCastException {
+		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent, false);
+	}
+	
+	public static WorldLoadingStateGenerator stateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent, boolean useImmutableStates) throws TokenCastException {
 		Integer width = fileToken.getInt(WorldFile.WIDTH);
 		Integer height = fileToken.getInt(WorldFile.HEIGHT);
 		List<GridGameServerToken> agentObjects = fileToken.getTokenList(WorldFile.AGENTS);
@@ -150,7 +158,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		State noGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, null, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
-		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent);
+		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent, useImmutableStates);
 	}
 	
 	private static State generateBaseState(SGDomain domain, List<List<Integer>> agentPositions, List<List<Integer>> goalPositions,
@@ -215,19 +223,22 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		
 		State copy = this.noGoalsUnsetAgents.copy();
 		List<ObjectInstance> goals = this.allGoalsUnsetAgents.getObjectsOfClass(GridGame.CLASSGOAL);
-		List<ObjectInstance> goalsToAdd = this.pruneGoals(goals, this.goalsPerAgent);
+		List<ObjectInstance> goalsToAdd = WorldLoadingStateGenerator.pruneGoals(goals, this.goalsPerAgent);
 		
 		for (ObjectInstance goal : goalsToAdd) {
-			copy.addObject(goal);
+			copy = copy.addObject(goal);
 		}
 		
 		List<ObjectInstance> agentObjects = copy.getObjectsOfClass(GridGame.CLASSAGENT);
 		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
 			SGAgent agent = agents.get(i);
 			ObjectInstance agentObject = agentObjects.get(i);
-			copy.renameObject(agentObject.getName(), agent.getAgentName());
+			copy = copy.renameObject(agentObject.getName(), agent.getAgentName());
 		}
-		return copy;
+		if (this.noGoalsUnsetAgents instanceof FixedSizeImmutableState) {
+			return new FixedSizeImmutableState(copy);
+		}
+		return (this.useImmutableStates) ? new ImmutableState(copy) : copy;
 	}
 	
 	public State generateAbstractedState() {

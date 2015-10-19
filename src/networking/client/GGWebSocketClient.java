@@ -160,6 +160,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 				
 			}
 		} catch (TokenCastException e) {
+			e.printStackTrace();
 			response.setError(true);
 		}
 		
@@ -248,12 +249,15 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		
 		String worldType = (worldLabel.equalsIgnoreCase("all")) ? "all" : worldDescriptions.get(worldLabel);
 		if (worldType == null) {
+			System.err.println("World label " + worldLabel + " does not exist.");
 			return;
 		}
 		
 		try {
+			boolean found = false;
 			for (GridGameServerToken worldToken : this.worldTokens) {
 				if (worldType.equals("all") || worldType.equals(worldToken.getString(WorldFile.DESCRIPTION))) {
+					found = true;
 					World world = GridGameWorldLoader.loadWorld(worldToken);
 					SGDomain domain = world.getDomain();
 					State startState = world.startingState();
@@ -272,6 +276,9 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 					explorerClient.initGUI();
 				}
 			} 
+			if (!found) {
+				System.out.println("World label not found");
+			}
 		} catch (TokenCastException e) {
 			e.printStackTrace();
 		}
@@ -308,7 +315,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
     }
 
     public static void main(String[] args) {
-    	String host = "elzar.cs.brown.edu:8787";
+    	String host = "localhost:8787";//"elzar.cs.brown.edu:8787";
     	if (args.length > 0) {
     		host = args[0];
     	}

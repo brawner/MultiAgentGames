@@ -23,6 +23,10 @@ public class GoalAbstraction implements StateAbstraction{
 	public State abstraction(State s) {
 		List<ObjectInstance> goalObjects = this.reference.getObjectsOfClass(GridGame.CLASSGOAL);
 		List<ObjectInstance> goalsToRemove = s.getObjectsOfClass(GridGame.CLASSGOAL);
+		if (goalObjects.equals(goalsToRemove)) {
+			return s;
+		}
+		
 		
 		State abstracted = s.copy();
 		for (ObjectInstance goal : goalsToRemove) {
@@ -75,6 +79,10 @@ public class GoalAbstraction implements StateAbstraction{
 			if (!found) {
 				goalsNotToAdd.add(goalToAdd);
 			}
+		}
+		
+		if (actualGoals.equals(goalObjects)) {
+			return abstracted;
 		}
 		
 		// Remove all the goals from the state
