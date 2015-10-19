@@ -35,7 +35,7 @@ echo "Copying website files"
 cp ./web/index_with_closure.html /var/www/multi_grid_games/index.html
 cp ./web/task_ui.html /var/www/multi_grid_games/task_ui.html
 mkdir -p /var/www/multi_grid_games/javascript/lib
-cp ./web/all.js /var/www/multi_grid_games/javascript/
+cp ./web/all.js /var/www/multi_grid_games/
 cp ./web/javascript/lib/* /var/www/multi_grid_games/javascript/lib/
 
 sudo chown $USER:www-data -R /var/www/multi_grid_games
