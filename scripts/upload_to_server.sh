@@ -2,8 +2,8 @@
 set -e
 
 DEFAULT_SERVER="elzar"
-BURLAP_BRANCH="multi_agent_games"
-MAG_BRANCH="master"
+BURLAP_BRANCH="mag_v2"
+MAG_BRANCH="burlap_v2"
 SERVER=${1:-$DEFAULT_SERVER}
 
 kinit
