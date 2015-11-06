@@ -68,8 +68,36 @@ public class GridGameExtreme {
 	}
 	
 	// TODO change joint reward function
-	public static JointReward generateJointReward(SGDomain domain) {
-		return new GridGame.GGJointRewardFunction(domain);
+	public static JointReward generateJointReward(final SGDomain domain) {
+		JointReward jr = new JointReward() {
+
+			JointReward baseJR = new GridGame.GGJointRewardFunction(domain);
+
+			@Override
+			public Map<String, Double> reward(State s, JointAction ja, State sp) {
+				Map<String, Double> baseReward = baseJR.reward(s, ja, sp);
+				boolean areEqual = true;
+				Double r = null;
+				for (Map.Entry<String, Double> entry : baseReward.entrySet()) {
+					double agentR = entry.getValue();
+					if (r != null && r != agentR) {
+						areEqual = false;
+						break;
+					}
+					r = agentR;
+				}
+				if (areEqual) {
+					return baseReward;
+				}
+				for (Map.Entry<String, Double> entry : baseReward.entrySet()) {
+					entry.setValue(0.0);
+				}
+				return baseReward;
+			}
+		};
+		
+		
+		return jr;
 	};
 
 	public static JointReward generateJointReward(SGDomain domain, double stepCost, double reward, boolean incurCostOnNoop) {

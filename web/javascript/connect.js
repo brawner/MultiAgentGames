@@ -22,7 +22,7 @@ var GameConnect = function(){
     }
     GameConnect.prototype._gameSceneMatch = this;
     
-    var wsurl = "ws://elzar.cs.brown.edu:8787/events/",
+    var wsurl = "ws://localhost:8787/events/",
         callbacks = [],
         callbackIds = [],
         ws = 0,
