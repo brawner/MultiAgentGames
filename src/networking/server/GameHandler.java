@@ -110,15 +110,17 @@ public class GameHandler {
 				this.appendToActionRecord(msg);
 
 			} else if (msgType.equals(TAKE_ACTION)) {
-				String actionName = msg.getString(ACTION);
-				List<String> actionParams = msg.getStringList(ACTION_PARAMS);
-				String[] params = actionParams.toArray(new String[actionParams.size()]);
-				SGAgentAction action = this.domain.getSingleAction(actionName);
-				GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent.getAgentName(), action, params);
-				this.agent.setNextAction(groundedAction);
-				response.setString(RESULT, SUCCESS);
-
-
+				if (this.agent.isGameStarted()) {
+					String actionName = msg.getString(ACTION);
+					List<String> actionParams = msg.getStringList(ACTION_PARAMS);
+					String[] params = actionParams.toArray(new String[actionParams.size()]);
+					SGAgentAction action = this.domain.getSingleAction(actionName);
+					GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent.getAgentName(), action, params);
+					this.agent.setNextAction(groundedAction);
+					response.setString(RESULT, SUCCESS);
+				} else {
+					response.setString("Game_started", "Game was not started");
+				}
 			}else if(msgType.equals(INITIALIZE)){
 
 			}else if (msgType.equals(HEARTBEAT)){
