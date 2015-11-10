@@ -217,7 +217,7 @@ GridWorldPainter.prototype.drawTransition
 	//draw rewards (if there are any)
 	if (typeof goal_callback === 'undefined') {
 		goal_callback = function (painter, location, agent) {
-			painter.showReward(location, agent, 'Goooaal')
+			painter.showReward(location, agent, 'Home')
 		}
 	}
 	var reward_time = false;
