@@ -49,7 +49,7 @@ public class GameAnalysisFileReader {
 	public static void main(String[] args) {
 		String directory = args[0];
 		GridGame gridGame = new GridGame();
-		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
+		SGDomain domain = GridGameExtreme.generateDomain(gridGame, false);
 		StateParser parser = new StateJSONParser(domain);
 		
 		

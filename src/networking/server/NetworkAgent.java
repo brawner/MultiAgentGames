@@ -28,10 +28,12 @@ public class NetworkAgent extends SGAgent {
 	 */
 	private final GameHandler handler;
 	
+	private Boolean gameStarted;
 	
 	public NetworkAgent(GameHandler handler) {
 		this.handler = handler;
 		this.lock = new ReentrantReadWriteLock();
+		this.gameStarted = false;
 	}
 
 	/**
@@ -39,7 +41,11 @@ public class NetworkAgent extends SGAgent {
 	 */
 	@Override
 	public void gameStarting() {
-		
+		this.gameStarted = true;
+	}
+	
+	public Boolean isGameStarted() {
+		return this.gameStarted;
 	}
 	
 	/**
@@ -92,7 +98,7 @@ public class NetworkAgent extends SGAgent {
 	@Override
 	public void gameTerminated() {
 		this.handler.gameCompleted();
-
+		this.gameStarted = false;
 	}
 	
 	/**
