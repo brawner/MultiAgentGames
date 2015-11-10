@@ -54,6 +54,7 @@ public class NetworkAgent extends SGAgent {
 	@Override
 	public void gameStarting(State startState) {
 		this.handler.updateClient(startState);
+		this.gameStarted = true;
 	}
 
 	/**
