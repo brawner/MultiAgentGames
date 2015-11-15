@@ -129,7 +129,7 @@ public class Analysis {
 	}
 	
 	public static Round getGameResult(String filename, List<GameAnalysis> games) {
-		int s = filename.lastIndexOf("_");
+		int s = filename.lastIndexOf("/") + 4;
 		int end = filename.lastIndexOf(".");
 		int roundNumber = Integer.parseInt(filename.substring(s+1,end));
 		String text;
@@ -326,13 +326,13 @@ public class Analysis {
 			
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.contains("learned") &&
-						name.contains(".game");
+				return name.contains(".game");
 			}
 		};
 		Match match = new Match();
 		String[] children = file.list(filter);
-		Integer matchNum = Integer.parseInt(file.getName());
+		String filename = file.getName();
+		Integer matchNum = Integer.parseInt(filename.substring(5));
 		for (int i = 0; i < children.length; ++i) {
 			if (matchNum == null) {
 				int s = children[i].indexOf("episode") + "episode".length();
