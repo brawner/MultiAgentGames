@@ -185,6 +185,9 @@ var Game = function() {
     };
 
     this.onActionPress = function (event) {
+        if (agent_waited) {
+            return;
+        }
         var action;
         console.log("On action press");
         //$(document).unbind('keydown.gridworld');

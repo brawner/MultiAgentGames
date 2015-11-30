@@ -69,12 +69,16 @@ public class GridGameManager {
 	public static final String CLOSED_PLAYER_LEAVING = "closed_by_player_leaving";
 	public static final String DEBUG = "debug";
 	public static final String OTHER_VARS = "other_vars";
+	public static final String NORM_LEARNING_AGENT = "norm_learning";
+	public static final String CONTINUOUS_NORM_LEARNING = "continuous_norm_learning";
 	
 	public static final List<String> ALLOWED_AGENTS = 
 			Arrays.asList(GridGameManager.QLEARNER_AGENT, 
 						  GridGameManager.COOPERATIVE_AGENT, 
 						  GridGameManager.RANDOM_AGENT, 
-						  GridGameManager.HUMAN_AGENT);
+						  GridGameManager.HUMAN_AGENT,
+						  GridGameManager.NORM_LEARNING_AGENT,
+						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
 	
 

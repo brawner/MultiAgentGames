@@ -3,6 +3,7 @@ package networking.server;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,16 +14,25 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import examples.GridGameNormRF2;
+import burlap.behavior.policy.GreedyQPolicy;
+import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
 import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
 import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
 import burlap.behavior.stochasticgames.madynamicprogramming.policies.EGreedyMaxWellfare;
 import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.oomdp.core.Domain;
+import burlap.oomdp.core.TerminalFunction;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.statehashing.HashableStateFactory;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
 import burlap.oomdp.stochasticgames.JointReward;
@@ -88,7 +98,7 @@ public class GridGameConfiguration {
 	private final AtomicBoolean isClosed;
 	
 	/**
-	 * Determines how many times the game can be restarted. Currently, there setter method is not called anywhere.
+	 * Determines how many times the game can be restarted. Currently, the setter method is not called anywhere.
 	 */
 	private final AtomicInteger maxIterations;
 	
@@ -99,7 +109,7 @@ public class GridGameConfiguration {
 	
 	/**
 	 * The maximum number of turns agents are allowed in a world. -1 is unlimited, and would be a bad idea because games could
-	 * possibly run forever on a server. Default is 10000;
+	 * possibly run forever on a server. Default is 30;
 	 */
 	private final AtomicInteger maxTurns;
 	
@@ -234,6 +244,8 @@ public class GridGameConfiguration {
 			return this.getNewMAVIAgent(world);
 		case GridGameManager.QLEARNER_AGENT:
 			return this.getNewQAgent(world);
+		case GridGameManager.NORM_LEARNING_AGENT:
+			return this.getNormLearningAgent(world);
 		}
 		return null;
 	}
@@ -280,6 +292,30 @@ public class GridGameConfiguration {
 		SGAgent agent = new SGNaiveQLAgent(domain, .95, .9, 0.0, hashingFactory);
 		
 		return agent;
+		
+	}
+	
+	private SGAgent getNormLearningAgent(World world) {
+		SGDomain domain = world.getDomain();
+		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
+		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
+		Domain cmdp = mdpdg.generateDomain();
+		
+		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
+		JointReward jr = new GridGame.GGJointRewardFunction(domain, 0, 10, true);
+		
+		RewardFunction crf = new TotalWelfare(jr);
+
+		//create joint task planner for social reward function and RHIRL leaf node values
+		final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(), 20, -1);
+		jplanner.toggleDebugPrinting(false);
+
+
+		//create independent social reward functions to learn for each agent
+		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
+
+		//create agents
+		return new NormLearningAgent(domain, agent1RF, -1, agent1RF.createCorresponingDiffVInit(jplanner));
 		
 	}
 	
@@ -343,7 +379,7 @@ public class GridGameConfiguration {
 	
 	/**
 	 * Adds an agent object that will be reused with each restart. This is helpful if the agent already has a policy computed. Be
-	 * surethat an agent that is added to this configuration does not share any mutable data members with other agents running in different
+	 * sure that an agent that is added to this configuration does not share any mutable data members with other agents running in different
 	 * worlds.
 	 * @param agent
 	 */

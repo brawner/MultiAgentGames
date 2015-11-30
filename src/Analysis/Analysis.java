@@ -52,8 +52,11 @@ public class Analysis {
 		public void write(FileWriter writer) throws IOException {
 			writer.append(turkId).append(",").append(Integer.toString(x)).append(",");
 			writer.append(Integer.toString(y)).append(",").append(Integer.toString(rt));
+			writer.append(",");
 			if (action != null) {
-				writer.append(",").append(action);
+				writer.append(action);
+			} else {
+				writer.append("null");
 			}
 		}
 	}
@@ -126,7 +129,7 @@ public class Analysis {
 	}
 	
 	public static Round getGameResult(String filename, List<GameAnalysis> games) {
-		int s = filename.lastIndexOf("_");
+		int s = filename.lastIndexOf("/") + 4;
 		int end = filename.lastIndexOf(".");
 		int roundNumber = Integer.parseInt(filename.substring(s+1,end));
 		String text;
@@ -137,6 +140,14 @@ public class Analysis {
 			return null;
 		}	
 		GameAnalysis analysis = GameAnalysis.legacyParseStringIntoGameAnalysis(text, domain, sp);
+		if (analysis.states.isEmpty()) {
+			analysis = GameAnalysis.parseFileIntoGA(filename, domain);
+			if (analysis.states.isEmpty()) {
+				System.err.println(filename + " didn't contain a full game");
+				
+				return null;
+			}
+		}
 		games.add(analysis);
 		List<JointAction> actions = analysis.getJointActions();
 		List<State> states = analysis.getStates();
@@ -233,9 +244,14 @@ public class Analysis {
 				
 			}
 			Round r = getGameResult(baseDir + "/" + children[i], games);
-			match.rounds.add(r);
-			match.rewardAgent1 += r.rewardAgent1;
-			match.rewardAgent2 += r.rewardAgent2;
+			if (r != null) {
+				match.rounds.add(r);
+				match.rewardAgent1 += r.rewardAgent1;
+				match.rewardAgent2 += r.rewardAgent2;
+			}
+		}
+		if (match.rounds.isEmpty()) {
+			return null;
 		}
 		if (matchNum != null) {
 			match.matchId = matchNum.toString();
@@ -286,7 +302,9 @@ public class Analysis {
 					games.add(matchGames);
 					
 					Match match = getMatch(baseDir, filePrefix, matchGames);
-					experiment.matches.put(filePrefix, match);
+					if (match != null) {
+						experiment.matches.put(filePrefix, match);
+					}
 				}
 			}
 			reader.close();
@@ -297,6 +315,67 @@ public class Analysis {
 			e.printStackTrace();
 		}
 		return experiment;
+	}
+	
+	public static Match loadMatch(String dir, List<List<GameAnalysis>> allGames) {
+		File file = new File(dir);
+		if (!file.isDirectory()) {
+			return null;
+		}
+		FilenameFilter filter = new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.contains(".game");
+			}
+		};
+		Match match = new Match();
+		String[] children = file.list(filter);
+		String filename = file.getName();
+		Integer matchNum = Integer.parseInt(filename.substring(5));
+		for (int i = 0; i < children.length; ++i) {
+			if (matchNum == null) {
+				int s = children[i].indexOf("episode") + "episode".length();
+				int e = children[i].lastIndexOf("_");
+				matchNum = Integer.parseInt(children[i].substring(s,e));
+				
+			}
+			List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+			Round r = getGameResult(dir + "/" + children[i], games);
+			if (r != null) {
+				match.rounds.add(r);
+				match.rewardAgent1 += r.rewardAgent1;
+				match.rewardAgent2 += r.rewardAgent2;
+				allGames.add(games);
+			}
+		}
+		if (match.rounds.isEmpty()) {
+			return null;
+		}
+		if (matchNum != null) {
+			match.matchId = matchNum.toString();
+		}
+		
+		Collections.sort(match.rounds);
+		
+		return match;
+	}
+	
+	public static Experiment loadExperiment(String baseDir, List<List<GameAnalysis>> games) {
+		File dir = new File(baseDir);
+		if (!dir.isDirectory()) {
+			throw new RuntimeException(baseDir + " is not a directory");
+		}
+		
+		File[] gameDirs = dir.listFiles();
+		Experiment exp = new Experiment();
+		for (File d : gameDirs) {
+			Match match = loadMatch(d.getAbsolutePath(), games);
+			if (match != null) {
+				exp.matches.put(d.getName(), match);
+			}
+		}
+		return exp;
 	}
 	
 	public static ObservedPolicy getPolicyFromGames(List<GameAnalysis> games, String abstractedAgent, List<State> states) {
@@ -372,7 +451,11 @@ public class Analysis {
 		}
 	}
 	
+	
+	
 	public static void main(String[] args) {
+		
+		List<List<GameAnalysis>> games = new ArrayList<List<GameAnalysis>>();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String directory = (args.length == 0) ? null : args[0];
         File file;
@@ -385,49 +468,50 @@ public class Analysis {
 			}	
 		}
 		
-//		String outfilename = (args.length < 2) ? null : args[1];
-//		File outFile;
-//		while (outfilename == null || (outFile = new File(outfilename)).exists()) {
-//			System.out.println("Enter an appropriate results filename");
-//			try {
-//				outfilename = br.readLine();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}	
-//		}
-//		String rewardsFilename = (args.length < 3) ? null : args[2];
-//		File rewardsOutfile;
-//		while (rewardsFilename == null || (rewardsOutfile = new File(rewardsFilename)).exists()) {
-//			System.out.println("Enter an appropriate rewards file name");
-//			try {
-//				rewardsFilename = br.readLine();
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}	
-//		}
-		List<List<GameAnalysis>> games = new ArrayList<List<GameAnalysis>>();
-		
-		Experiment experiment = loadExperiment(file.getAbsolutePath(), "IDMap.csv", games);
-		for (String agent : Arrays.asList("agent0", "agent1")) {
-			List<ObservedPolicy> policies = new ArrayList<ObservedPolicy>();
-			List<List<State>> allStates = new ArrayList<List<State>>();
-			
-			for (int i = 7; i < 28; i++) {
-				List<GameAnalysis> list = games.get(i);
-				List<State> states = new ArrayList<State>();
-				ObservedPolicy policy = getPolicyFromGames(list, agent, states);
-				policies.add(policy);
-				allStates.add(states);
-			}
-			visualizePolicy(allStates, agent, policies);
+		String outfilename = (args.length < 2) ? null : args[1];
+		File outFile;
+		while (outfilename == null || (outFile = new File(outfilename)).exists()) {
+			System.out.println("Enter an appropriate results filename");
+			try {
+				outfilename = br.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
+		}
+		String rewardsFilename = (args.length < 3) ? null : args[2];
+		File rewardsOutfile;
+		while (rewardsFilename == null || (rewardsOutfile = new File(rewardsFilename)).exists()) {
+			System.out.println("Enter an appropriate rewards file name");
+			try {
+				rewardsFilename = br.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
 		}
 		
-//		if (outFile.exists()) {
-//			System.out.println("Cannot overwrite existing data file, choose a different name");
-//			return;
+		Experiment experiment = loadExperiment(file.getAbsolutePath(), games);
+		
+		
+		
+		/*
+		List<List<GameAnalysis>> games = new ArrayList<List<GameAnalysis>>();
+		Experiment experiment = loadExperiment(file.getAbsolutePath(), "IDMap.csv", games);
+		*/
+//		for (String agent : Arrays.asList("agent0", "agent1")) {
+//			List<ObservedPolicy> policies = new ArrayList<ObservedPolicy>();
+//			List<List<State>> allStates = new ArrayList<List<State>>();
+//			
+//			for (int i = 7; i < 28; i++) {
+//				List<GameAnalysis> list = games.get(i);
+//				List<State> states = new ArrayList<State>();
+//				ObservedPolicy policy = getPolicyFromGames(list, agent, states);
+//				policies.add(policy);
+//				allStates.add(states);
+//			}
+//			visualizePolicy(allStates, agent, policies);
 //		}
-//		
-//		write(outFile.getAbsolutePath(), rewardsOutfile.getAbsolutePath(), experiment);
+		
+		write(outFile.getAbsolutePath(), rewardsOutfile.getAbsolutePath(), experiment);
 		
 	}
 }
