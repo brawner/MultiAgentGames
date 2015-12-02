@@ -14,6 +14,7 @@ import burlap.oomdp.core.Attribute;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 import burlap.oomdp.visualizer.RenderLayer;
@@ -29,12 +30,13 @@ public class GridGameExtreme {
 		Domain domain = gridGame.generateDomain();
 		SGDomain sgDomain = (SGDomain)domain;
 		if (!randomlyBreakTies) {
-			sgDomain.setJointActionModel(
-					new GridGameStandardMechanicsWithoutTieBreaking(domain, gridGame.getSemiWallProb()));
+			double semiWallProb = gridGame.getSemiWallProb();
+			JointActionModel model = new GridGameStandardMechanicsWithoutTieBreaking(domain, semiWallProb);
+			sgDomain.setJointActionModel(model);
 		}
 		
-		Attribute xAtt = domain.getAttribute(GridGame.ATTX);
-		Attribute yAtt = domain.getAttribute(GridGame.ATTY);
+//		Attribute xAtt = domain.getAttribute(GridGame.ATTX);
+//		Attribute yAtt = domain.getAttribute(GridGame.ATTY);
 //		Attribute cost = new Attribute(domain, ATTVALUE, Attribute.AttributeType.INT);
 //		cost.setDiscValuesForRange(-Integer.MAX_VALUE, -Integer.MAX_VALUE, 1);
 //		domain.addAttribute(cost);
