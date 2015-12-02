@@ -11,6 +11,7 @@ import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.Attribute;
+import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.SGDomain;
@@ -25,9 +26,11 @@ public class GridGameExtreme {
 		
 	public static SGDomain generateDomain(GridGame gridGame, boolean randomlyBreakTies) {
 		//gridGame.setMaxDim(5);
-		SGDomain domain = (SGDomain) gridGame.generateDomain();
+		Domain domain = gridGame.generateDomain();
+		SGDomain sgDomain = (SGDomain)domain;
 		if (!randomlyBreakTies) {
-			domain.setJointActionModel(new GridGameStandardMechanicsWithoutTieBreaking(domain, gridGame.getSemiWallProb()));
+			sgDomain.setJointActionModel(
+					new GridGameStandardMechanicsWithoutTieBreaking(domain, gridGame.getSemiWallProb()));
 		}
 		
 		Attribute xAtt = domain.getAttribute(GridGame.ATTX);
@@ -37,7 +40,7 @@ public class GridGameExtreme {
 //		domain.addAttribute(cost);
 //		
 		//AgentInReward agentInReward = new AgentInReward(PFINREWARD, domain);
-		return domain;
+		return sgDomain;
 	}
 
 	public static SGDomain generateDomain(GridGame gridGame) {
