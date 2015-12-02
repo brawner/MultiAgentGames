@@ -14,7 +14,7 @@ git checkout $BURLAP_BRANCH
 git pull
 rsync -avz --exclude '.git' ./ $SERVER:~/workspace/burlap
 
-cd ~/workspace/NORM_LEARNING_BRANCH
+cd ~/workspace/norm_learning
 git checkout $NORM_LEARNING_BRANCH
 git pull
 rsync -avz --exclude '.git' ./ $SERVER:~/workspace/norm_learning
