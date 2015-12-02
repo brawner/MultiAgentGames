@@ -50,7 +50,7 @@ public class GridGameExtreme {
 		return sgDomain;
 	}
 	
-	public JointReward getSimultaneousGoalRewardFunction(final double goalReward, final double stepCost) {
+	public static JointReward getSimultaneousGoalRewardFunction(final double goalReward, final double stepCost) {
 		return new JointReward() {
 
 			@Override
