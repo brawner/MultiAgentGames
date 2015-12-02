@@ -214,7 +214,10 @@ public class GridGameConfiguration {
 	private void addAgentToWorld(World world, String agentName) {
 		if (this.repeatedAgents.containsKey(agentName)) {
 			SGAgent agent = this.repeatedAgents.get(agentName);
-			SGAgentType agentType = agent.getAgentType();
+			//SGAgentType agentType = agent.getAgentType();
+			SGAgentType agentType = 
+					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
+			
 			agent.joinWorld(world, agentType);
 			
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
@@ -302,12 +305,12 @@ public class GridGameConfiguration {
 		Domain cmdp = mdpdg.generateDomain();
 		
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
-		JointReward jr = new GridGame.GGJointRewardFunction(domain, 0, 10, true);
+		JointReward jr = new GridGame.GGJointRewardFunction(domain, 0, 1, true);
 		
 		RewardFunction crf = new TotalWelfare(jr);
 
 		//create joint task planner for social reward function and RHIRL leaf node values
-		final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(), 20, -1);
+		final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(false), 20, -1);
 		jplanner.toggleDebugPrinting(false);
 
 
@@ -396,12 +399,12 @@ public class GridGameConfiguration {
 		}
 	}
 	
-	/**
-	 * Adds a new agent of a specific type. Because each agent is regenerated at each restart, there is no concern about thread interaction with
-	 * other agents.
-	 * @param agentType
-	 */
-	public void addAgentType(String agentType) {
+	public void addAgentType(String agentType, boolean repeated) {
+		if (repeated) {
+			SGAgent agent = getNewAgentForWorld(this.baseWorld, agentType);
+			this.addAgent(agent);
+		}
+
 		if (!this.canAddAgent()) {
 			return;
 		}
@@ -414,6 +417,15 @@ public class GridGameConfiguration {
 			this.regeneratedAgents.put(agentName, agentType);
 			this.orderedAgents.add(agentName);
 		}
+	}
+	
+	/**
+	 * Adds a new agent of a specific type. Because each agent is regenerated at each restart, there is no concern about thread interaction with
+	 * other agents.
+	 * @param agentType
+	 */
+	public void addAgentType(String agentType) {
+		this.addAgentType(agentType, false);
 	}
 	
 	/**

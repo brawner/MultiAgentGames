@@ -202,19 +202,6 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			GridGame.setVerticalWall(state, i + 2, x, y1, y2, wallType);
 		}
 		
-		for (int i = 0; i < rewards.size(); i++) {
-			List<Integer> reward = rewards.get(i);
-			int x = reward.get(0);
-			int y = reward.get(1);
-			int value = reward.get(2);
-			ObjectClass rewardClass = domain.getObjectClass(GridGameExtreme.CLASSREWARD);
-			ObjectInstance rewardObject = new MutableObjectInstance(rewardClass, "reward" + i);
-			rewardObject.setValue(GridGame.ATTX, x);
-			rewardObject.setValue(GridGame.ATTY, y);
-			rewardObject.setValue(GridGameExtreme.ATTVALUE, value);
-			state.addObject(rewardObject);
-		}
-		
 		return state;
 	}
 

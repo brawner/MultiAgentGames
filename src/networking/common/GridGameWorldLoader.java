@@ -52,8 +52,8 @@ public class GridGameWorldLoader {
 			if (useImmutableStates) {
 				domain.setJointActionModel(new GGStandardMechanicsImmutableState(domain, gridGame.getSemiWallProb()));
 			}
-			TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
-			JointReward jointReward = GridGameExtreme.generateJointReward(domain);
+			TerminalFunction terminalFunction = new GridGame.GGTerminalFunction(domain);
+			JointReward jointReward = new GridGame.GGJointRewardFunction(domain);
 			
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
@@ -86,7 +86,7 @@ public class GridGameWorldLoader {
 		GridGame gridGame = new GridGame();
 		GridGameServerToken token = GridGameWorldLoader.loadText(filename);
 		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
-		JointReward jointReward = GridGameExtreme.generateJointReward(domain, stepCost, reward, incurCostOnNoop);
+		JointReward jointReward = new GridGame.GGJointRewardFunction(domain, stepCost, reward, incurCostOnNoop);
 		
 		
 		return GridGameWorldLoader.loadWorld(token, domain, jointReward, false);
@@ -120,7 +120,7 @@ public class GridGameWorldLoader {
 			}
 			gridGame.setMaxDim(max);
 			
-			TerminalFunction terminalFunction = GridGameExtreme.generateTerminalFunction(domain);
+			TerminalFunction terminalFunction = new GridGame.GGTerminalFunction(domain);
 			
 			Integer goalsPerAgent = token.getInt(WorldFile.GOALS_PER_AGENT);
 			goalsPerAgent = (goalsPerAgent == null ) ? 0 : goalsPerAgent;
