@@ -5,16 +5,21 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
-import burlap.oomdp.core.Attribute;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
+import burlap.oomdp.singleagent.GroundedAction;
+import burlap.oomdp.singleagent.RewardFunction;
+import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.JointActionModel;
+import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 import burlap.oomdp.visualizer.RenderLayer;
@@ -43,6 +48,44 @@ public class GridGameExtreme {
 //		
 		//AgentInReward agentInReward = new AgentInReward(PFINREWARD, domain);
 		return sgDomain;
+	}
+	
+	public JointReward getSimultaneousGoalRewardFunction(final double goalReward, final double stepCost) {
+		return new JointReward() {
+
+			@Override
+			public Map<String, Double> reward(State s, JointAction ja, State sp) {
+				Map<String, Double> reward = new HashMap<String, Double>();
+				List<ObjectInstance> agents = s.getObjectsOfClass(GridGame.CLASSAGENT);
+				List<ObjectInstance> goals = s.getObjectsOfClass(GridGame.CLASSGOAL);
+				
+				boolean allPlayersInGoals = true;
+				for (ObjectInstance agent : agents) {
+					int playerNumber = agent.getIntValForAttribute(GridGame.ATTPN);
+					int ax = agent.getIntValForAttribute(GridGame.ATTX);
+					int ay = agent.getIntValForAttribute(GridGame.ATTY);
+					for (ObjectInstance goal : goals) {
+						int goalType = goal.getIntValForAttribute(GridGame.ATTGT);
+						if (playerNumber + 1 == goalType) {
+							int gx = goal.getIntValForAttribute(GridGame.ATTX);
+							int gy = goal.getIntValForAttribute(GridGame.ATTY);
+							if (ax != gx || ay != gy) {
+								allPlayersInGoals = false;
+								break;
+							}
+						}
+					}
+					if (!allPlayersInGoals) {
+						break;
+					}
+				}
+				double rewardValue = (allPlayersInGoals) ? goalReward : stepCost;
+				for (ObjectInstance agent : agents) {
+					reward.put(agent.getName(), rewardValue);
+				}
+				return reward;
+			}			
+		};
 	}
 
 	public static SGDomain generateDomain(GridGame gridGame) {
