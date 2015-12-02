@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -80,9 +81,12 @@ public class GridGameManager {
 						  GridGameManager.NORM_LEARNING_AGENT,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
+	public static final List<String> REPEATED_AGENTS = 
+			Arrays.asList(GridGameManager.NORM_LEARNING_AGENT,
+						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
 
-	public HashMap<String,ArrayList<String>> gameTypesForIds = new HashMap<String,ArrayList< String>>();
+	public HashMap<String,List<String>> gameTypesForIds = new HashMap<String,List< String>>();
 
 	//add a logging string here that is pushed at end of game with episode data??
 
@@ -483,6 +487,10 @@ public class GridGameManager {
 		agentTypeStr = agentTypeStr.toLowerCase();
 		return ALLOWED_AGENTS.contains(agentTypeStr);
 	}
+	
+	private boolean isRepeatedAgent(String worldId, String agentTypeStr) {
+		return REPEATED_AGENTS.contains(agentTypeStr);
+	}
 
 	/**
 	 * Takes a configured world and runs it. If the configuration hasn't been fully configured, it won't run the game.
@@ -573,114 +581,93 @@ public class GridGameManager {
 			GridGameServerToken response) throws TokenCastException{
 		//if a game of the type exists, join that game
 
-		String turk_id = token.getString(GridGameManager.URL_ID);
-		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		String worldId = token.getString(GridGameManager.WORLD_ID);
 		String experimentType = token.getString(EXP_NAME);
+		if (worldId == null && experimentType == null) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The world or experiment must be specified");
+			return;
+		}
+		
+		String turkId = token.getString(GridGameManager.URL_ID);
+		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
 		GridGameServerToken otherVars = token.getToken(OTHER_VARS);
+		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
+
 		Boolean runDebug = false;
 		if (otherVars != null) {
 			String runDebugStr = otherVars.getString(GridGameManager.DEBUG);
 			runDebug = (runDebugStr == null) ? false : Boolean.parseBoolean(runDebugStr);
 		}
 		
-		System.out.println("Client " + clientId + " with turk id: " + turk_id + " is starting a game. " +
-				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
-		
-		//config_game message received
-		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
-
-		if (worldId == null && experimentType == null) {
-			response.setError(true);
-			response.setString(WHY_ERROR, "The world or experiment must be specified");
-			return;
-		}
-
-		if(experimentType != null){
+		if (experimentType != null) {
 			agentTypes = new ArrayList<String>();
-			agentTypes.add(HUMAN_AGENT);
-			agentTypeStr = HUMAN_AGENT;
-			
-			Path fileName = Paths.get(this.experimentDirectory, experimentType + ".csv").toAbsolutePath();
-			// read these two strings from a human written json file here??
-
-			BufferedReader reader;
-			FileReader fileReader;
-			try {
-				fileReader = 
-						new FileReader(fileName.toString());
-			} catch (FileNotFoundException e) {
-				response.setError(true);
-				response.setString(WHY_ERROR, "The experiment " + experimentType + " does not exist on this server");
+			agentTypes.add(GridGameManager.HUMAN_AGENT);
+			List<String> expParams = this.loadExperimentType(experimentType, response);
+			if (response.getError()) {
 				return;
 			}
-
-			String opponentType = "random";
-			worldId = "TwoAgentsHall_3by5_noWalls";
-
-			try {
-				String line = "";
-
-				reader = new BufferedReader(fileReader);
-
-				while ((line = reader.readLine()) != null) {
-					//Get all tokens available in line
-					String[] tokens = line.split(COMMA_DELIMITER);
-					if (tokens.length >=2) {
-						worldId = tokens[0];
-						opponentType = tokens[1];
-					}
-				}
-				reader.close();
-			} catch (IOException e) {
-				response.setError(true);
-				response.setString(WHY_ERROR, "Reading the experiment " + experimentType + " file failed");
-				return;
-			} 
-
-			agentTypes.add(opponentType);
+			worldId = expParams.get(0);
+			agentTypes.add(expParams.get(1));
 		}
 		
+		System.out.println("Client " + clientId + " with turk id: " + turkId + " is starting a game. " +
+				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
+		this.runGame(worldId, turkId, agentTypeStr, agentTypes, runDebug, clientId, session, response);
+	}
+	
+	private void runGame(String worldId, String turkId, String agentTypeStr, 
+			List<String> agentTypes, boolean runDebug,
+			String clientId, Session session,
+			GridGameServerToken response) {
+
 		World world = this.collections.getWorld(worldId);
+		if (world == null) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The desired world id does not exist");
+			return;
+		}
 
 		GridGameConfiguration configuration = null;
 		String activeId = null;
 
-		boolean joinOnly = false;
+		boolean initGame = true;
 
 		Map<String,GridGameConfiguration> configs = collections.getConfigurations();
-		for(String id : configs.keySet()){
+		for (Map.Entry<String, GridGameConfiguration> entry : configs.entrySet()) {
+			String id = entry.getKey();
+			GridGameConfiguration config = entry.getValue();
 			System.out.println("GTFI size: "+gameTypesForIds.size());
-			if(!configs.get(id).isFullyConfigured() && gameTypesForIds.get(worldId).contains(id)){ //&& check same type??){
-
-				joinOnly = true;
+			
+			if (config.isFullyConfigured()) {
+				continue;
+			}
+			
+			if(gameTypesForIds.get(worldId).contains(id)){
+				initGame = false;
 				activeId = id;
 				configuration = configs.get(id);
 				break;
 			}
 		}
 
-		if(!joinOnly){
-			//init_game message received
-			if (world != null) {
-				configuration = new GridGameConfiguration(world.copy());
-				if (runDebug) {
-					configuration.setMaxIterations(2);
-				}
-				activeId = this.collections.getUniqueThreadId();
-				if(!gameTypesForIds.containsKey(worldId)){
-					gameTypesForIds.put(worldId, new ArrayList<String>());
-
-				}
-				gameTypesForIds.get(worldId).add(activeId);
-
-				this.collections.addConfiguration(activeId, configuration);
-				response.setString(STATUS, "Game " + worldId + " has been initialized");
-			} else {
-				response.setError(true);
-				response.setString(WHY_ERROR, "The desired world id does not exist");
-				return;
+		if(initGame){
+			configuration = new GridGameConfiguration(world.copy());
+			
+			if (runDebug) {
+				configuration.setMaxIterations(2);
 			}
+			
+			List<String> gameTypes = gameTypesForIds.get(worldId);
+			if(gameTypes == null){
+				gameTypes = new ArrayList<String>();
+				gameTypesForIds.put(worldId, gameTypes);
+
+			}
+			activeId = this.collections.getUniqueThreadId();
+			gameTypes.add(activeId);
+			this.collections.addConfiguration(activeId, configuration);
+			response.setString(STATUS, "Game " + worldId + " has been initialized");
 
 			int count = 1;
 			for (String agentTypeToAdd : agentTypes) {
@@ -691,16 +678,13 @@ public class GridGameManager {
 					response.setString(WHY_ERROR, "An agent of type " + agentTypeToAdd + " cannot be added to this game");
 					return;
 				}
+				
+				boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
+				configuration.addAgentType(agentTypeToAdd, isRepeated);
 				System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeToAdd);
-				configuration.addAgentType(agentTypeToAdd);
+				
 			}
 		}else{
-			//add agent to game
-			if (configuration == null) {
-				response.setError(true);
-				response.setString(WHY_ERROR, "Add agent: The desired world id does not exist");
-				return;
-			}
 			int count = configuration.getNumberAgents() + 1;
 			System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeStr);
 			boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
@@ -712,7 +696,6 @@ public class GridGameManager {
 			configuration.addAgentType(agentTypeStr);
 		}
 
-		//join_game message received
 		String agentName = "unset";
 		GameHandler handler = new GameHandler(this, session, worldId);
 
@@ -736,7 +719,7 @@ public class GridGameManager {
 		try {
 			FileWriter pw = new FileWriter(this.analysisDirectory +"/IDMap.csv", true);
 
-			pw.append(clientId).append(",").append(turk_id).append(",").append(agentName);
+			pw.append(clientId).append(",").append(turkId).append(",").append(agentName);
 			pw.append(",").append(agentTypeStr).append(",").append(configuration.getUniqueGameId());
 			pw.append("\n");
 			pw.close();
@@ -744,12 +727,9 @@ public class GridGameManager {
 			e.printStackTrace();
 		}
 
-		System.out.println("CID: "+clientId+" TID: "+turk_id+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
+		System.out.println("CID: "+clientId+" TID: "+turkId+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
 
 		if (!configuration.isFullyConfigured()) {
-			System.out.println("Not Fully Configured");
-			response.setError(true);
-			response.setString(WHY_ERROR, "This game has not been fully connected, or it is awaiting humans to join");
 			response.setString(GridGameManager.IS_READY,"false");
 			return;
 		}
@@ -764,6 +744,49 @@ public class GridGameManager {
 		if (this.collections.getHandlersWithGame(activeId).size() == 0) {
 			throw new RuntimeException("We've started very poorly here");
 		}
+	}
+	
+	private List<String> loadExperimentType(String experimentType, GridGameServerToken response) {
+		Path fileName = Paths.get(this.experimentDirectory, experimentType + ".csv").toAbsolutePath();
+		List<String> params = new ArrayList<String>();
+		if (!Files.exists(fileName)) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The experiment " + experimentType + " does not exist on this server");
+			return params;
+		}
+		
+		BufferedReader reader;
+		FileReader fileReader;
+		try {
+			fileReader = 
+					new FileReader(fileName.toString());
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("The file " + fileName.toString() + " somehow does not exist");
+		}
+
+		String opponentType = "random";
+		String worldId = "TwoAgentsHall_3by5_noWalls";
+
+		try {
+			String line = "";
+
+			reader = new BufferedReader(fileReader);
+
+			while ((line = reader.readLine()) != null) {
+				//Get all tokens available in line
+				String[] tokens = line.split(COMMA_DELIMITER);
+				if (tokens.length >=2) {
+					worldId = tokens[0];
+					opponentType = tokens[1];
+				}
+			}
+			reader.close();
+		} catch (IOException e) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "Reading the experiment " + experimentType + " file failed");
+			return params;
+		} 
+		return Arrays.asList(worldId, opponentType);		
 	}
 
 	/**
@@ -801,12 +824,10 @@ public class GridGameManager {
 			e.printStackTrace();
 		}
 
-		World world = this.collections.removeRunningWorld(futureId);
 		this.collections.removeFuture(futureId);
 
 		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
-		StateJSONParser parser = new StateJSONParser(world.getDomain());
 		result.writeToFile(path);
 
 		//print map here
@@ -867,7 +888,6 @@ public class GridGameManager {
 			try {
 				GameAnalysis analysis = future.get();
 				String path = this.analysisDirectory + "/episode" + futureId;
-				StateJSONParser parser = new StateJSONParser(world.getDomain());
 				analysis.writeToFile(path);
 
 
