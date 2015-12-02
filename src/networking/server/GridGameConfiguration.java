@@ -14,7 +14,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import networking.common.GridGameExtreme;
 import examples.GridGameNormRF2;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
@@ -306,7 +305,7 @@ public class GridGameConfiguration {
 		Domain cmdp = mdpdg.generateDomain();
 		
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
-		JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
+		JointReward jr = new GridGame.GGJointRewardFunction(domain, 0, 1, true);
 		
 		RewardFunction crf = new TotalWelfare(jr);
 

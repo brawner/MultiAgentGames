@@ -56,8 +56,8 @@ public class GridGameExtreme {
 			@Override
 			public Map<String, Double> reward(State s, JointAction ja, State sp) {
 				Map<String, Double> reward = new HashMap<String, Double>();
-				List<ObjectInstance> agents = s.getObjectsOfClass(GridGame.CLASSAGENT);
-				List<ObjectInstance> goals = s.getObjectsOfClass(GridGame.CLASSGOAL);
+				List<ObjectInstance> agents = sp.getObjectsOfClass(GridGame.CLASSAGENT);
+				List<ObjectInstance> goals = sp.getObjectsOfClass(GridGame.CLASSGOAL);
 				
 				boolean allPlayersInGoals = true;
 				for (ObjectInstance agent : agents) {
