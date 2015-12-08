@@ -29,7 +29,7 @@ import Analysis.Analysis;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
-import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
+//import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
@@ -690,14 +690,14 @@ public class GridGameManager {
 				}
 				
 				if (this.isForeverAgent(worldId, agentTypeToAdd)) {
-					ForeverNormLearningAgent agent =
-							(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(agentTypeToAdd, worldId);
-					if (agent == null) {
-						agent = (ForeverNormLearningAgent)
-								configuration.getNewAgentForWorld(configuration.getBaseWorld(), agentTypeToAdd);
-						this.collections.addContinuousLearningAgent(agentTypeToAdd, worldId, agent);
-					} 
-					configuration.addAgent(agent.copy());
+//					ForeverNormLearningAgent agent =
+//							(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(agentTypeToAdd, worldId);
+//					if (agent == null) {
+//						agent = (ForeverNormLearningAgent)
+//								configuration.getNewAgentForWorld(configuration.getBaseWorld(), agentTypeToAdd);
+//						this.collections.addContinuousLearningAgent(agentTypeToAdd, worldId, agent);
+//					} 
+//					configuration.addAgent(agent.copy());
 				} else {
 					boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
 					configuration.addAgentType(agentTypeToAdd, isRepeated);
@@ -893,17 +893,17 @@ public class GridGameManager {
 	}
 	
 	private void processForeverAgents(GridGameConfiguration configuration) {
-		List<SGAgent> agents = configuration.getRepeatedAgents();
-		String worldId = configuration.getBaseWorldId();
-		
-		for (SGAgent agent : agents) {
-			if (agent instanceof ForeverNormLearningAgent) {
-				ForeverNormLearningAgent forever = (ForeverNormLearningAgent)agent;
-				ForeverNormLearningAgent baseForever = 
-						(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(CONTINUOUS_NORM_LEARNING, worldId);
-				baseForever.addGamesFromAgent(forever);
-			}
-		}
+//		List<SGAgent> agents = configuration.getRepeatedAgents();
+//		String worldId = configuration.getBaseWorldId();
+//		
+//		for (SGAgent agent : agents) {
+//			if (agent instanceof ForeverNormLearningAgent) {
+//				ForeverNormLearningAgent forever = (ForeverNormLearningAgent)agent;
+//				ForeverNormLearningAgent baseForever = 
+//						(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(CONTINUOUS_NORM_LEARNING, worldId);
+//				baseForever.addGamesFromAgent(forever);
+//			}
+//		}
 	}
 
 	/**
