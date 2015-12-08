@@ -496,8 +496,6 @@ public class Analysis {
 		int matchNum = 0;
 		String name1 = first.getName();
 		String name2 = second.getName();
-		String actualName1 = "unknown";
-		String actualName2 = "unknown";
 		int reaction1 = 0;
 		int reaction2 = 0;
 		String action1 = (action == null) ? "null" : action.action(name1).actionName();
@@ -505,11 +503,11 @@ public class Analysis {
 		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
 		writer.append(Integer.toString(turnNum)).append(",");
 		
-		writer.append(name1).append(",").append(actualName1).append(",").append(Integer.toString(a1x)).append(",");
+		writer.append(name1).append(",").append(Integer.toString(a1x)).append(",");
 		writer.append(Integer.toString(a1y)).append(",").append(Integer.toString(reaction1)).append(",");
 		writer.append(action1).append(",");
 		
-		writer.append(name2).append(",").append(actualName2).append(",").append(Integer.toString(a2x)).append(",");
+		writer.append(name2).append(",").append(Integer.toString(a2x)).append(",");
 		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
 		writer.append(action2).append("\n");
 	}
