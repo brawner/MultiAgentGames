@@ -472,6 +472,10 @@ public class Analysis {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		File file = new File(path);
+		file.setExecutable(true, false);
+		file.setReadable(true, false);
 	}
 	
 	public static void writeLineToFile(State state, JointAction action, int roundNum, int turnNum, FileWriter writer) throws IOException {

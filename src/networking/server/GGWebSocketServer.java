@@ -81,13 +81,14 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	public static void main(String[] args) {
 		String gameDirectory = WORLD_DIRECTORY;
 		String outputDirectoryRoot = OUTPUT_DIRECTORY;
+		String summariesDirectoryRoot = "/var/www/multi_grid_games/results";
 		String experimentDirectory = EXPERIMENT_DIRECTORY;
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 		Date date = new Date();
 		String dateStr = dateFormat.format(date);
 		String outputDirectory = outputDirectoryRoot + "/" + dateStr;
-		String summariesDirectory = outputDirectoryRoot + "/summaries/" + dateStr;
+		String summariesDirectory = summariesDirectoryRoot + "/" + dateStr;
 		File outputDirFile = new File(outputDirectory);
 		if (!outputDirFile.mkdirs()) {
 			throw new RuntimeException("Could not make the output directory " + outputDirFile.getAbsolutePath());
