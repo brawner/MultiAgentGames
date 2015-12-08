@@ -26,8 +26,8 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	public GGWebSocketServer() {
 		this.server = GridGameManager.connect();
 	}
-	public GGWebSocketServer(String gameDirectory, String outputDirectory, String experimentDirectory) {
-		this.server = GridGameManager.connect(gameDirectory, outputDirectory, experimentDirectory);
+	public GGWebSocketServer(String gameDirectory, String outputDirectory, String summeriesDirectory, String experimentDirectory) {
+		this.server = GridGameManager.connect(gameDirectory, outputDirectory, summeriesDirectory, experimentDirectory);
 	}
 	
 	@Override
@@ -87,17 +87,24 @@ public class GGWebSocketServer extends WebSocketAdapter{
 		Date date = new Date();
 		String dateStr = dateFormat.format(date);
 		String outputDirectory = outputDirectoryRoot + "/" + dateStr;
+		String summariesDirectory = outputDirectoryRoot + "/summaries/" + dateStr;
 		File outputDirFile = new File(outputDirectory);
 		if (!outputDirFile.mkdirs()) {
 			throw new RuntimeException("Could not make the output directory " + outputDirFile.getAbsolutePath());
 		}
+		
+		File summariesDirFile = new File(summariesDirectory);
+		if (!summariesDirFile.mkdirs()) {
+			throw new RuntimeException("Could not make the summaries directory " + summariesDirFile.getAbsolutePath());
+		}
+		
 		
 		if (args.length > 1) {
 			gameDirectory = args[0];
 			outputDirectory = args[1];
 		}
 		
-		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, experimentDirectory);
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8787);

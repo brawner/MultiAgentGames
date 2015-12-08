@@ -25,12 +25,13 @@ import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
 import networking.common.TokenCastException;
 import networking.common.messages.WorldFile;
-
+import Analysis.Analysis;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.oomdp.core.states.State;
-import burlap.oomdp.legacy.StateJSONParser;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 
@@ -85,7 +86,10 @@ public class GridGameManager {
 			Arrays.asList(GridGameManager.NORM_LEARNING_AGENT,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
-
+	public static final List<String> FOREVER_AGENTS = 
+			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING);
+	
+	
 	public HashMap<String,List<String>> gameTypesForIds = new HashMap<String,List< String>>();
 
 	//add a logging string here that is pushed at end of game with episode data??
@@ -99,6 +103,7 @@ public class GridGameManager {
 
 	private final String gameDirectory;
 	private final String analysisDirectory;
+	private final String summariesDirectory;
 	private final String experimentDirectory;
 
 	/**
@@ -118,11 +123,12 @@ public class GridGameManager {
 	 * @param gameDirectory
 	 * @param analysisDirectory
 	 */
-	private GridGameManager(String gameDirectory, String analysisDirectory, String experimentDirectory) {
+	private GridGameManager(String gameDirectory, String analysisDirectory, String summariesDirectory, String experimentDirectory) {
 		this.collections = new GridGameServerCollections();
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.gameDirectory = gameDirectory;
 		this.analysisDirectory = analysisDirectory;
+		this.summariesDirectory = summariesDirectory;
 		this.experimentDirectory = experimentDirectory;
 		this.collections.addWorldTokens(this.loadWorlds(null));
 
@@ -149,9 +155,9 @@ public class GridGameManager {
 	 * @param outputDirectory
 	 * @return
 	 */
-	public static GridGameManager connect(String gameDirectory, String outputDirectory, String experimentDirectory) {
+	public static GridGameManager connect(String gameDirectory, String outputDirectory, String summariesDirectory, String experimentDirectory) {
 		if (GridGameManager.singleton == null) {
-			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory, experimentDirectory);
+			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory);
 			GridGameManager.singleton = singleton;
 		}
 		return GridGameManager.singleton;
@@ -368,7 +374,7 @@ public class GridGameManager {
 		String worldId = token.getString(GridGameManager.WORLD_ID);
 		World world = this.collections.getWorld(worldId);
 		if (world != null) {
-			GridGameConfiguration config = new GridGameConfiguration(world.copy());
+			GridGameConfiguration config = new GridGameConfiguration(world.copy(), worldId);
 
 			String activeId = this.collections.getUniqueThreadId();
 			this.collections.addConfiguration(activeId, config);
@@ -490,6 +496,10 @@ public class GridGameManager {
 	
 	private boolean isRepeatedAgent(String worldId, String agentTypeStr) {
 		return REPEATED_AGENTS.contains(agentTypeStr);
+	}
+	
+	private boolean isForeverAgent(String worldId, String agentTypeStr) {
+		return FOREVER_AGENTS.contains(agentTypeStr);
 	}
 
 	/**
@@ -652,7 +662,7 @@ public class GridGameManager {
 		}
 
 		if(initGame){
-			configuration = new GridGameConfiguration(world.copy());
+			configuration = new GridGameConfiguration(world.copy(), worldId);
 			
 			if (runDebug) {
 				configuration.setMaxIterations(2);
@@ -679,9 +689,23 @@ public class GridGameManager {
 					return;
 				}
 				
-				boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
-				configuration.addAgentType(agentTypeToAdd, isRepeated);
+				if (this.isForeverAgent(worldId, agentTypeToAdd)) {
+					ForeverNormLearningAgent agent =
+							(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(agentTypeToAdd, worldId);
+					if (agent == null) {
+						agent = (ForeverNormLearningAgent)
+								configuration.getNewAgentForWorld(configuration.getBaseWorld(), agentTypeToAdd);
+						this.collections.addContinuousLearningAgent(agentTypeToAdd, worldId, agent);
+					} 
+					configuration.addAgent(agent.copy());
+				} else {
+					boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
+					configuration.addAgentType(agentTypeToAdd, isRepeated);
+				}
+				
 				System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeToAdd);
+				
+				
 				
 			}
 		}else{
@@ -829,6 +853,10 @@ public class GridGameManager {
 		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		result.writeToFile(path);
+		
+		String condensedPath = this.summariesDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId + ".csv";
+		System.out.println("Game " + futureId + ": Writing summarized game result to " + condensedPath);
+		Analysis.writeGameToFile(configuration, result, condensedPath);
 
 		//print map here
 		//file name, agent names and url_client_ids, experiment name
@@ -842,6 +870,7 @@ public class GridGameManager {
 			}
 		} else {
 			this.informExperimentOver(configuration, futureId, handlers, false);
+			this.processForeverAgents(configuration);
 			for (GameHandler handler : handlers) {
 				this.collections.removeHandler(handler.getThreadId());	
 			}
@@ -860,6 +889,20 @@ public class GridGameManager {
 		
 		for (GameHandler handler : handlers) {
 			handler.updateClient(msg);
+		}
+	}
+	
+	private void processForeverAgents(GridGameConfiguration configuration) {
+		List<SGAgent> agents = configuration.getRepeatedAgents();
+		String worldId = configuration.getBaseWorldId();
+		
+		for (SGAgent agent : agents) {
+			if (agent instanceof ForeverNormLearningAgent) {
+				ForeverNormLearningAgent forever = (ForeverNormLearningAgent)agent;
+				ForeverNormLearningAgent baseForever = 
+						(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(CONTINUOUS_NORM_LEARNING, worldId);
+				baseForever.addGamesFromAgent(forever);
+			}
 		}
 	}
 

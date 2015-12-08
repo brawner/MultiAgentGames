@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import networking.common.GridGameExtreme;
+import networking.server.GameHandler;
+import networking.server.GridGameConfiguration;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
@@ -27,6 +29,7 @@ import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyph
 import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
@@ -449,6 +452,62 @@ public class Analysis {
 			System.err.println("Failed to write file");
 			e.printStackTrace();
 		}
+	}
+	
+	public static void writeGameToFile(GridGameConfiguration configuration, GameAnalysis result, String path) {
+		try {
+			FileWriter writer = new FileWriter(path, true);
+			List<JointAction> actions = result.jointActions;
+			List<State> states = result.states;
+			int i = 0;
+			for (; i < actions.size(); i++) {
+				JointAction action = actions.get(i);
+				State state = states.get(i);
+				Analysis.writeLineToFile(state, action, configuration.getGameNum().get(), i, writer);
+			}
+			State finalState = states.get(states.size()-1);
+			
+			Analysis.writeLineToFile(finalState, null, configuration.getGameNum().get(), i, writer);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void writeLineToFile(State state, JointAction action, int roundNum, int turnNum, FileWriter writer) throws IOException {
+		List<ObjectInstance> agents = state.getObjectsOfClass(GridGame.CLASSAGENT);
+		ObjectInstance first = null;
+		ObjectInstance second = null;
+		for (ObjectInstance agent : agents) {
+			if (agent.getIntValForAttribute(GridGame.ATTPN) == 0) {
+				first = agent;
+			} else if (agent.getIntValForAttribute(GridGame.ATTPN) == 1) {
+				second = agent;
+			}
+		}
+		int a1x = first.getIntValForAttribute(GridGame.ATTX);
+		int a1y = first.getIntValForAttribute(GridGame.ATTY);
+		int a2x = second.getIntValForAttribute(GridGame.ATTX);
+		int a2y = second.getIntValForAttribute(GridGame.ATTY);
+		int matchNum = 0;
+		String name1 = first.getName();
+		String name2 = second.getName();
+		String actualName1 = "unknown";
+		String actualName2 = "unknown";
+		int reaction1 = 0;
+		int reaction2 = 0;
+		String action1 = (action == null) ? "null" : action.action(name1).actionName();
+		String action2 = (action == null) ? "null" : action.action(name2).actionName();
+		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
+		writer.append(Integer.toString(turnNum)).append(",");
+		
+		writer.append(name1).append(",").append(actualName1).append(",").append(Integer.toString(a1x)).append(",");
+		writer.append(Integer.toString(a1y)).append(",").append(Integer.toString(reaction1)).append(",");
+		writer.append(action1).append(",");
+		
+		writer.append(name2).append(",").append(actualName2).append(",").append(Integer.toString(a2x)).append(",");
+		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
+		writer.append(action2).append("\n");
 	}
 	
 	

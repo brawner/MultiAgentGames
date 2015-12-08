@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import networking.common.GridGameExtreme;
-import examples.GridGameNormRF2;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
@@ -41,6 +40,7 @@ import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
+import examples.GridGameNormRF2;
 
 /**
  * The GridGameConfiguration class tracks how a game is to be configured. Instead of configuring a world, the configuration
@@ -114,11 +114,14 @@ public class GridGameConfiguration {
 	 */
 	private final AtomicInteger maxTurns;
 	
+	private String worldId;
+	
 	private static final int DEFAULT_MAX_TURNS = 30;
 	private static final int DEFAULT_MAX_ITERATIONS = 20;
 	
-	public GridGameConfiguration(World world) {
+	public GridGameConfiguration(World world, String worldId) {
 		this.baseWorld = world;
+		this.worldId = worldId;
 		this.uniqueGameID = generateUniqueID();
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
@@ -162,6 +165,10 @@ public class GridGameConfiguration {
 	 */
 	public World getBaseWorld() {
 		return this.baseWorld.copy();
+	}
+	
+	public String getBaseWorldId() {
+		return this.worldId;
 	}
 	
 	/**
@@ -240,7 +247,7 @@ public class GridGameConfiguration {
 	 * @param agentType
 	 * @return
 	 */
-	private SGAgent getNewAgentForWorld(World world, String agentType) {
+	public SGAgent getNewAgentForWorld(World world, String agentType) {
 		switch(agentType) {
 		case GridGameManager.RANDOM_AGENT:
 			return this.getNewRandomAgent();
@@ -378,6 +385,12 @@ public class GridGameConfiguration {
 	public int getNumberAgents() {
 		synchronized(this.orderedAgents) {
 			return this.orderedAgents.size();
+		}
+	}
+	
+	public List<SGAgent> getRepeatedAgents() {
+		synchronized(this.repeatedAgents) {
+			return new ArrayList<SGAgent>(this.repeatedAgents.values());
 		}
 	}
 	

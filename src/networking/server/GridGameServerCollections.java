@@ -13,6 +13,7 @@ import networking.common.GridGameServerToken;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 
 /**
@@ -33,6 +34,7 @@ public class GridGameServerCollections {
 	private final Map<String, List<String>> handlersAssociatedWithGames;
 	private final Map<String, String> clientToGameLookup;
 	private final Map<String, GridGameConfiguration> configurations;
+	private final Map<String, Map<String, SGAgent> > continousLearningAgents; // agent type, world id
 	
 	private final AtomicLong threadIdCounter;
 	private final AtomicLong activeIdCounter;
@@ -44,6 +46,7 @@ public class GridGameServerCollections {
 		this.clientIdCounter = new AtomicLong(1000000);
 		
 		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
+		this.continousLearningAgents = Collections.synchronizedMap(new HashMap<String, Map<String, SGAgent>>());
 		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		
@@ -212,6 +215,29 @@ public class GridGameServerCollections {
 	public void addWorld(String id, World world) {
 		synchronized(this.worldLookup) {
 			this.worldLookup.put(id,  world);
+		}
+	}
+	
+	public SGAgent getContinousLearningAgent(String agentType, String worldId) {
+		synchronized(this.continousLearningAgents) {
+			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
+			if (agentsOfType == null) {
+				return null;
+			}
+			
+			return agentsOfType.get(worldId);
+		}
+	}
+	
+	public void addContinuousLearningAgent(String agentType, String worldId, SGAgent agent) {
+		synchronized(this.continousLearningAgents) {
+			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
+			if (agentsOfType == null) {
+				agentsOfType = Collections.synchronizedMap(new HashMap<String, SGAgent>());
+				this.continousLearningAgents.put(agentType, agentsOfType);
+			}
+			
+			agentsOfType.put(worldId, agent);
 		}
 	}
 	
