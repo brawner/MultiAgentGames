@@ -457,6 +457,7 @@ public class Analysis {
 	public static void writeGameToFile(GridGameConfiguration configuration, GameAnalysis result, String path) {
 		try {
 			FileWriter writer = new FileWriter(path, true);
+			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action");
 			List<JointAction> actions = result.jointActions;
 			List<State> states = result.states;
 			int i = 0;
