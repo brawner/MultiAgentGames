@@ -84,12 +84,15 @@ public class GameHandler {
 	 */
 	private double currentScore;
 	private SGDomain domain;
+	
+	private final String turkId;
 
-	public GameHandler(GridGameManager server, Session session, String threadId) {
+	public GameHandler(GridGameManager server, Session session, String threadId, String turkId) {
 		this.server = server;
 		this.session = session;
 		this.threadId = threadId;
 		this.currentScore = 0.0;
+		this.turkId = turkId;
 	}
 
 	/**
@@ -179,6 +182,9 @@ public class GameHandler {
 		this.updateClient(msg);
 	}
 
+	public String getParticipantId() {
+		return this.turkId;
+	}
 	/**
 	 * After each joint action, the world needs to update the client. This handles that update.
 	 * @param s

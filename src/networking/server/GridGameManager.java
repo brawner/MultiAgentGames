@@ -401,7 +401,7 @@ public class GridGameManager {
 		GridGameConfiguration configuration = this.collections.getConfiguration(worldId);
 
 		if (configuration != null) {
-			GameHandler handler = new GameHandler(this, session, worldId);
+			GameHandler handler = new GameHandler(this, session, worldId, "mememe");
 
 			this.collections.addHandler(clientId, worldId, handler);
 			configuration.addHandler(clientId, handler);
@@ -721,7 +721,7 @@ public class GridGameManager {
 		}
 
 		String agentName = "unset";
-		GameHandler handler = new GameHandler(this, session, worldId);
+		GameHandler handler = new GameHandler(this, session, worldId, turkId);
 
 		this.collections.addHandler(clientId, activeId, handler);
 		configuration.addHandler(clientId, handler);
@@ -854,7 +854,14 @@ public class GridGameManager {
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		result.writeToFile(path);
 		
-		String condensedPath = this.summariesDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId + ".csv";
+		String names = "";
+		for (GameHandler handler : handlers) {
+			String participantId = handler.getParticipantId();
+			if (participantId != null) {
+				names += "_" + participantId ;
+			}
+		}
+		String condensedPath = this.summariesDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId + names + ".csv";
 		System.out.println("Game " + futureId + ": Writing summarized game result to " + condensedPath);
 		Analysis.writeGameToFile(configuration, result, condensedPath);
 
