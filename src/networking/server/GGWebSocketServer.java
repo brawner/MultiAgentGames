@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import networking.common.GridGameServerToken;
 
@@ -19,6 +21,12 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
 	private static final String OUTPUT_DIRECTORY = System.getProperty("user.home") + "/grid_games/results";
 	private static final String EXPERIMENT_DIRECTORY = System.getProperty("user.home") + "/grid_games/experiments/";
+	private static final String SUMMARIES_DIRECTORY  = "/var/www/multi_grid_games/results";
+	private static final String WORLD_DIRECTORY_FLAG = "world-dir";
+	private static final String OUTPUT_DIRECTORY_FLAG = "output-dir";
+	private static final String EXPERIMENT_DIRECTORY_FLAG = "exp-dir";
+	private static final String SUMMARIES_DIRECTORY_FLAG = "summaries-dir";
+	
 	private GridGameManager server;
 	private Session session;
 	
@@ -76,13 +84,35 @@ public class GGWebSocketServer extends WebSocketAdapter{
         super.onWebSocketError(cause);
         cause.printStackTrace(System.err);
     }
+    
+    public static Map<String, String> parseInputArgs(String[] args) {
+    	Map<String, String> argsMap = new HashMap<String, String>();
+    	argsMap.put(WORLD_DIRECTORY_FLAG, WORLD_DIRECTORY);
+    	argsMap.put(EXPERIMENT_DIRECTORY_FLAG, EXPERIMENT_DIRECTORY);
+    	argsMap.put(OUTPUT_DIRECTORY_FLAG, OUTPUT_DIRECTORY);
+    	argsMap.put(SUMMARIES_DIRECTORY_FLAG, SUMMARIES_DIRECTORY);
+    	
+    	for (int i = 0; i < args.length; i++) {
+    		if (args[i].substring(0, 2).equals("--")) {
+    			String arg = args[i].substring(2);
+    			String nextArg = args[i+1];
+    			if (nextArg.contains("--")) {
+    				throw new RuntimeException("Value for arg " + arg + " does not exist");
+    			}
+    			argsMap.put(arg, nextArg);
+    		}
+    	}
+    	
+    	return argsMap;
+    }
 	
 	
 	public static void main(String[] args) {
-		String gameDirectory = WORLD_DIRECTORY;
-		String outputDirectoryRoot = OUTPUT_DIRECTORY;
-		String summariesDirectoryRoot = "/var/www/multi_grid_games/results";
-		String experimentDirectory = EXPERIMENT_DIRECTORY;
+		Map<String, String> argsMap = parseInputArgs(args);
+		String gameDirectory = argsMap.get(WORLD_DIRECTORY_FLAG);
+		String outputDirectoryRoot = argsMap.get(OUTPUT_DIRECTORY_FLAG);
+		String summariesDirectoryRoot = argsMap.get(SUMMARIES_DIRECTORY_FLAG);
+		String experimentDirectory = argsMap.get(EXPERIMENT_DIRECTORY_FLAG);
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 		Date date = new Date();
@@ -97,12 +127,6 @@ public class GGWebSocketServer extends WebSocketAdapter{
 		File summariesDirFile = new File(summariesDirectory);
 		if (!summariesDirFile.mkdirs()) {
 			throw new RuntimeException("Could not make the summaries directory " + summariesDirFile.getAbsolutePath());
-		}
-		
-		
-		if (args.length > 1) {
-			gameDirectory = args[0];
-			outputDirectory = args[1];
 		}
 		
 		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory);

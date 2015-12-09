@@ -21,6 +21,7 @@ import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
 import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
@@ -257,6 +258,8 @@ public class GridGameConfiguration {
 			return this.getNewQAgent(world);
 		case GridGameManager.NORM_LEARNING_AGENT:
 			return this.getNormLearningAgent(world);
+		case GridGameManager.CONTINUOUS_NORM_LEARNING:
+			return this.getContinuousNormLearningAgent(world);
 		}
 		return null;
 	}
@@ -327,6 +330,30 @@ public class GridGameConfiguration {
 
 		//create agents
 		return new NormLearningAgent(domain, agent1RF, -1, agent1RF.createCorresponingDiffVInit(jplanner));
+		
+	}
+	
+	private SGAgent getContinuousNormLearningAgent(World world) {
+		SGDomain domain = world.getDomain();
+		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
+		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
+		Domain cmdp = mdpdg.generateDomain();
+		
+		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
+		JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
+		
+		RewardFunction crf = new TotalWelfare(jr);
+
+		//create joint task planner for social reward function and RHIRL leaf node values
+		final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(false), 20, -1);
+		jplanner.toggleDebugPrinting(false);
+
+
+		//create independent social reward functions to learn for each agent
+		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
+
+		//create agents
+		return new ForeverNormLearningAgent(domain, agent1RF, -1, agent1RF.createCorresponingDiffVInit(jplanner));
 		
 	}
 	
