@@ -13,6 +13,7 @@ import networking.common.GridGameServerToken;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.agents.normlearning.ExploringNormLearningAgent;
 import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 
@@ -47,6 +48,7 @@ public class GridGameServerCollections {
 		
 		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
 		this.continousLearningAgents = Collections.synchronizedMap(new HashMap<String, Map<String, SGAgent>>());
+		
 		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		
@@ -241,6 +243,10 @@ public class GridGameServerCollections {
 		}
 	}
 	
+	
+	
+	
+	
 	/*
 	public World getActiveWorld(String id) {
 		synchronized(this.activeGameWorlds) {
@@ -372,6 +378,8 @@ public class GridGameServerCollections {
 			return this.clientToGameLookup.get(clientId);
 		}
 	}
+
+	
 
 
 }

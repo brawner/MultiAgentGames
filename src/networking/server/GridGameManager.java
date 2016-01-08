@@ -26,9 +26,11 @@ import networking.common.GridGameWorldLoader;
 import networking.common.TokenCastException;
 import networking.common.messages.WorldFile;
 import Analysis.Analysis;
+
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.agents.normlearning.ExploringNormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.SGAgent;
@@ -73,6 +75,7 @@ public class GridGameManager {
 	public static final String OTHER_VARS = "other_vars";
 	public static final String NORM_LEARNING_AGENT = "norm_learning";
 	public static final String CONTINUOUS_NORM_LEARNING = "continuous_norm_learning";
+	public static final String EXPLORING_NORM_LEARNING = "exploring_norm_learning";
 	
 	public static final List<String> ALLOWED_AGENTS = 
 			Arrays.asList(GridGameManager.QLEARNER_AGENT, 
@@ -80,14 +83,17 @@ public class GridGameManager {
 						  GridGameManager.RANDOM_AGENT, 
 						  GridGameManager.HUMAN_AGENT,
 						  GridGameManager.NORM_LEARNING_AGENT,
-						  GridGameManager.CONTINUOUS_NORM_LEARNING);
+						  GridGameManager.CONTINUOUS_NORM_LEARNING,
+						  GridGameManager.EXPLORING_NORM_LEARNING);
 	
 	public static final List<String> REPEATED_AGENTS = 
 			Arrays.asList(GridGameManager.NORM_LEARNING_AGENT,
+						  GridGameManager.EXPLORING_NORM_LEARNING,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
 	public static final List<String> FOREVER_AGENTS = 
-			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING);
+			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING,
+						  GridGameManager.EXPLORING_NORM_LEARNING);
 	
 	
 	public HashMap<String,List<String>> gameTypesForIds = new HashMap<String,List< String>>();
@@ -501,6 +507,7 @@ public class GridGameManager {
 	private boolean isForeverAgent(String worldId, String agentTypeStr) {
 		return FOREVER_AGENTS.contains(agentTypeStr);
 	}
+	
 
 	/**
 	 * Takes a configured world and runs it. If the configuration hasn't been fully configured, it won't run the game.
@@ -698,7 +705,7 @@ public class GridGameManager {
 						this.collections.addContinuousLearningAgent(agentTypeToAdd, worldId, agent);
 					} 
 					configuration.addAgent(agent.copy());
-				} else {
+				}else {
 					boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
 					configuration.addAgentType(agentTypeToAdd, isRepeated);
 				}
@@ -909,6 +916,11 @@ public class GridGameManager {
 				ForeverNormLearningAgent baseForever = 
 						(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(CONTINUOUS_NORM_LEARNING, worldId);
 				baseForever.addGamesFromAgent(forever);
+			}else if (agent instanceof ExploringNormLearningAgent) {
+				ExploringNormLearningAgent exploring = (ExploringNormLearningAgent)agent;
+				ExploringNormLearningAgent baseExploring = 
+						(ExploringNormLearningAgent)this.collections.getContinousLearningAgent(EXPLORING_NORM_LEARNING, worldId);
+				baseExploring.addGamesFromAgent(exploring);
 			}
 		}
 	}
