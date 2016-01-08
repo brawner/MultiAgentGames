@@ -43,6 +43,7 @@ import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 import examples.GridGameNormRF2;
+import examples.GridGameNormRF2Cost;
 
 /**
  * The GridGameConfiguration class tracks how a game is to be configured. Instead of configuring a world, the configuration
@@ -332,7 +333,7 @@ public class GridGameConfiguration {
 
 		//create independent social reward functions to learn for each agent
 		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
-
+		agent1RF.randomizeParameters(-0.0001, 0.0001, new Random());
 		//create agents
 		return new NormLearningAgent(domain, agent1RF, -1, agent1RF.createCorresponingDiffVInit(jplanner));
 		
