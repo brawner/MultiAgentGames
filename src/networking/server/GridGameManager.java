@@ -92,8 +92,7 @@ public class GridGameManager {
 						  GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
 	public static final List<String> FOREVER_AGENTS = 
-			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING,
-						  GridGameManager.EXPLORING_NORM_LEARNING);
+			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
 	
 	public HashMap<String,List<String>> gameTypesForIds = new HashMap<String,List< String>>();
@@ -916,11 +915,6 @@ public class GridGameManager {
 				ForeverNormLearningAgent baseForever = 
 						(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(CONTINUOUS_NORM_LEARNING, worldId);
 				baseForever.addGamesFromAgent(forever);
-			}else if (agent instanceof ExploringNormLearningAgent) {
-				ExploringNormLearningAgent exploring = (ExploringNormLearningAgent)agent;
-				ExploringNormLearningAgent baseExploring = 
-						(ExploringNormLearningAgent)this.collections.getContinousLearningAgent(EXPLORING_NORM_LEARNING, worldId);
-				baseExploring.addGamesFromAgent(exploring);
 			}
 		}
 	}
