@@ -76,6 +76,7 @@ public class GridGameManager {
 	public static final String NORM_LEARNING_AGENT = "norm_learning";
 	public static final String CONTINUOUS_NORM_LEARNING = "continuous_norm_learning";
 	public static final String EXPLORING_NORM_LEARNING = "exploring_norm_learning";
+	public static final String WAIT_NORM_LEARNING = "wait_norm_learning";
 	
 	public static final List<String> ALLOWED_AGENTS = 
 			Arrays.asList(GridGameManager.QLEARNER_AGENT, 
@@ -84,12 +85,14 @@ public class GridGameManager {
 						  GridGameManager.HUMAN_AGENT,
 						  GridGameManager.NORM_LEARNING_AGENT,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING,
-						  GridGameManager.EXPLORING_NORM_LEARNING);
+						  GridGameManager.EXPLORING_NORM_LEARNING,
+						  GridGameManager.WAIT_NORM_LEARNING);
 	
 	public static final List<String> REPEATED_AGENTS = 
 			Arrays.asList(GridGameManager.NORM_LEARNING_AGENT,
 						  GridGameManager.EXPLORING_NORM_LEARNING,
-						  GridGameManager.CONTINUOUS_NORM_LEARNING);
+						  GridGameManager.CONTINUOUS_NORM_LEARNING,
+						  GridGameManager.WAIT_NORM_LEARNING);
 	
 	public static final List<String> FOREVER_AGENTS = 
 			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING);
