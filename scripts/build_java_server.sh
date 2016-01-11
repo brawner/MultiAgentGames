@@ -38,6 +38,7 @@ mkdir -p ~/grid_games/results
 rsync -avz ./resources/ ~/grid_games/
 
 echo "Copying website files"
+sudo chown $USER:www-data -R /var/www/multi_grid_games
 cp ./web/index.html /var/www/multi_grid_games/index.html
 cp ./web/task_ui.html /var/www/multi_grid_games/task_ui.html
 mkdir -p /var/www/multi_grid_games/javascript/lib
