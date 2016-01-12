@@ -74,8 +74,12 @@ public class GridGameManager {
 	public static final String DEBUG = "debug";
 	public static final String OTHER_VARS = "other_vars";
 	public static final String NORM_LEARNING_AGENT = "norm_learning";
+	public static final String NORM_LEARNING_AGENT_IGNORE = "norm_learning_ignore";
 	public static final String CONTINUOUS_NORM_LEARNING = "continuous_norm_learning";
 	public static final String EXPLORING_NORM_LEARNING = "exploring_norm_learning";
+	public static final String TEAM_EXPLORING_NORM_LEARNING = "team_exploring_norm_learning";
+	public static final String TEAM_EXPLORING_NORM_LEARNING_IGNORE = "team_exploring_norm_learning_ignore";
+	public static final String UNIFORM_EXPLORING_NORM_LEARNING = "uniform_exploring_norm_learning";
 	public static final String WAIT_NORM_LEARNING = "wait_norm_learning";
 	
 	public static final List<String> ALLOWED_AGENTS = 
@@ -84,13 +88,21 @@ public class GridGameManager {
 						  GridGameManager.RANDOM_AGENT, 
 						  GridGameManager.HUMAN_AGENT,
 						  GridGameManager.NORM_LEARNING_AGENT,
+						  GridGameManager.NORM_LEARNING_AGENT_IGNORE,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING,
 						  GridGameManager.EXPLORING_NORM_LEARNING,
-						  GridGameManager.WAIT_NORM_LEARNING);
+						  GridGameManager.WAIT_NORM_LEARNING,
+						  GridGameManager.UNIFORM_EXPLORING_NORM_LEARNING,
+						  GridGameManager.TEAM_EXPLORING_NORM_LEARNING,
+						  GridGameManager.TEAM_EXPLORING_NORM_LEARNING_IGNORE);
 	
 	public static final List<String> REPEATED_AGENTS = 
 			Arrays.asList(GridGameManager.NORM_LEARNING_AGENT,
+						  GridGameManager.NORM_LEARNING_AGENT_IGNORE,
 						  GridGameManager.EXPLORING_NORM_LEARNING,
+						  GridGameManager.UNIFORM_EXPLORING_NORM_LEARNING,
+						  GridGameManager.TEAM_EXPLORING_NORM_LEARNING,
+						  GridGameManager.TEAM_EXPLORING_NORM_LEARNING_IGNORE,
 						  GridGameManager.CONTINUOUS_NORM_LEARNING,
 						  GridGameManager.WAIT_NORM_LEARNING);
 	
@@ -139,7 +151,6 @@ public class GridGameManager {
 		this.summariesDirectory = summariesDirectory;
 		this.experimentDirectory = experimentDirectory;
 		this.collections.addWorldTokens(this.loadWorlds(null));
-
 		this.monitor = new GameMonitor(this);
 		this.monitorFuture = this.gameExecutor.submit(this.monitor);
 
@@ -251,7 +262,6 @@ public class GridGameManager {
 	private void addCurrentState(GridGameServerToken token) {
 		List<GridGameServerToken> worldTokens = this.collections.getWorldTokens();
 		token.setTokenList(WORLDS, worldTokens);
-
 
 		Map<String, GridGameConfiguration> configurations = this.collections.getConfigurations();
 
