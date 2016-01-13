@@ -21,10 +21,8 @@ import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
 import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.ExploringNormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.WaitToNormLearningAgent;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
@@ -44,7 +42,6 @@ import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 import examples.GridGameNormRF2;
-import examples.GridGameNormRF2Cost;
 
 /**
  * The GridGameConfiguration class tracks how a game is to be configured. Instead of configuring a world, the configuration
@@ -260,21 +257,10 @@ public class GridGameConfiguration {
 		case GridGameManager.QLEARNER_AGENT:
 			return this.getNewQAgent(world);
 		case GridGameManager.NORM_LEARNING_AGENT:
-			return this.getNormLearningAgent(world, true);
-		case GridGameManager.NORM_LEARNING_AGENT_IGNORE:
-			return this.getNormLearningAgent(world, false);
+			return getNormLearningAgent(world);
+			//return NormLearningAgentFactory.getNormLearningAgent(parametersFile, experiment);
 		case GridGameManager.CONTINUOUS_NORM_LEARNING:
 			return this.getContinuousNormLearningAgent(world);
-		case GridGameManager.EXPLORING_NORM_LEARNING:
-			return this.getUniformExploringNormLearningAgent(world);
-		case GridGameManager.UNIFORM_EXPLORING_NORM_LEARNING:
-			return this.getUniformExploringNormLearningAgent(world);
-		case GridGameManager.TEAM_EXPLORING_NORM_LEARNING:
-			return this.getTeamExploringNormLearningAgent(world,true);
-		case GridGameManager.TEAM_EXPLORING_NORM_LEARNING_IGNORE:
-			return this.getTeamExploringNormLearningAgent(world,false);
-		case GridGameManager.WAIT_NORM_LEARNING:
-			return this.getWaitNormLearningAgent(world);
 		}
 		return null;
 	}
@@ -326,7 +312,7 @@ public class GridGameConfiguration {
 		
 	}
 	
-	private SGAgent getNormLearningAgent(World world, boolean learnFromBadGame) {
+	public static SGAgent getNormLearningAgent(World world) {
 		SGDomain domain = world.getDomain();
 		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
 		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
@@ -347,9 +333,11 @@ public class GridGameConfiguration {
 		agent1RF.randomizeParameters(-0.0001, 0.0001, new Random());
 		//create agents
 		return new NormLearningAgent(domain, agent1RF, -1, 
-				agent1RF.createCorresponingDiffVInit(jplanner), learnFromBadGame);
+				agent1RF.createCorresponingDiffVInit(jplanner), true);
 		
 	}
+	
+	
 	
 	private SGAgent getContinuousNormLearningAgent(World world) {
 		SGDomain domain = world.getDomain();
@@ -375,82 +363,6 @@ public class GridGameConfiguration {
 		
 	}
 	
-	// This should maybe be combined with the above method
-	private SGAgent getUniformExploringNormLearningAgent(World world) {
-		SGDomain domain = world.getDomain();
-		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
-		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
-		Domain cmdp = mdpdg.generateDomain();
-		
-		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
-		JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
-		
-		RewardFunction crf = new TotalWelfare(jr);
-
-		//create joint task planner for social reward function and RHIRL leaf node values
-		final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(false), 20, -1);
-		jplanner.toggleDebugPrinting(false);
-
-
-		//create independent social reward functions to learn for each agent
-		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
-
-		//create agents
-		return new ExploringNormLearningAgent(domain, agent1RF, -1, 
-				agent1RF.createCorresponingDiffVInit(jplanner), false, true);
-		
-	}
-	
-	// This should maybe be combined with the above method
-		private SGAgent getTeamExploringNormLearningAgent(World world, boolean learnFromBad) {
-			SGDomain domain = world.getDomain();
-			List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
-			CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
-			Domain cmdp = mdpdg.generateDomain();
-			
-			TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
-			JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
-			
-			RewardFunction crf = new TotalWelfare(jr);
-
-			//create joint task planner for social reward function and RHIRL leaf node values
-			final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(false), 20, -1);
-			jplanner.toggleDebugPrinting(false);
-
-
-			//create independent social reward functions to learn for each agent
-			final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
-
-			//create agents
-			return new ExploringNormLearningAgent(domain, agent1RF, -1, 
-					agent1RF.createCorresponingDiffVInit(jplanner),learnFromBad,false);
-			
-		}
-	
-	// This should maybe be combined with the above method
-		private SGAgent getWaitNormLearningAgent(World world) {
-			SGDomain domain = world.getDomain();
-			List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
-			CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
-			Domain cmdp = mdpdg.generateDomain();
-			
-			TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
-			JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
-			
-			RewardFunction crf = new TotalWelfare(jr);
-
-			//create joint task planner for social reward function and RHIRL leaf node values
-			final SparseSampling jplanner = new SparseSampling(cmdp, crf, tf, 0.99, new SimpleHashableStateFactory(false), 20, -1);
-			jplanner.toggleDebugPrinting(false);
-
-
-			//create independent social reward functions to learn for each agent
-			final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
-
-			//create agents
-			return new WaitToNormLearningAgent(domain, agent1RF, -1, agent1RF.createCorresponingDiffVInit(jplanner));
-			
-		}
 	
 	/**
 	 * Set the max number of iterations the game will be restarted.

@@ -25,7 +25,7 @@ import burlap.oomdp.stochasticgames.World;
 public class GridGameWorldLoader {
 
 
-	private static GridGameServerToken loadText(String filename) {
+	public static GridGameServerToken loadText(String filename) {
 		return GridGameServerToken.tokenFromFile(filename);
 	}
 

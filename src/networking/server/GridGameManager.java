@@ -869,7 +869,7 @@ public class GridGameManager {
 
 		this.collections.removeFuture(futureId);
 
-		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId+"_"+configuration.getGameNum();
+		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial" + futureId+"_match_0_round"+configuration.getGameNum();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		result.writeToFile(path);
 		
