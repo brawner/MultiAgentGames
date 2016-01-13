@@ -145,7 +145,7 @@ public class NormLearnersExperiment {
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
 		arguments.put("numTrials", "1");
-		arguments.put("experiment",  "test_world");
+		arguments.put("experiment",  "test_machine");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
 		arguments.put("paramF","/resources/parameters/");

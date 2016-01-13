@@ -11,10 +11,10 @@
 	{"x":0, "y":1, "gt":2}
 	],
 	"horizontal_walls": [
-		{"end1":0, "end2":2, "pos":2, "wallType":1}
+		{"end1":0, "end2":2, "pos":2, "wallType":0}
 	],
 	"vertical_walls": [
-		{"end1":2, "end2":4, "pos":2, "wallType":1}
+		{"end1":2, "end2":4, "pos":3, "wallType":0}
 	],
 	"random_tie_breaks": false
 }

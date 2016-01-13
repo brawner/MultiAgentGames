@@ -257,7 +257,7 @@ public class GridGameConfiguration {
 		case GridGameManager.QLEARNER_AGENT:
 			return this.getNewQAgent(world);
 		case GridGameManager.NORM_LEARNING_AGENT:
-			return getNormLearningAgent(world);
+			return this.getNormLearningAgent(world);
 			//return NormLearningAgentFactory.getNormLearningAgent(parametersFile, experiment);
 		case GridGameManager.CONTINUOUS_NORM_LEARNING:
 			return this.getContinuousNormLearningAgent(world);
@@ -312,7 +312,7 @@ public class GridGameConfiguration {
 		
 	}
 	
-	public static SGAgent getNormLearningAgent(World world) {
+	public SGAgent getNormLearningAgent(World world) {
 		SGDomain domain = world.getDomain();
 		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
 		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
