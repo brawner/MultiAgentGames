@@ -1,6 +1,7 @@
 package experiments;
 
 import burlap.behavior.policy.GreedyQPolicy;
+import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.behavior.stochasticgames.agents.HumanAgent;
@@ -17,10 +18,14 @@ import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 import burlap.oomdp.visualizer.Visualizer;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import examples.GridGameNormRF2;
 
@@ -40,6 +45,7 @@ public class NormLearnersExperiment {
 	public void runExperiment() {
 
 		results = new ArrayList<List<GameAnalysis>>();
+		
 		for (int match = 0; match < experiment.numMatches; match++) {
 
 			// create agents
@@ -60,10 +66,11 @@ public class NormLearnersExperiment {
 				matchList.add(game);
 			}
 			results.add(matchList);
+					
 		}
 
 		// visualize results
-		Visualizer v = GGAltVis.getVisualizer(5, 5);
+		Visualizer v = GGAltVis.getVisualizer(7, 6);
 		List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
 		for(List<GameAnalysis> games : results){
 			gamesToSee.addAll(games);
@@ -144,8 +151,8 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "1");
-		arguments.put("experiment",  "test_machine");
+		arguments.put("numTrials", "3");
+		arguments.put("experiment", "allGames");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
 		arguments.put("paramF","/resources/parameters/");
@@ -161,6 +168,16 @@ public class NormLearnersExperiment {
 			}
 		}
 		return arguments;
+	}
+	
+	private static String generateUniqueID() {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
+		Date date = new Date();
+		String dateStr = dateFormat.format(date);
+		Random rand = new Random();
+		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
+		
+		return dateStr+"_"+randVal;
 	}
 
 	public static void main(String[] args) {
@@ -178,13 +195,14 @@ public class NormLearnersExperiment {
 		String gamesFolder = currDir+arguments.get("gamesF");
 
 		experimentFile = experimentFolder + experimentFile;
-
+		String uniqueId = NormLearnersExperiment.generateUniqueID();
+		
 		for (int trial = 0; trial < numTrials; trial++) {
 			Experiment experiment = new Experiment(experimentFile,
 					paramFilesFolder, gamesFolder);
 			NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
 			ex.runExperiment();
-			ex.outputTrialResults(outputFolder+experiment.uniqueId+"_trial_"+trial+"_");
+			ex.outputTrialResults(outputFolder+uniqueId+"/trial_"+trial+"_");
 		}
 	}
 

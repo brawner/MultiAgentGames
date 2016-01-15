@@ -15,6 +15,7 @@ import java.io.File;
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
 import networking.common.TokenCastException;
+import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
@@ -52,7 +53,6 @@ public class Experiment {
 	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder) {
 		// Initialize lists.
 		
-		this.uniqueId = generateUniqueID();
 		this.agentKindLists = new ArrayList<List<String>>();
 		this.paramFileLists = new ArrayList<List<String>>();
 		this.numRounds = new ArrayList<Integer>();
@@ -88,15 +88,7 @@ public class Experiment {
 
 	}
 	
-	private String generateUniqueID() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
-		Date date = new Date();
-		String dateStr = dateFormat.format(date);
-		Random rand = new Random();
-		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
-		
-		return dateStr+"_"+randVal;
-	}
+	
 	
 	private void readExperimentFile(String experimentFile){
 		File expSetup = new java.io.File(experimentFile);
@@ -208,5 +200,6 @@ public class Experiment {
 	public World getWorld(int match) {
 		return new World(sgDomain, jr, tf, startingStates.get(match));
 	}
+
 
 }
