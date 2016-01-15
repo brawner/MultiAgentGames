@@ -21,7 +21,7 @@ import java.util.Map;
 
 import networking.common.GridGameExtreme;
 import networking.server.GameHandler;
-import networking.server.GridGameConfiguration;
+import networking.server.ExperimentConfiguration;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
@@ -454,7 +454,7 @@ public class Analysis {
 		}
 	}
 	
-	public static void writeGameToFile(GridGameConfiguration configuration, GameAnalysis result, String path) {
+	public static void writeGameToFile(ExperimentConfiguration configuration, GameAnalysis result, String path) {
 		try {
 			FileWriter writer = new FileWriter(path, true);
 			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
@@ -464,11 +464,11 @@ public class Analysis {
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
 				State state = states.get(i);
-				Analysis.writeLineToFile(state, action, configuration.getGameNum().get(), i, writer);
+				Analysis.writeLineToFile(state, action, configuration.getCurrentMatch().getGameNum().get(), i, writer);
 			}
 			State finalState = states.get(states.size()-1);
 			
-			Analysis.writeLineToFile(finalState, null, configuration.getGameNum().get(), i, writer);
+			Analysis.writeLineToFile(finalState, null, configuration.getCurrentMatch().getGameNum().get(), i, writer);
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();

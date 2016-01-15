@@ -218,7 +218,8 @@ public class GridGameWorldLoader {
 
 	public static List<World> loadWorlds(GridGameServerToken token) {
 		try {
-			List<GridGameServerToken> worldTokens = token.getTokenList(GridGameManager.WORLDS);
+			List<GridGameServerToken> worldTokens = 
+					token.getTokenList(GridGameManager.WORLDS);
 			return GridGameWorldLoader.loadWorlds(worldTokens);
 		} catch (TokenCastException e) {
 			e.printStackTrace();

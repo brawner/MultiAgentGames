@@ -33,7 +33,7 @@ public class GridGameServerCollections {
 	private final Map<String, Future<GameAnalysis>> futures;
 	private final Map<String, List<String>> handlersAssociatedWithGames;
 	private final Map<String, String> clientToGameLookup;
-	private final Map<String, GridGameConfiguration> configurations;
+	private final Map<String, ExperimentConfiguration> configurations;
 	private final Map<String, Map<String, SGAgent> > continousLearningAgents; // agent type, world id
 	
 	private final AtomicLong threadIdCounter;
@@ -56,7 +56,7 @@ public class GridGameServerCollections {
 		this.futures = Collections.synchronizedMap(new HashMap<String, Future<GameAnalysis>>());
 		this.handlersAssociatedWithGames = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		this.clientToGameLookup = Collections.synchronizedMap(new HashMap<String, String>());
-		this.configurations = Collections.synchronizedMap(new HashMap<String, GridGameConfiguration>());
+		this.configurations = Collections.synchronizedMap(new HashMap<String, ExperimentConfiguration>());
 		this.worldTokens = new ArrayList<GridGameServerToken>();
 		
 	}
@@ -219,18 +219,18 @@ public class GridGameServerCollections {
 		}
 	}
 	
-	public SGAgent getContinousLearningAgent(String agentType, String worldId) {
+	public SGAgent getContinousLearningAgent(String agentType, World world) {
 		synchronized(this.continousLearningAgents) {
 			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
 			if (agentsOfType == null) {
 				return null;
 			}
 			
-			return agentsOfType.get(worldId);
+			return agentsOfType.get(world.toString());
 		}
 	}
 	
-	public void addContinuousLearningAgent(String agentType, String worldId, SGAgent agent) {
+	public void addContinuousLearningAgent(String agentType, World world, SGAgent agent) {
 		synchronized(this.continousLearningAgents) {
 			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
 			if (agentsOfType == null) {
@@ -238,7 +238,7 @@ public class GridGameServerCollections {
 				this.continousLearningAgents.put(agentType, agentsOfType);
 			}
 			
-			agentsOfType.put(worldId, agent);
+			agentsOfType.put(world.toString(), agent);
 		}
 	}
 	
@@ -337,27 +337,27 @@ public class GridGameServerCollections {
 		
 	}
 	
-	public void addConfiguration(String id, GridGameConfiguration config) {
+	public void addConfiguration(String id, ExperimentConfiguration config) {
 		synchronized(this.configurations) {
 			this.configurations.put(id, config);
 		}
 	}
 	
-	public GridGameConfiguration getConfiguration(String id) {
+	public ExperimentConfiguration getConfiguration(String id) {
 		synchronized(this.configurations) {
 			return this.configurations.get(id);
 		}
 	}
 	
-	public GridGameConfiguration removeConfiguration(String id) {
+	public ExperimentConfiguration removeConfiguration(String id) {
 		synchronized(this.configurations) {
 			return this.configurations.remove(id);
 		}
 	}
 	
-	public Map<String, GridGameConfiguration> getConfigurations() {
+	public Map<String, ExperimentConfiguration> getConfigurations() {
 		synchronized(this.configurations) {
-			return new HashMap<String, GridGameConfiguration>(this.configurations);
+			return new HashMap<String, ExperimentConfiguration>(this.configurations);
 		}
 	}
 
