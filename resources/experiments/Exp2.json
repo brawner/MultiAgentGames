@@ -1,0 +1,21 @@
+"matches": [
+{
+	"world": "TwoAgentsTwoGoals2",
+	"agent1": "human",
+	"agent2": "human",
+	"max_rounds": 5
+},
+{
+	"world": "TwoAgentsHall_3by5_noWalls",
+	"agent1": "human",
+	"agent2": "human",
+	"max_rounds": 10
+
+},
+{
+	"world": "TwoAgentsHall_3by5_4Walls",
+	"agent1": "human",
+	"agent2": "human",
+	"max_rounds": 10
+}
+]
