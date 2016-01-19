@@ -109,7 +109,7 @@ public class GridGameManager {
 	public static final List<String> FOREVER_AGENTS = 
 			Arrays.asList(GridGameManager.CONTINUOUS_NORM_LEARNING);
 	
-	
+	// Map worldId to list of ?
 	public HashMap<String,List<String>> gameTypesForIds = new HashMap<String,List< String>>();
 
 	//add a logging string here that is pushed at end of game with episode data??
@@ -336,7 +336,7 @@ public class GridGameManager {
 				this.collections.addWorldTokens(tokens);
 				break;
 			case GameHandler.RUN_URL_GAME:
-				this.runUrlGame(token,id,session,response);
+				this.runURLGame2(token,id,session,response);
 				break;
 			}
 
@@ -396,7 +396,7 @@ public class GridGameManager {
 		World world = this.collections.getWorld(worldId);
 		if (world != null) {
 			MatchConfiguration matchConfig = new MatchConfiguration(world.copy());
-			ExperimentConfiguration expConfiguration = new ExperimentConfiguration();
+			ExperimentConfiguration expConfiguration = new ExperimentConfiguration("custom");
 			expConfiguration.addMatchConfig(matchConfig);
 			String activeId = this.collections.getUniqueThreadId();
 			this.collections.addConfiguration(activeId, expConfiguration);
@@ -640,190 +640,287 @@ public class GridGameManager {
 		this.updateConnected();
 	}
 
-	private void runUrlGame(GridGameServerToken token, String clientId, Session session,
-			GridGameServerToken response) throws TokenCastException{
-		//if a game of the type exists, join that game
-
-		String worldId = token.getString(GridGameManager.WORLD_ID);
+//	private void runUrlGame(GridGameServerToken token, String clientId, Session session,
+//			GridGameServerToken response) throws TokenCastException{
+//		//if a game of the type exists, join that game
+//
+//		String worldId = token.getString(GridGameManager.WORLD_ID);
+//		String experimentType = token.getString(EXP_NAME);
+//		if (worldId == null && experimentType == null) {
+//			response.setError(true);
+//			response.setString(WHY_ERROR, "The world or experiment must be specified");
+//			return;
+//		}
+//		
+//		String turkId = token.getString(GridGameManager.URL_ID);
+//		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
+//		GridGameServerToken otherVars = token.getToken(OTHER_VARS);
+//		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
+//
+//		Boolean runDebug = false;
+//		if (otherVars != null) {
+//			String runDebugStr = otherVars.getString(GridGameManager.DEBUG);
+//			runDebug = (runDebugStr == null) ? false : Boolean.parseBoolean(runDebugStr);
+//		}
+//		
+//		if (experimentType != null) {
+//			agentTypes = new ArrayList<String>();
+//			agentTypes.add(GridGameManager.HUMAN_AGENT);
+//			List<String> expParams = this.loadExperimentType(experimentType, response);
+//			if (response.getError()) {
+//				return;
+//			}
+//			worldId = expParams.get(0);
+//			agentTypes.add(expParams.get(1));
+//		}
+//		
+//		System.out.println("Client " + clientId + " with turk id: " + turkId + " is starting a game. " +
+//				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
+//		this.runGame(worldId, turkId, agentTypeStr, agentTypes, runDebug, clientId, session, response);
+//	}
+	
+	private void runURLGame2(GridGameServerToken token, String clientId, Session session,
+			GridGameServerToken response)  throws TokenCastException {
 		String experimentType = token.getString(EXP_NAME);
-		if (worldId == null && experimentType == null) {
+		if (experimentType == null) {
 			response.setError(true);
-			response.setString(WHY_ERROR, "The world or experiment must be specified");
+			response.setString(WHY_ERROR, "The experiment must be specified");
 			return;
 		}
 		
 		String turkId = token.getString(GridGameManager.URL_ID);
-		String agentTypeStr = token.getString(GameHandler.AGENT_TYPE);
+		
 		GridGameServerToken otherVars = token.getToken(OTHER_VARS);
-		List<String> agentTypes = token.getStringList(WorldFile.AGENTS);
-
 		Boolean runDebug = false;
 		if (otherVars != null) {
 			String runDebugStr = otherVars.getString(GridGameManager.DEBUG);
 			runDebug = (runDebugStr == null) ? false : Boolean.parseBoolean(runDebugStr);
 		}
 		
-		if (experimentType != null) {
-			agentTypes = new ArrayList<String>();
-			agentTypes.add(GridGameManager.HUMAN_AGENT);
-			List<String> expParams = this.loadExperimentType(experimentType, response);
-			if (response.getError()) {
+		ExperimentConfiguration configuration = this.collections.getFirstOpenConfiguration(experimentType);
+		if (configuration == null) {
+			configuration = this.initGame(experimentType, runDebug, response);
+			if (configuration == null) {
 				return;
 			}
-			worldId = expParams.get(0);
-			agentTypes.add(expParams.get(1));
-		}
-		
-		System.out.println("Client " + clientId + " with turk id: " + turkId + " is starting a game. " +
-				"With world: " + worldId + " experiment type: " + experimentType + " and agent type: " + agentTypeStr);
-		this.runGame(worldId, turkId, agentTypeStr, agentTypes, runDebug, clientId, session, response);
-	}
-	
-	
-	private void runGame(String worldId, String turkId, String agentTypeStr, 
-			List<String> agentTypes, boolean runDebug,
-			String clientId, Session session,
-			GridGameServerToken response) {
-
-		World world = this.collections.getWorld(worldId);
-		if (world == null) {
-			response.setError(true);
-			response.setString(WHY_ERROR, "The desired world id does not exist");
-			return;
-		}
-
-		ExperimentConfiguration configuration = null;
-		String activeId = null;
-
-		boolean initGame = true;
-
-		Map<String,ExperimentConfiguration> configs = collections.getConfigurations();
-		for (Map.Entry<String, ExperimentConfiguration> entry : configs.entrySet()) {
-			String id = entry.getKey();
-			ExperimentConfiguration config = entry.getValue();
-			System.out.println("GTFI size: "+gameTypesForIds.size());
-			
-			if (config.isFullyConfigured()) {
-				continue;
-			}
-			
-			if(gameTypesForIds.get(worldId).contains(id)){
-				initGame = false;
-				activeId = id;
-				configuration = configs.get(id);
-				break;
-			}
-		}
-
-		if(initGame){
-			configuration = new ExperimentConfiguration(world.copy());
-			
-			if (runDebug) {
-				configuration.setMaxIterations(2);
-			}
-			
-			List<String> gameTypes = gameTypesForIds.get(worldId);
-			if(gameTypes == null){
-				gameTypes = new ArrayList<String>();
-				gameTypesForIds.put(worldId, gameTypes);
-
-			}
-			activeId = this.collections.getUniqueThreadId();
-			gameTypes.add(activeId);
+			String activeId = this.collections.getUniqueThreadId();
 			this.collections.addConfiguration(activeId, configuration);
-			response.setString(STATUS, "Game " + worldId + " has been initialized");
-
-			int count = 1;
-			for (String agentTypeToAdd : agentTypes) {
-				boolean isValidAgent = this.isValidAgent(worldId, agentTypeToAdd);
-
-				if (!isValidAgent) {
-					response.setError(true);
-					response.setString(WHY_ERROR, "An agent of type " + agentTypeToAdd + " cannot be added to this game");
-					return;
-				}
-				
-				if (this.isForeverAgent(worldId, agentTypeToAdd)) {
-					ForeverNormLearningAgent agent =
-							(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(agentTypeToAdd, world);
-					if (agent == null) {
-						World baseWorld = configuration.getBaseWorld();
-						agent = (ForeverNormLearningAgent)
-								configuration.getNewAgentForWorld(baseWorld, agentTypeToAdd);
-						this.collections.addContinuousLearningAgent(agentTypeToAdd, baseWorld, agent);
-					} 
-					configuration.addAgent(agent.copy());
-				}else {
-					boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
-					configuration.addAgentType(agentTypeToAdd, isRepeated);
-				}
-				
-				System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeToAdd);
-				
-				
-				
-			}
-		}else{
-			int count = configuration.getNumberAgents() + 1;
-			System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeStr);
-			boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
-			if (!isValidAgent) {
-				response.setError(true);
-				response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
-				return;
-			}
-			configuration.addAgentType(agentTypeStr);
+			response.setString(STATUS, "Game " + activeId + " has been initialized");
 		}
-
-		String agentName = "unset";
-		GameHandler handler = new GameHandler(this, session, worldId, turkId);
-
-		this.collections.addHandler(clientId, activeId, handler);
-		configuration.addHandler(clientId, handler);
-		response.setString(STATUS, "Client " + clientId + " has been added to game " + activeId);
-
-		World baseWorld = configuration.getWorldWithAgents();
-		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
-		SGDomain domain = baseWorld.getDomain();
-		State startState = baseWorld.startingState();
-		agentName = configuration.getAgentName(handler);
-		response.setString(GameHandler.AGENT, agentName);
-		response.setState(GameHandler.STATE, startState, domain);
-		response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
-		response.setString(GridGameManager.IS_READY,"true");
-		response.setString(GridGameManager.WORLD_ID, activeId);
-
-		response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
+		String configId = configuration.getUniqueGameId();
+		this.addHumanAgent(configuration, clientId, turkId, configId, session, response);
 		
-		try {
-			FileWriter pw = new FileWriter(this.analysisDirectory +"/IDMap.csv", true);
-
-			pw.append(clientId).append(",").append(turkId).append(",").append(agentName);
-			pw.append(",").append(agentTypeStr).append(",").append(configuration.getUniqueGameId());
-			pw.append("\n");
-			pw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		System.out.println("CID: "+clientId+" TID: "+turkId+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
-
-		if (!configuration.isFullyConfigured()) {
-			response.setString(GridGameManager.IS_READY,"false");
-			return;
-		}
-		
-		Future<GameAnalysis> future = this.collections.getFuture(activeId);
+		Future<GameAnalysis> future = this.collections.getFuture(configId);
 		//map from futureId to agent name and turk id and experiment name
 
 		if (future == null) {
-			System.out.println("Game " + activeId + ": starting game");
-			this.runGame(configuration, activeId, response);
+			System.out.println("Game " + configId + ": starting game");
+			this.runGame(configuration, configId, response);
 		}
-		if (this.collections.getHandlersWithGame(activeId).size() == 0) {
+		if (this.collections.getHandlersWithGame(configId).size() == 0) {
 			throw new RuntimeException("We've started very poorly here");
 		}
 	}
+	
+	private ExperimentConfiguration initGame(String experimentType, boolean runDebug, GridGameServerToken response) {
+		Path fileName = Paths.get(this.experimentDirectory, experimentType + ".yaml").toAbsolutePath();
+		List<String> params = new ArrayList<String>();
+		if (!Files.exists(fileName)) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The experiment " + experimentType + " does not exist on this server");
+			return null;
+		}
+		
+		BufferedReader reader;
+		FileReader fileReader;
+		try {
+			fileReader = 
+					new FileReader(fileName.toString());
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("The file " + fileName.toString() + " somehow does not exist");
+		}
+		StringBuilder builder = new StringBuilder();
+		try {
+			String line = "";
+
+			reader = new BufferedReader(fileReader);
+
+			while ((line = reader.readLine()) != null) {
+				builder.append(line);
+			}
+			reader.close();
+		} catch (IOException e) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "Reading the experiment " + experimentType + " file failed");
+			return null;
+		} 
+		String text = builder.toString();
+		
+		ExperimentConfiguration configuration = 
+				ExperimentConfiguration.createConfigurationFromExperimentStr(experimentType, text, collections);
+		if (runDebug) {
+			configuration.setMaxIterations(2);
+		}
+		
+		return configuration;
+	}
+	
+	private void addHumanAgent(ExperimentConfiguration configuration, String clientId, String turkId, String configId, Session session, GridGameServerToken response) {
+		String agentName = "unset";
+		String threadId = this.collections.getUniqueThreadId();
+		GameHandler handler = new GameHandler(this, session, threadId, turkId);
+
+		this.collections.addHandler(clientId, configId, handler);
+		configuration.addHandler(clientId, handler);
+		response.setString(STATUS, "Client " + clientId + " has been added to game " + configId);
+
+	}
+	
+	
+//	private void runGame(String worldId, String turkId, String agentTypeStr, 
+//			List<String> agentTypes, boolean runDebug,
+//			String clientId, Session session,
+//			GridGameServerToken response) {
+//
+//		World world = this.collections.getWorld(worldId);
+//		if (world == null) {
+//			response.setError(true);
+//			response.setString(WHY_ERROR, "The desired world id does not exist");
+//			return;
+//		}
+//
+//		ExperimentConfiguration configuration = null;
+//		String activeId = null;
+//
+//		boolean initGame = true;
+//
+//		Map<String,ExperimentConfiguration> configs = collections.getConfigurations();
+//		for (Map.Entry<String, ExperimentConfiguration> entry : configs.entrySet()) {
+//			String id = entry.getKey();
+//			ExperimentConfiguration config = entry.getValue();
+//			System.out.println("GTFI size: "+gameTypesForIds.size());
+//			
+//			if (config.isFullyConfigured()) {
+//				continue;
+//			}
+//			
+//			if(gameTypesForIds.get(worldId).contains(id)){
+//				initGame = false;
+//				activeId = id;
+//				configuration = configs.get(id);
+//				break;
+//			}
+//		}
+//
+//		if(initGame){
+//			configuration = new ExperimentConfiguration();
+//			
+//			if (runDebug) {
+//				configuration.setMaxIterations(2);
+//			}
+//			
+//			List<String> gameTypes = gameTypesForIds.get(worldId);
+//			if(gameTypes == null){
+//				gameTypes = new ArrayList<String>();
+//				gameTypesForIds.put(worldId, gameTypes);
+//
+//			}
+//			activeId = this.collections.getUniqueThreadId();
+//			gameTypes.add(activeId);
+//			this.collections.addConfiguration(activeId, configuration);
+//			response.setString(STATUS, "Game " + worldId + " has been initialized");
+//
+//			int count = 1;
+//			for (String agentTypeToAdd : agentTypes) {
+//				boolean isValidAgent = this.isValidAgent(worldId, agentTypeToAdd);
+//
+//				if (!isValidAgent) {
+//					response.setError(true);
+//					response.setString(WHY_ERROR, "An agent of type " + agentTypeToAdd + " cannot be added to this game");
+//					return;
+//				}
+//				
+//				if (this.isForeverAgent(worldId, agentTypeToAdd)) {
+//					ForeverNormLearningAgent agent =
+//							(ForeverNormLearningAgent)this.collections.getContinousLearningAgent(agentTypeToAdd, world);
+//					if (agent == null) {
+//						World baseWorld = configuration.getBaseWorld();
+//						agent = (ForeverNormLearningAgent)
+//								configuration.getNewAgentForWorld(baseWorld, agentTypeToAdd);
+//						this.collections.addContinuousLearningAgent(agentTypeToAdd, baseWorld, agent);
+//					} 
+//					configuration.addAgent(agent.copy());
+//				}else {
+//					boolean isRepeated = this.isRepeatedAgent(worldId, agentTypeToAdd);
+//					configuration.addAgentType(agentTypeToAdd, isRepeated);
+//				}
+//				
+//				System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeToAdd);
+//				
+//				
+//				
+//			}
+//		}else{
+//			int count = configuration.getNumberAgents() + 1;
+//			System.out.println("Adding agent " + count + " to world " + worldId + " of type " + agentTypeStr);
+//			boolean isValidAgent = this.isValidAgent(worldId, agentTypeStr);
+//			if (!isValidAgent) {
+//				response.setError(true);
+//				response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
+//				return;
+//			}
+//			configuration.addAgentType(agentTypeStr);
+//		}
+//
+//		String agentName = "unset";
+//		GameHandler handler = new GameHandler(this, session, worldId, turkId);
+//
+//		this.collections.addHandler(clientId, activeId, handler);
+//		configuration.addHandler(clientId, handler);
+//		response.setString(STATUS, "Client " + clientId + " has been added to game " + activeId);
+//
+//		World baseWorld = configuration.getWorldWithAgents();
+//		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
+//		SGDomain domain = baseWorld.getDomain();
+//		State startState = baseWorld.startingState();
+//		agentName = configuration.getAgentName(handler);
+//		response.setString(GameHandler.AGENT, agentName);
+//		response.setState(GameHandler.STATE, startState, domain);
+//		response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
+//		response.setString(GridGameManager.IS_READY,"true");
+//		response.setString(GridGameManager.WORLD_ID, activeId);
+//
+//		response.setString(GameHandler.RESULT, GameHandler.SUCCESS);
+//		
+//		try {
+//			FileWriter pw = new FileWriter(this.analysisDirectory +"/IDMap.csv", true);
+//
+//			pw.append(clientId).append(",").append(turkId).append(",").append(agentName);
+//			pw.append(",").append(agentTypeStr).append(",").append(configuration.getUniqueGameId());
+//			pw.append("\n");
+//			pw.close();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//
+//		System.out.println("CID: "+clientId+" TID: "+turkId+"AN: "+agentName+" AT: "+agentTypeStr+" GID: "+configuration.getUniqueGameId());
+//
+//		if (!configuration.isFullyConfigured()) {
+//			response.setString(GridGameManager.IS_READY,"false");
+//			return;
+//		}
+//		
+//		Future<GameAnalysis> future = this.collections.getFuture(activeId);
+//		//map from futureId to agent name and turk id and experiment name
+//
+//		if (future == null) {
+//			System.out.println("Game " + activeId + ": starting game");
+//			this.runGame(configuration, activeId, response);
+//		}
+//		if (this.collections.getHandlersWithGame(activeId).size() == 0) {
+//			throw new RuntimeException("We've started very poorly here");
+//		}
+//	}
 	
 	private List<String> loadExperimentType(String experimentType, GridGameServerToken response) {
 		Path fileName = Paths.get(this.experimentDirectory, experimentType + ".csv").toAbsolutePath();
@@ -889,7 +986,7 @@ public class GridGameManager {
 		
 		ExperimentConfiguration configuration = this.collections.getConfiguration(futureId);
 		Collection<GameHandler> handlers = configuration.getCurrentMatch().getHandlerLookup().values();
-		String rt_path = analysisDirectory+"/"+configuration.getUniqueGameId()+"_reactionTimes_episode" + futureId+"_"+configuration.getGameNum()+".csv";
+		String rt_path = analysisDirectory+"/"+configuration.getUniqueGameId()+"_reactionTimes_episode" + futureId+"_"+configuration.getUniqueGameId()+".csv";
 		try {
 			FileWriter writer = new FileWriter(rt_path);
 
@@ -905,7 +1002,7 @@ public class GridGameManager {
 
 		this.collections.removeFuture(futureId);
 
-		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial" + futureId+"_match_0_round"+configuration.getGameNum();
+		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial" + futureId+"_match_0_round"+configuration.getUniqueGameId();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		result.writeToFile(path);
 		

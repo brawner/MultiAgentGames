@@ -34,6 +34,7 @@ public class GridGameServerCollections {
 	private final Map<String, List<String>> handlersAssociatedWithGames;
 	private final Map<String, String> clientToGameLookup;
 	private final Map<String, ExperimentConfiguration> configurations;
+	private final Map<String, List<ExperimentConfiguration>> experiments;
 	private final Map<String, Map<String, SGAgent> > continousLearningAgents; // agent type, world id
 	
 	private final AtomicLong threadIdCounter;
@@ -57,6 +58,7 @@ public class GridGameServerCollections {
 		this.handlersAssociatedWithGames = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		this.clientToGameLookup = Collections.synchronizedMap(new HashMap<String, String>());
 		this.configurations = Collections.synchronizedMap(new HashMap<String, ExperimentConfiguration>());
+		this.experiments = Collections.synchronizedMap(new HashMap<String, List<ExperimentConfiguration>>());
 		this.worldTokens = new ArrayList<GridGameServerToken>();
 		
 	}
@@ -341,6 +343,16 @@ public class GridGameServerCollections {
 		synchronized(this.configurations) {
 			this.configurations.put(id, config);
 		}
+		
+		synchronized(this.experiments) {
+			String experimentType = config.getExperimentType();
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs == null) {
+				configs = Collections.synchronizedList(new ArrayList<ExperimentConfiguration>());
+				this.experiments.put(experimentType, configs);
+			}
+			configs.add(config);
+		}
 	}
 	
 	public ExperimentConfiguration getConfiguration(String id) {
@@ -350,15 +362,42 @@ public class GridGameServerCollections {
 	}
 	
 	public ExperimentConfiguration removeConfiguration(String id) {
+		ExperimentConfiguration configuration = null;
 		synchronized(this.configurations) {
-			return this.configurations.remove(id);
+			configuration = this.configurations.remove(id);
 		}
+		
+		synchronized(this.experiments) {
+			String experimentType = configuration.getExperimentType();
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs != null) {
+				configs.remove(configuration);
+			}
+		}
+		
+		return configuration;
 	}
 	
 	public Map<String, ExperimentConfiguration> getConfigurations() {
 		synchronized(this.configurations) {
 			return new HashMap<String, ExperimentConfiguration>(this.configurations);
 		}
+	}
+	
+	public ExperimentConfiguration getFirstOpenConfiguration(
+			String experimentType) {
+		synchronized(this.experiments) {
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs == null) {
+				return null;
+			}
+			for (ExperimentConfiguration configuration : configs) {
+				if (!configuration.isFullyConfigured()) {
+					return configuration;
+				}
+			}
+		}
+		return null;
 	}
 
 	public String getClientId(Session session) {
@@ -377,6 +416,8 @@ public class GridGameServerCollections {
 			return this.clientToGameLookup.get(clientId);
 		}
 	}
+
+	
 
 	
 

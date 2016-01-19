@@ -60,6 +60,7 @@ public class ExperimentConfiguration {
 	 */
 	private final String uniqueGameID;
 	
+	private final String experimentType;
 	/**
 	 * The game scores that are tracked through an games run. This should be modified at the end of each run with how reward maps to overall score
 	 */
@@ -71,10 +72,11 @@ public class ExperimentConfiguration {
 	
 	//private String worldId;
 	
-	public ExperimentConfiguration() {
+	public ExperimentConfiguration(String experimentType) {
 		this.uniqueGameID = generateUniqueID();
 		this.scores = Collections.synchronizedMap(new HashMap<String, Double>());
 		this.matchConfigurations = new ArrayList<MatchConfiguration>();
+		this.experimentType = experimentType;
 	}
 	
 	private String generateUniqueID() {
@@ -172,7 +174,7 @@ public class ExperimentConfiguration {
 	}
 
 	
-	public static ExperimentConfiguration createConfigurationFromExperimentStr(
+	public static ExperimentConfiguration createConfigurationFromExperimentStr(String experimentType,
 			String yamlString, GridGameServerCollections collections) 
 	{
 		GridGameExperimentToken token = GridGameExperimentToken.tokenFromJSONString(yamlString);
@@ -184,7 +186,7 @@ public class ExperimentConfiguration {
 			return null;
 		}
 		
-		ExperimentConfiguration expConfiguration = new ExperimentConfiguration();
+		ExperimentConfiguration expConfiguration = new ExperimentConfiguration(experimentType);
 		for (GridGameExperimentToken match : matches) {
 			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections);
 			expConfiguration.addMatchConfig(matchConfig);
@@ -193,6 +195,22 @@ public class ExperimentConfiguration {
 		return expConfiguration;
 		
 		
+	}
+
+	public void setMaxIterations(int i) {
+		for (MatchConfiguration configuration : this.matchConfigurations) {
+			configuration.setMaxIterations(i);
+		}
+	}
+
+	public String getExperimentType() {
+		return this.experimentType;
+	}
+	
+	public void addHandler(String clientId, GameHandler handler) {
+		for (MatchConfiguration match : this.matchConfigurations) {
+			match.addHandler(clientId, handler);
+		}
 	}
 	
 
