@@ -1,5 +1,5 @@
 {
-	"description":"Two agents, one goal each, in front of other's",
+	"description":"Two agents, one goal each, in front of other's, no tie",
 	"width":5,
 	"height":2,
 	"agents": [
@@ -16,5 +16,6 @@
 	"vertical_walls": [
 	{"pos": 2, "end1": 1, "end2": 1},
 	{"pos": 3, "end1": 1, "end2": 1}
-	]
+	],
+	"random_tie_breaks": false
 }

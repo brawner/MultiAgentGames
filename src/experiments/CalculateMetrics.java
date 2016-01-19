@@ -1,6 +1,8 @@
 package experiments;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,14 +21,32 @@ public class CalculateMetrics {
 
 		File folder = new File(inputFolder);
 		File[] listOfFiles = folder.listFiles();
+		try {
+			FileWriter writer = new FileWriter(inputFolder+"/stats.csv");
 
-		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].isFile()) {
-				String res = calculateMetricsForGame(listOfFiles[i].getAbsolutePath());
-				System.out.println(res);
-			} else if (listOfFiles[i].isDirectory()) {
-				System.out.println("Directory " + listOfFiles[i].getName());
+
+			for (int i = 0; i < listOfFiles.length; i++) {
+				if(!listOfFiles[i].getAbsolutePath().contains(".csv")){
+					if (listOfFiles[i].isFile()) {
+						String res = calculateMetricsForGame(listOfFiles[i].getAbsolutePath());
+
+						writer.append(res);
+
+						writer.append('\n');
+						System.out.println(res);
+					} else if (listOfFiles[i].isDirectory()) {
+						System.out.println("Directory " + listOfFiles[i].getName());
+					}
+
+
+				}
+
 			}
+			writer.flush();
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -54,17 +74,17 @@ public class CalculateMetrics {
 	}
 
 	private String parseFilename(String file) {
-		
+
 		//System.out.println(file);
 		String[] fullFileName = file.split("\\.");
 		String[] fileName = fullFileName[0].split("/");
 		//System.out.println(fileName[fileName.length-1]);
 		String[] fileParts = fileName[fileName.length-1].split("_");
-		
+
 		String trial = "";
 		String match = "";
 		String round = "";
-		
+
 		for(int i = 0; i<fileParts.length-1;i++){
 			if(fileParts[i].compareToIgnoreCase("trial")==0){
 				trial = fileParts[i+1];
@@ -109,9 +129,18 @@ public class CalculateMetrics {
 
 	public static void main(String[] args){
 
-		String inputFolder = "/home/betsy/workspace/MultiAgentGames/grid_games/results/2016_01_15_10_52_19_582_536825161";
-		CalculateMetrics metricsCalc = new CalculateMetrics(inputFolder);
+		File folder = new File("/home/betsy/workspace/MultiAgentGames/grid_games/results");
+		File[] listOfFiles = folder.listFiles();
 
+		for (int i = 0; i < listOfFiles.length; i++) {
+
+			if (listOfFiles[i].isDirectory()){
+				String inputFolder = listOfFiles[i].getAbsolutePath();
+				CalculateMetrics metricsCalc = new CalculateMetrics(inputFolder);
+
+			}
+
+		}
 	}
 
 }

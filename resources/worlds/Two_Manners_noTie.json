@@ -1,5 +1,5 @@
 {
-	"description":"Two agents, Two goals each, four corners, cross of walls, extra top and bottom walls",
+	"description":"Two agents, Two goals each, four corners, cross of walls, extra top and bottom walls,no tie",
 	"width":5,
 	"height":5,
 	"agents": [
@@ -23,5 +23,6 @@
 	{"pos": 2, "end1": 1, "end2": 3},
 	{"pos": 3, "end1": 1, "end2": 3},
 	{"pos": 4, "end1": 2, "end2": 2}
-	]
+	],
+	"random_tie_breaks": false
 }

@@ -107,7 +107,8 @@ public class Experiment {
 			while ((line = br.readLine()) != null) {
 				this.numMatches++;
 				String[] matchLine = line.split(",");
-				numRounds.add(Integer.valueOf(matchLine[0]));
+				
+				numRounds.add(Integer.valueOf(matchLine[0])/2); // EDITIED HERE
 				games.add(matchLine[1]);
 				List<String> agentKinds = new ArrayList<String>();
 				agentKinds.add(matchLine[2]);
@@ -169,6 +170,8 @@ public class Experiment {
 		case "model_based":
 			return null;
 		case "CD":
+			return null;
+		case "human":
 			return null;
 		default:
 			return null;

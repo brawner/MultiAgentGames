@@ -1,5 +1,5 @@
 {
-	"description":"Two agents, Two goals, Hall, tunnel walls",
+	"description":"Two agents, Two goals, Hall, tunnel walls, no tie",
 	"width":5,
 	"height":3,
 	"agents": [
