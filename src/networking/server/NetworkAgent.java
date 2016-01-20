@@ -1,6 +1,7 @@
 package networking.server;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
@@ -19,21 +20,29 @@ public class NetworkAgent extends SGAgent {
 	private GroundedSGAgentAction currentAction;
 	
 	/**
-	 * To protect concurrent access
-	 */
-	private ReentrantReadWriteLock lock;
-	
-	/**
 	 * The associated game handler.
 	 */
 	private final GameHandler handler;
 	
 	private Boolean gameStarted;
 	
-	public NetworkAgent(GameHandler handler) {
+	private static Map<GameHandler, NetworkAgent> agentMap = 
+			Collections.synchronizedMap(new HashMap<GameHandler, NetworkAgent>());
+	
+	private NetworkAgent(GameHandler handler) {
 		this.handler = handler;
-		this.lock = new ReentrantReadWriteLock();
 		this.gameStarted = false;
+	}
+	
+	public static NetworkAgent getNetworkAgent(GameHandler handler) {
+		synchronized(NetworkAgent.agentMap) {
+			NetworkAgent agent = NetworkAgent.agentMap.get(handler);
+			if (agent == null) {
+				agent = new NetworkAgent(handler);
+				NetworkAgent.agentMap.put(handler, agent);
+			}
+			return agent;
+		}
 	}
 
 	/**
@@ -62,21 +71,22 @@ public class NetworkAgent extends SGAgent {
 	 */
 	@Override
 	public GroundedSGAgentAction getAction(State s) {
-		this.lock.readLock().lock();
-		GroundedSGAgentAction action = this.currentAction;
-		this.lock.readLock().unlock();
+		GroundedSGAgentAction action = null;
+		synchronized(this) {
+			action = this.currentAction;
+		}
 		
 		if (action == null) {
 			this.handler.begForAction(s);
 		}
 		while (action == null && this.world.isOk() && this.handler.isConnected()) {
-			this.lock.readLock().lock();
-			action = this.currentAction;
-			this.lock.readLock().unlock();	
+			synchronized(this) {
+				action = this.currentAction;
+			}
 		}
-		this.lock.writeLock().lock();
-		this.currentAction = null;
-		this.lock.writeLock().unlock();
+		synchronized(this) {
+			this.currentAction = null;
+		}
 		
 		return action;
 	}
@@ -107,9 +117,9 @@ public class NetworkAgent extends SGAgent {
 	 * @param action
 	 */
 	public void setNextAction(GroundedSGAgentAction action) {
-		this.lock.writeLock().lock();
-		this.currentAction = action;
-		this.lock.writeLock().unlock();
+		synchronized(this) {
+			this.currentAction = action;
+		}
 	}
 
 }

@@ -439,26 +439,13 @@ var Game = function() {
     var initialize_game = function(msg) {
         var initMsg = message_reader.getInitializationMsg(msg);
         console.log(initMsg);
-        if (typeof initMsg !== 'undefined' && !is_initialized) {
+        if (typeof initMsg !== 'undefined') {
             console.log("Initializing game " + initMsg.world_type);
             agent_name = initMsg.agent_name;
 
-            if (stephens_code) {
-                var element = document.getElementById('text_box');
-                element.style.visibility = "hidden";
-                var button = document.getElementById('submit_button');
-                button.style.visibility = "hidden";
+            //example gridworld and initState
 
-                painter = new GamePainter(initMsg.agent_name, width, height);
-                handler.registerWithPainter(painter);
-                currentState = initMsg.state;
-                painter.draw(currentState, currentScore, currentAction);
-                console.log("DRAWN STATE");
-            }
-
-            //CALL MARK'S CODE HERE
-            if (marks_code) {
-                //example gridworld and initState
+            if (!is_initialized) {
                 var gridworld = getGridworld(initMsg.state);
                 var initState = getAgentLocals(initMsg.state);
                 clientmdp = new ClientMDP(gridworld);
@@ -484,7 +471,28 @@ var Game = function() {
                     setTimeout(waitForOtherAgent, WAIT_FOR_PARTNER);
                 }
                 is_initialized = true;
+            } else {
+                var load_next_round = function () { 
+                    var gridworld = getGridworld(initMsg.state);
+                    var initState = getAgentLocals(initMsg.state);
+                    previousState = initState;
+                    painter.reset(gridworld, $('#task_display')[0], initMsg.agent_name);
+                    $(painter.paper.canvas).css({display :'block', margin : 'auto'}); //center the task
+                    painter.drawState(initState);
+                    step_start_time = +new Date;
+
+                    //score_board = $('#score_board')
+                    //score_board.html('End of round')
+                    //score_board.hide();
+
+                    text_messages = $('#messages');
+                    text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore +"<br>      "+"<br>        "+"<br>        ");
+                }
+                setTimeout(load_next_round, END_OF_ROUND_PAUSE-500);
+                   
             }
+
+            
         }
     };
 
