@@ -1,5 +1,5 @@
 {
-	"description":"Two agents, tunnels",
+	"description":"Two agents, tunnels, no ties",
 	"width":5,
 	"height":6,
 	"agents": [
@@ -28,5 +28,6 @@
 	{"pos": 3, "end1": 4, "end2": 4, "wallType":0},
 	{"pos": 4, "end1": 1, "end2": 2, "wallType":0}
 	],
+	"random_tie_breaks": false,
 	"goals_per_agent": 1
 }

@@ -1,0 +1,9 @@
+1,Two_Hall_3x5_no_tie_breaks,norm_learning,norm_learning,basic_norm,basic_norm
+1,Two_Hall_3x5_noTie_tunnels,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsNoManners_2by5,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsChicken_3by6,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsChicken2_3by6,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsDoor_3by5,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsTunnels,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsCorner_5by5_NoWalls,norm_learning,norm_learning,basic_norm,basic_norm
+1,TwoAgentsCorner_5by5_2Walls,norm_learning,norm_learning,basic_norm,basic_norm

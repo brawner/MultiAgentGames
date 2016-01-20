@@ -1,20 +1,15 @@
 package domain;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanics;
 import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
 import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
@@ -43,7 +38,7 @@ public class TwoAgentsTwoGoals {
 	private static SGStateGenerator generateStateGenerator(final Domain domain, final int version) {
 		
 		return new SGStateGenerator() {
-			private State generateStateGeneratorType0(final Domain domain, List<Agent> agents) {
+			private State generateStateGeneratorType0(final Domain domain, List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 2, 2, 4, 5, 5);
 				
 				GridGame.setAgent(state, 0, 4, 4, 0);
@@ -55,7 +50,7 @@ public class TwoAgentsTwoGoals {
 				return state;
 			}
 			
-			private State generateStateGeneratorType1(final Domain domain, List<Agent> agents) {
+			private State generateStateGeneratorType1(final Domain domain, List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 2, 3, 3, 5, 5);
 				
 				GridGame.setAgent(state, 0, 0, 4, 0);
@@ -67,7 +62,7 @@ public class TwoAgentsTwoGoals {
 				return state;
 			}
 			
-			private State generateStateGeneratorType2(final Domain domain, List<Agent> agents) {
+			private State generateStateGeneratorType2(final Domain domain, List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 2, 2, 2, 5, 5);
 				
 				GridGame.setAgent(state, 0, 1, 3, 0);
@@ -77,7 +72,7 @@ public class TwoAgentsTwoGoals {
 				return state;
 			}
 			
-			private State generateStateGeneratorType3(final Domain domain, List<Agent> agents) {
+			private State generateStateGeneratorType3(final Domain domain, List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 2, 4, 2, 5, 5);
 				
 				GridGame.setAgent(state, 0, 0, 2, 0);
@@ -92,7 +87,7 @@ public class TwoAgentsTwoGoals {
 				return state;
 			}
 			
-			private State generateStateGeneratorType4(final Domain domain, List<Agent> agents) {
+			private State generateStateGeneratorType4(final Domain domain, List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, 2, 2, 2, 4, 5, 5);
 				
 				GridGame.setAgent(state, 0, 4, 4, 0);
@@ -107,7 +102,7 @@ public class TwoAgentsTwoGoals {
 			}
 			
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				switch(version) {
 				case 0:
 					return this.generateStateGeneratorType0(domain, agents);
@@ -133,7 +128,7 @@ public class TwoAgentsTwoGoals {
 		JointReward jointReward = new GridGame.GGJointRewardFunction(domain); //this.generateJointReward();
 		
 		SGStateGenerator stateGenerator = TwoAgentsTwoGoals.generateStateGenerator(domain, version);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		world.setDescription("Two agents, two goals, type " + version);
 		
 		return world;

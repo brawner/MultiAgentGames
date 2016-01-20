@@ -7,14 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import networking.common.GridGameServerToken;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.behavior.stochasticgame.GameAnalysis;
+import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 
 /**
@@ -34,7 +33,9 @@ public class GridGameServerCollections {
 	private final Map<String, Future<GameAnalysis>> futures;
 	private final Map<String, List<String>> handlersAssociatedWithGames;
 	private final Map<String, String> clientToGameLookup;
-	private final Map<String, GridGameConfiguration> configurations;
+	private final Map<String, ExperimentConfiguration> configurations;
+	private final Map<String, List<ExperimentConfiguration>> experiments;
+	private final Map<String, Map<String, SGAgent> > continousLearningAgents; // agent type, world id
 	
 	private final AtomicLong threadIdCounter;
 	private final AtomicLong activeIdCounter;
@@ -46,6 +47,8 @@ public class GridGameServerCollections {
 		this.clientIdCounter = new AtomicLong(1000000);
 		
 		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
+		this.continousLearningAgents = Collections.synchronizedMap(new HashMap<String, Map<String, SGAgent>>());
+		
 		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, World>());
 		
@@ -54,7 +57,8 @@ public class GridGameServerCollections {
 		this.futures = Collections.synchronizedMap(new HashMap<String, Future<GameAnalysis>>());
 		this.handlersAssociatedWithGames = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		this.clientToGameLookup = Collections.synchronizedMap(new HashMap<String, String>());
-		this.configurations = Collections.synchronizedMap(new HashMap<String, GridGameConfiguration>());
+		this.configurations = Collections.synchronizedMap(new HashMap<String, ExperimentConfiguration>());
+		this.experiments = Collections.synchronizedMap(new HashMap<String, List<ExperimentConfiguration>>());
 		this.worldTokens = new ArrayList<GridGameServerToken>();
 		
 	}
@@ -217,6 +221,33 @@ public class GridGameServerCollections {
 		}
 	}
 	
+	public SGAgent getContinousLearningAgent(String agentType, World world) {
+		synchronized(this.continousLearningAgents) {
+			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
+			if (agentsOfType == null) {
+				return null;
+			}
+			
+			return agentsOfType.get(world.toString());
+		}
+	}
+	
+	public void addContinuousLearningAgent(String agentType, World world, SGAgent agent) {
+		synchronized(this.continousLearningAgents) {
+			Map<String, SGAgent> agentsOfType = this.continousLearningAgents.get(agentType);
+			if (agentsOfType == null) {
+				agentsOfType = Collections.synchronizedMap(new HashMap<String, SGAgent>());
+				this.continousLearningAgents.put(agentType, agentsOfType);
+			}
+			
+			agentsOfType.put(world.toString(), agent);
+		}
+	}
+	
+	
+	
+	
+	
 	/*
 	public World getActiveWorld(String id) {
 		synchronized(this.activeGameWorlds) {
@@ -308,28 +339,66 @@ public class GridGameServerCollections {
 		
 	}
 	
-	public void addConfiguration(String id, GridGameConfiguration config) {
+	public void addConfiguration(ExperimentConfiguration config) {
+		String id = config.getActiveGameID();
 		synchronized(this.configurations) {
 			this.configurations.put(id, config);
 		}
+		
+		synchronized(this.experiments) {
+			String experimentType = config.getExperimentType();
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs == null) {
+				configs = Collections.synchronizedList(new ArrayList<ExperimentConfiguration>());
+				this.experiments.put(experimentType, configs);
+			}
+			configs.add(config);
+		}
 	}
 	
-	public GridGameConfiguration getConfiguration(String id) {
+	public ExperimentConfiguration getConfiguration(String id) {
 		synchronized(this.configurations) {
 			return this.configurations.get(id);
 		}
 	}
 	
-	public GridGameConfiguration removeConfiguration(String id) {
+	public ExperimentConfiguration removeConfiguration(String id) {
+		ExperimentConfiguration configuration = null;
 		synchronized(this.configurations) {
-			return this.configurations.remove(id);
+			configuration = this.configurations.remove(id);
+		}
+		
+		synchronized(this.experiments) {
+			String experimentType = configuration.getExperimentType();
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs != null) {
+				configs.remove(configuration);
+			}
+		}
+		
+		return configuration;
+	}
+	
+	public Map<String, ExperimentConfiguration> getConfigurations() {
+		synchronized(this.configurations) {
+			return new HashMap<String, ExperimentConfiguration>(this.configurations);
 		}
 	}
 	
-	public Map<String, GridGameConfiguration> getConfigurations() {
-		synchronized(this.configurations) {
-			return new HashMap<String, GridGameConfiguration>(this.configurations);
+	public ExperimentConfiguration getFirstOpenConfiguration(
+			String experimentType) {
+		synchronized(this.experiments) {
+			List<ExperimentConfiguration> configs = this.experiments.get(experimentType);
+			if (configs == null) {
+				return null;
+			}
+			for (ExperimentConfiguration configuration : configs) {
+				if (!configuration.isFullyConfigured()) {
+					return configuration;
+				}
+			}
 		}
+		return null;
 	}
 
 	public String getClientId(Session session) {
@@ -348,6 +417,10 @@ public class GridGameServerCollections {
 			return this.clientToGameLookup.get(clientId);
 		}
 	}
+
+	
+
+	
 
 
 }

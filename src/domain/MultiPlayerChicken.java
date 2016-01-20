@@ -1,31 +1,17 @@
 package domain;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import burlap.behavior.statehashing.NameDependentStateHashFactory;
-import burlap.behavior.statehashing.StateHashFactory;
-import burlap.behavior.stochasticgame.PolicyFromJointPolicy;
-import burlap.behavior.stochasticgame.agents.mavf.MultiAgentVFPlanningAgent;
-import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.CoCoQ;
-import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.MaxQ;
-import burlap.behavior.stochasticgame.mavaluefunction.policies.EGreedyMaxWellfare;
-import burlap.behavior.stochasticgame.mavaluefunction.vfplanners.MAValueIteration;
-import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanics;
 import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.State;
 import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.AgentType;
-import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.JointReward;
+import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.SGStateGenerator;
 import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.visualizer.Visualizer;
 
 
 public class MultiPlayerChicken {
@@ -51,7 +37,7 @@ public class MultiPlayerChicken {
 		
 		return new SGStateGenerator() {
 			@Override
-			public State generateState(List<Agent> agents) {
+			public State generateState(List<SGAgent> agents) {
 				State state = GridGame.getCleanState(domain, agents, numberAgents, numberAgents, 2, 2, width, height);
 				int maxX = width - 1;
 				int maxY = height - 1;
@@ -79,7 +65,7 @@ public class MultiPlayerChicken {
 		JointReward jointReward = new GridGame.GGJointRewardFunction(domain); //this.generateJointReward();
 		
 		SGStateGenerator stateGenerator = MultiPlayerChicken.generateStateGenerator(domain, numberAgents, width, height);
-		World world = new World((SGDomain)domain, jointActionModel, jointReward, terminalFunction, stateGenerator);
+		World world = new World((SGDomain)domain, jointReward, terminalFunction, stateGenerator);
 		world.setDescription(numberAgents + " player chicken");
 		return world;
 	}

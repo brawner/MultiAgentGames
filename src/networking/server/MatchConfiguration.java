@@ -1,59 +1,37 @@
 package networking.server;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import burlap.behavior.singleagent.learning.LearningAgent;
-import burlap.behavior.singleagent.learning.tdmethods.QLearning;
-import burlap.behavior.statehashing.NameDependentStateHashFactory;
-import burlap.behavior.statehashing.StateHashFactory;
-import burlap.behavior.stochasticgame.PolicyFromJointPolicy;
-import burlap.behavior.stochasticgame.agents.RandomAgent;
-import burlap.behavior.stochasticgame.agents.mavf.MultiAgentVFPlanningAgent;
-import burlap.behavior.stochasticgame.agents.naiveq.SGNaiveQLAgent;
-import burlap.behavior.stochasticgame.mavaluefunction.backupOperators.MaxQ;
-import burlap.behavior.stochasticgame.mavaluefunction.policies.EGreedyMaxWellfare;
-import burlap.behavior.stochasticgame.mavaluefunction.vfplanners.MAValueIteration;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.AgentType;
-import burlap.oomdp.stochasticgames.JointReward;
-import burlap.oomdp.stochasticgames.SGDomain;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.World;
+import networking.common.GridGameExperimentToken;
+import networking.common.Token;
+import networking.common.TokenCastException;
 
-/**
- * The GridGameConfiguration class tracks how a game is to be configured. Instead of configuring a world, the configuration
- * keeps track of the base world, the different agent types and any other information that needs to be tracked for a game.
- * 
- * @author brawner
- *
- */
-public class GridGameConfiguration {
+public class MatchConfiguration {
+	private static final String AGENTS = "agents";
+	private static final String PARAMS = "params";
+	private static final int DEFAULT_MAX_TURNS = 30;
+	private static final int DEFAULT_MAX_ROUNDS = 20;
 	
-
 	/**
 	 * The base type of world for this configuration.
 	 */
-	private final String uniqueGameID;
-
-	/**
-	 * The base type of world for this configuration.
-	 */
-	private final World baseWorld;
+	private World baseWorld;
 	
 	/**
 	 * A list of the agents in their assigned order. I.e. the first agent added will be agent 0, regardless of what type it is.
@@ -64,7 +42,7 @@ public class GridGameConfiguration {
 	 * If an Agent needs to precompute a policy and should be recycled from each run, then it should be a repeated agent. Becareful to make sure
 	 * that any repeated agent is not shared with a different game, and all data members are fully copied when added to this configuration.
 	 */
-	private final Map<String, Agent> repeatedAgents;
+	private final Map<String, SGAgent> repeatedAgents;
 	
 	/**
 	 * If a simple agent can be regenerated anytime a new game is started, or when this game is restarted then it would be a regenerated agent.
@@ -82,57 +60,105 @@ public class GridGameConfiguration {
 	private final Map<String, GameHandler> handlerLookup;
 	
 	/**
-	 * The game scores that are tracked through an games run. This should be modified at the end of each run with how reward maps to overall score
-	 */
-	private final Map<String, Double> scores;
-	
-	/**
 	 * Once all the agents have been assigned, the configuration is considered closed.
 	 */
 	private final AtomicBoolean isClosed;
 	
 	/**
-	 * Determines how many times the game can be restarted. Currently, there setter method is not called anywhere.
+	 * Determines how many times the game can be restarted. Currently, the setter method is not called anywhere.
 	 */
-	private final AtomicInteger maxIterations;
+	private final AtomicInteger numTotalRounds;
 	
 	/**
 	 * Tracks the number of times the game has been restarted.
 	 */
-	private final AtomicInteger iterationCount;
+	private final AtomicInteger currentRound;
 	
 	/**
 	 * The maximum number of turns agents are allowed in a world. -1 is unlimited, and would be a bad idea because games could
-	 * possibly run forever on a server. Default is 10000;
+	 * possibly run forever on a server. Default is 30;
 	 */
 	private final AtomicInteger maxTurns;
-	
-	private static final int DEFAULT_MAX_TURNS = 30;
-	private static final int DEFAULT_MAX_ITERATIONS = 20;
-	
-	public GridGameConfiguration(World world) {
+
+	public MatchConfiguration(World world) {
 		this.baseWorld = world;
-		this.uniqueGameID = generateUniqueID();
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
-		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, Agent>());
+		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, SGAgent>());
 		this.networkAgents = Collections.synchronizedMap(new HashMap<String, GameHandler>());
 		this.handlerLookup = Collections.synchronizedMap(new HashMap<String, GameHandler>());
-		this.scores = Collections.synchronizedMap(new HashMap<String, Double>());
 		this.isClosed = new AtomicBoolean(false);
-		this.maxIterations = new AtomicInteger(DEFAULT_MAX_ITERATIONS);
-		this.iterationCount = new AtomicInteger();
+		this.numTotalRounds = new AtomicInteger(DEFAULT_MAX_ROUNDS);
+		this.currentRound = new AtomicInteger();
 		this.maxTurns = new AtomicInteger(DEFAULT_MAX_TURNS);
 	}
-	
-	private String generateUniqueID() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
-		Date date = new Date();
-		String dateStr = dateFormat.format(date);
-		Random rand = new Random();
-		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
+	public MatchConfiguration(World world, int maxTurns, int maxRounds) {
+		this.baseWorld = world;
+		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
+		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
+		this.repeatedAgents = Collections.synchronizedMap(new HashMap<String, SGAgent>());
+		this.networkAgents = Collections.synchronizedMap(new HashMap<String, GameHandler>());
+		this.handlerLookup = Collections.synchronizedMap(new HashMap<String, GameHandler>());
+		this.isClosed = new AtomicBoolean(false);
+		this.numTotalRounds = new AtomicInteger(maxRounds);
+		this.currentRound = new AtomicInteger();
+		this.maxTurns = new AtomicInteger(maxTurns);
+	}// TODO Auto-generated constructor stub
+
+
+	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections, String paramsDirectory) {
+		try {
+			String worldId = token.getString(GridGameManager.WORLD_ID);
+			if (worldId == null) {
+				System.err.println("World id " + worldId + " was not specified");
+				return null;
+			}
+			World world = collections.getWorld(worldId);
+			if (world == null) {
+				System.err.println("World " + worldId + " does not exist");
+				return null;
+			}
 		
-		return dateStr+"_"+randVal;
+			Integer maxTurns = token.getInt(GridGameExperimentToken.MAX_TURNS);
+			if (maxTurns == null) {
+				maxTurns = DEFAULT_MAX_TURNS;
+			}
+			
+			Integer maxRounds = token.getInt(GridGameExperimentToken.MAX_ROUNDS);
+			if (maxRounds == null) {
+				maxRounds = DEFAULT_MAX_ROUNDS; 
+			}
+			
+			MatchConfiguration configuration = new MatchConfiguration(world, maxTurns, maxRounds);
+			List<GridGameExperimentToken> agentTokens = token.getTokenList(AGENTS);
+			if (agentTokens == null) {
+				System.err.println("Agent tokens were not specified");
+				return null;
+			}
+			for (Token agentToken : agentTokens) {
+				String agentTypeStr = agentToken.getString(GridGameManager.AGENT_TYPE);
+				if (agentTypeStr == null) {
+					System.err.println("Agent's type was not specified");
+					return null;
+				}
+				String params = agentToken.getString(PARAMS);
+				if (params != null) {
+					Path path = Paths.get(paramsDirectory, params + ".properties");
+					if (!Files.exists(path)) {
+						System.err.println(path.toString() + " does not exist");
+						return null;
+					}
+					params = Paths.get(paramsDirectory, params).toString();
+				}
+				configuration.addAgentType(agentTypeStr, GridGameManager.REPEATED_AGENTS.contains(agentTypeStr), params);
+			}
+			return configuration;
+		
+		} catch (TokenCastException e) {
+			e.printStackTrace();
+			return null;
+		}
+			
 	}
 
 	/**
@@ -162,6 +188,9 @@ public class GridGameConfiguration {
 	 * @return
 	 */
 	public boolean canAddAgent() {
+		if (this.baseWorld == null) {
+			System.out.print("");
+		}
 		int maxAgentsCanJoin = this.baseWorld.getMaximumAgentsCanJoin();
 		if (maxAgentsCanJoin == -1) {
 			return true;
@@ -190,7 +219,7 @@ public class GridGameConfiguration {
 	 * @return
 	 */
 	public World getWorldWithAgents() {
-		World world = this.getBaseWorld();
+		World world = this.getBaseWorld().copy();
 		
 		for (String agentName : this.orderedAgents) {
 			this.addAgentToWorld(world, agentName);
@@ -207,15 +236,18 @@ public class GridGameConfiguration {
 	 */
 	private void addAgentToWorld(World world, String agentName) {
 		if (this.repeatedAgents.containsKey(agentName)) {
-			Agent agent = this.repeatedAgents.get(agentName);
-			AgentType agentType = agent.getAgentType();
+			SGAgent agent = this.repeatedAgents.get(agentName);
+			//SGAgentType agentType = agent.getAgentType();
+			SGAgentType agentType = 
+					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
+			
 			agent.joinWorld(world, agentType);
 			
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
-			Agent agent = this.getNewAgentForWorld(world, agentTypeStr);
-			AgentType agentType = 
-					new AgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getSingleActions());
+			SGAgent agent = AgentFactory.getNewAgentForWorld(world, agentTypeStr, null);
+			SGAgentType agentType = 
+					new SGAgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
 			agent.joinWorld(world, agentType);
 			
 		} else if (this.networkAgents.containsKey(agentName)) {
@@ -225,74 +257,11 @@ public class GridGameConfiguration {
 	}
 	
 	/**
-	 * Constructs a new Agent object of the given type.
-	 * @param world
-	 * @param agentType
-	 * @return
-	 */
-	private Agent getNewAgentForWorld(World world, String agentType) {
-		switch(agentType) {
-		case GridGameManager.RANDOM_AGENT:
-			return this.getNewRandomAgent();
-		case GridGameManager.COOPERATIVE_AGENT:
-			return this.getNewMAVIAgent(world);
-		case GridGameManager.QLEARNER_AGENT:
-			return this.getNewQAgent(world);
-		}
-		return null;
-	}
-	
-	/**
-	 * Constructs a new Random agent
-	 * @return
-	 */
-	private Agent getNewRandomAgent() {
-		return new RandomAgent();
-	}
-	
-	/**
-	 * Constructs a default multi agent value iteration agent. It's cooperative, and breaks ties randomly.
-	 * @param world
-	 * @return
-	 */
-	private Agent getNewMAVIAgent(World world) {
-		
-		SGDomain domain = world.getDomain();
-		EGreedyMaxWellfare ja0 = new EGreedyMaxWellfare(0.0);
-		ja0.setBreakTiesRandomly(false);
-		JointReward rf = world.getRewardModel();
-		StateHashFactory hashingFactory = new NameDependentStateHashFactory();
-		MAValueIteration vi = 
-				new MAValueIteration((SGDomain) domain, world.getActionModel(), rf, world.getTF(), 
-						0.95, hashingFactory, 0., new MaxQ(), 0.00015, 50);
-		return new MultiAgentVFPlanningAgent((SGDomain) domain, vi, new PolicyFromJointPolicy(ja0));
-		
-	}
-	
-	/**
-	 * Constructs a default multi agent value iteration agent. It's cooperative, and breaks ties randomly.
-	 * @param world
-	 * @return
-	 */
-	private Agent getNewQAgent(World world) {
-		
-		SGDomain domain = world.getDomain();
-		
-		JointReward rf = world.getRewardModel();
-		StateHashFactory hashingFactory = new NameDependentStateHashFactory();
-		
-		Agent agent = new SGNaiveQLAgent(domain, .95, .9, 0.0, hashingFactory);
-		
-		return agent;
-		
-	}
-	
-	/**
 	 * Set the max number of iterations the game will be restarted.
 	 * @param iterations
 	 */
 	public void setMaxIterations(int iterations) {
-		this.maxIterations.set(iterations);
+		this.numTotalRounds.set(iterations);
 	}
 	
 	/**
@@ -300,7 +269,7 @@ public class GridGameConfiguration {
 	 * @return
 	 */
 	public int getMaxIterations() {
-		return this.maxIterations.get();
+		return this.numTotalRounds.get();
 	}
 	
 	/**
@@ -308,7 +277,7 @@ public class GridGameConfiguration {
 	 * @return
 	 */
 	public int incrementIterations() {
-		return this.iterationCount.incrementAndGet();
+		return this.currentRound.incrementAndGet();
 	}
 	
 	/**
@@ -316,7 +285,7 @@ public class GridGameConfiguration {
 	 * @return
 	 */
 	public boolean hasReachedMaxIterations() {
-		return (this.iterationCount.get() >= this.maxIterations.get());
+		return (this.currentRound.get() >= this.numTotalRounds.get());
 	}
 	
 	
@@ -345,13 +314,19 @@ public class GridGameConfiguration {
 		}
 	}
 	
+	public List<SGAgent> getRepeatedAgents() {
+		synchronized(this.repeatedAgents) {
+			return new ArrayList<SGAgent>(this.repeatedAgents.values());
+		}
+	}
+	
 	/**
 	 * Adds an agent object that will be reused with each restart. This is helpful if the agent already has a policy computed. Be
-	 * surethat an agent that is added to this configuration does not share any mutable data members with other agents running in different
+	 * sure that an agent that is added to this configuration does not share any mutable data members with other agents running in different
 	 * worlds.
 	 * @param agent
 	 */
-	public void addAgent(Agent agent) {
+	public void addAgent(SGAgent agent) {
 		if (!this.canAddAgent()) {
 			return;
 		}
@@ -364,12 +339,12 @@ public class GridGameConfiguration {
 		}
 	}
 	
-	/**
-	 * Adds a new agent of a specific type. Because each agent is regenerated at each restart, there is no concern about thread interaction with
-	 * other agents.
-	 * @param agentType
-	 */
-	public void addAgentType(String agentType) {
+	public void addAgentType(String agentType, boolean repeated, String params) {
+		if (repeated) {
+			SGAgent agent = AgentFactory.getNewAgentForWorld(this.baseWorld, agentType, params);
+			this.addAgent(agent);
+		}
+
 		if (!this.canAddAgent()) {
 			return;
 		}
@@ -385,34 +360,12 @@ public class GridGameConfiguration {
 	}
 	
 	/**
-	 * Get the score for a specific agent.;
-	 * @param agentName
-	 * @return
+	 * Adds a new agent of a specific type. Because each agent is regenerated at each restart, there is no concern about thread interaction with
+	 * other agents.
+	 * @param agentType
 	 */
-	public Double getScore(String agentName) {
-		synchronized(this.scores) {
-			return this.scores.get(agentName);
-		}
-	}
-	
-	/** 
-	 * Add the updates to the current scores.
-	 * @param updates
-	 */
-	public void appendScores(Map<String, Double> updates) {
-		synchronized(this.scores) {
-			for (Map.Entry<String, Double> entry : updates.entrySet()) {
-				String agentName = entry.getKey();
-				Double current = this.scores.get(agentName);
-				
-				Double update = entry.getValue();
-				if (current != null) {
-					update += current;
-				} 
-				this.scores.put(agentName, update);
-					
-			}
-		}
+	public void addAgentType(String agentType) {
+		this.addAgentType(agentType, false, null);
 	}
 	
 	/**
@@ -553,7 +506,7 @@ public class GridGameConfiguration {
 		for (String agentName : this.orderedAgents) {
 			String agentType = null;
 			if (this.repeatedAgents.containsKey(agentName)) {
-				Agent agent = this.repeatedAgents.get(agentName);
+				SGAgent agent = this.repeatedAgents.get(agentName);
 				agentType = agent.getClass().getSimpleName();
 				
 			} else if (this.regeneratedAgents.containsKey(agentName)) {
@@ -583,21 +536,14 @@ public class GridGameConfiguration {
 	public void setMaxTurns(int maxTurns) {
 		this.maxTurns.set(maxTurns);
 	}
-
-	public String getUniqueGameId() {
-		
-		return uniqueGameID;
-	}
-
+	
 	public AtomicInteger getGameNum() {
 		
-		return iterationCount;
+		return currentRound;
 	}
 
 	public Map<String, GameHandler> getHandlerLookup() {
 		
 		return handlerLookup;
 	}
-	
-
 }

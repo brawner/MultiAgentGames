@@ -12,7 +12,9 @@
 	],
 	"horizontal_walls": [
 	{"pos": 2, "end1": 0, "end2": 0},
-	{"pos": 1, "end1": 4, "end2": 4}
+	{"pos": 1, "end1": 0, "end2": 0},
+	{"pos": 1, "end1": 4, "end2": 4},
+	{"pos": 2, "end1": 4, "end2": 4}
 	]
 	
 }

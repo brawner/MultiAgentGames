@@ -1,6 +1,5 @@
 package networking.client;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -8,11 +7,11 @@ import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.server.GameHandler;
 import networking.server.GridGameManager;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.JointActionModel;
 import burlap.oomdp.stochasticgames.SGDomain;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
 import burlap.oomdp.stochasticgames.explorers.SGVisualExplorer;
 import burlap.oomdp.visualizer.Visualizer;
 
@@ -45,7 +44,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 		String mappedAction = this.getKeyAction(key);
 
 		if(mappedAction != null){
-			GroundedSingleAction nextAction = this.parseIntoSingleActions(mappedAction);
+			GroundedSGAgentAction nextAction = this.parseIntoSingleActions(mappedAction);
 			this.attemptAction(nextAction);
 			System.out.println(nextAction.toString());
 			
@@ -82,6 +81,7 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 				
 			}
 		} catch (TokenCastException e) {
+			e.printStackTrace();
 			response.setError(true);
 		}
 	
@@ -96,12 +96,12 @@ public class SGVisualExplorerClient extends SGVisualExplorer implements GGWebSoc
 		
 	}
 	
-	private void attemptAction(GroundedSingleAction action) {
+	private void attemptAction(GroundedSGAgentAction action) {
 		GridGameServerToken request = new GridGameServerToken();
 		
 		request.setString(GridGameManager.MSG_TYPE, GameHandler.TAKE_ACTION);
 		request.setString(GameHandler.ACTION, action.actionName());
-		request.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.params));
+		request.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.getParametersAsString()));
 		
 		
 		this.socketClient.sendMessage(request);
