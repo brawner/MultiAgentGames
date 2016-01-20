@@ -4,7 +4,7 @@ set -e
 DEFAULT_SERVER="elzar"
 BURLAP_BRANCH="mag_v2"
 NORM_LEARNING_BRANCH="master"
-MAG_BRANCH="burlap_v2"
+MAG_BRANCH="master"
 SERVER=${1:-$DEFAULT_SERVER}
 
 kinit
