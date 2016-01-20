@@ -1,6 +1,7 @@
 package experiments;
 
 import burlap.behavior.policy.GreedyQPolicy;
+import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.stochasticgames.GameAnalysis;
 import burlap.behavior.stochasticgames.agents.HumanAgent;
@@ -17,10 +18,14 @@ import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 import burlap.oomdp.visualizer.Visualizer;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import examples.GridGameNormRF2;
 
@@ -37,9 +42,10 @@ public class NormLearnersExperiment {
 		this.experiment = experiment;
 	}
 
-	public void runExperiment() {
+	public void runExperiment(boolean visualize) {
 
 		results = new ArrayList<List<GameAnalysis>>();
+
 		for (int match = 0; match < experiment.numMatches; match++) {
 
 			// create agents
@@ -60,15 +66,18 @@ public class NormLearnersExperiment {
 				matchList.add(game);
 			}
 			results.add(matchList);
+
 		}
 
 		// visualize results
-		Visualizer v = GGAltVis.getVisualizer(5, 5);
-		List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
-		for(List<GameAnalysis> games : results){
-			gamesToSee.addAll(games);
+		if(visualize){
+			Visualizer v = GGAltVis.getVisualizer(7, 6);
+			List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
+			for(List<GameAnalysis> games : results){
+				gamesToSee.addAll(games);
+			}
+			new GameSequenceVisualizer(v, this.experiment.sgDomain, gamesToSee);
 		}
-		new GameSequenceVisualizer(v, this.experiment.sgDomain, gamesToSee);
 
 	}
 
@@ -130,7 +139,7 @@ public class NormLearnersExperiment {
 	}
 
 	private void outputTrialResults(String outputFolder) {
-		
+
 		int match = 0;
 		for(List<GameAnalysis> list : results){
 			int round = 0;
@@ -144,8 +153,8 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "1");
-		arguments.put("experiment",  "test_machine");
+		arguments.put("numTrials", "15");
+		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
 		arguments.put("paramF","/resources/parameters/");
@@ -163,28 +172,43 @@ public class NormLearnersExperiment {
 		return arguments;
 	}
 
+	private static String generateUniqueID(String expName) {
+		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
+		Date date = new Date();
+		String dateStr = dateFormat.format(date);
+		Random rand = new Random();
+		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
+
+		return dateStr+"_Exp"+expName;
+	}
+
 	public static void main(String[] args) {
+		boolean visualize = false;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String experimentFile = arguments.get("experiment"); //from args
-		experimentFile+=".csv";
+		String[] experiments = {"corner_1","corner_2","hall_pair","corner_pair"}; //"hall_1","hall_2","door","tunnels","manners",
+		for(int e =0; e<experiments.length;e++){
+			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
+			experimentFile+=".csv";
 
-		// some other folder locations here
-		String outputFolder = currDir+arguments.get("outputF"); //from args
-		String paramFilesFolder = currDir+arguments.get("paramF"); //from args
-		String experimentFolder = currDir+arguments.get("experimentF"); //from args
-		String gamesFolder = currDir+arguments.get("gamesF");
+			// some other folder locations here
+			String outputFolder = currDir+arguments.get("outputF"); //from args
+			String paramFilesFolder = currDir+arguments.get("paramF"); //from args
+			String experimentFolder = currDir+arguments.get("experimentF"); //from args
+			String gamesFolder = currDir+arguments.get("gamesF");
 
-		experimentFile = experimentFolder + experimentFile;
+			experimentFile = experimentFolder + experimentFile;
+			String uniqueId = NormLearnersExperiment.generateUniqueID(experiments[e]); //edited here too
 
-		for (int trial = 0; trial < numTrials; trial++) {
-			Experiment experiment = new Experiment(experimentFile,
-					paramFilesFolder, gamesFolder);
-			NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
-			ex.runExperiment();
-			ex.outputTrialResults(outputFolder+experiment.uniqueId+"_trial_"+trial+"_");
+			for (int trial = 0; trial < numTrials; trial++) {
+				Experiment experiment = new Experiment(experimentFile,
+						paramFilesFolder, gamesFolder);
+				NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
+				ex.runExperiment(visualize);
+				ex.outputTrialResults(outputFolder+uniqueId+"/trial_"+trial+"_");
+			}
 		}
 	}
 
