@@ -122,6 +122,7 @@ public class GridGameManager {
 
 
 	private final String gameDirectory;
+	private final String paramsDirectory;
 	private final String analysisDirectory;
 	private final String summariesDirectory;
 	private final String experimentDirectory;
@@ -143,13 +144,14 @@ public class GridGameManager {
 	 * @param gameDirectory
 	 * @param analysisDirectory
 	 */
-	private GridGameManager(String gameDirectory, String analysisDirectory, String summariesDirectory, String experimentDirectory) {
+	private GridGameManager(String gameDirectory, String analysisDirectory, String summariesDirectory, String experimentDirectory, String paramsDirectory) {
 		this.collections = new GridGameServerCollections();
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.gameDirectory = gameDirectory;
 		this.analysisDirectory = analysisDirectory;
 		this.summariesDirectory = summariesDirectory;
 		this.experimentDirectory = experimentDirectory;
+		this.paramsDirectory = paramsDirectory;
 		this.collections.addWorldTokens(this.loadWorlds(null));
 		this.monitor = new GameMonitor(this);
 		this.monitorFuture = this.gameExecutor.submit(this.monitor);
@@ -174,9 +176,9 @@ public class GridGameManager {
 	 * @param outputDirectory
 	 * @return
 	 */
-	public static GridGameManager connect(String gameDirectory, String outputDirectory, String summariesDirectory, String experimentDirectory) {
+	public static GridGameManager connect(String gameDirectory, String outputDirectory, String summariesDirectory, String experimentDirectory, String paramsDirectory) {
 		if (GridGameManager.singleton == null) {
-			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory);
+			GridGameManager singleton = new GridGameManager(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory, paramsDirectory);
 			GridGameManager.singleton = singleton;
 		}
 		return GridGameManager.singleton;
@@ -732,7 +734,7 @@ public class GridGameManager {
 	
 	private void addInitializationMsg(ExperimentConfiguration configuration, GridGameServerToken response,
 			GameHandler handler) {
-		World baseWorld = configuration.getCurrentMatch().getBaseWorld();
+		World baseWorld = configuration.getCurrentMatch().getWorldWithAgents();
 		
 		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 		
@@ -781,7 +783,7 @@ public class GridGameManager {
 		String text = builder.toString();
 		
 		ExperimentConfiguration configuration = 
-				ExperimentConfiguration.createConfigurationFromExperimentStr(experimentType, text, collections);
+				ExperimentConfiguration.createConfigurationFromExperimentStr(experimentType, text, collections, this.paramsDirectory);
 		if (runDebug) {
 			configuration.setMaxIterations(2);
 		}

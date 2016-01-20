@@ -488,7 +488,7 @@ var Game = function() {
                     text_messages = $('#messages');
                     text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore +"<br>      "+"<br>        "+"<br>        ");
                 }
-                setTimeout(load_next_round, END_OF_ROUND_PAUSE);
+                setTimeout(load_next_round, END_OF_ROUND_PAUSE-500);
                    
             }
 

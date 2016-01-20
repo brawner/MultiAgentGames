@@ -13,6 +13,7 @@ import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
 import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
@@ -43,7 +44,7 @@ public class AgentFactory {
 	 * @param agentType
 	 * @return
 	 */
-	public static SGAgent getNewAgentForWorld(World world, String agentType) {
+	public static SGAgent getNewAgentForWorld(World world, String agentType, String params) {
 		switch(agentType) {
 		case GridGameManager.RANDOM_AGENT:
 			return AgentFactory.getNewRandomAgent();
@@ -52,7 +53,7 @@ public class AgentFactory {
 		case GridGameManager.QLEARNER_AGENT:
 			return AgentFactory.getNewQAgent(world);
 		case GridGameManager.NORM_LEARNING_AGENT:
-			return AgentFactory.getNormLearningAgent(world);
+			return AgentFactory.getNormLearningAgent(world, params);
 			//return NormLearningAgentFactory.getNormLearningAgent(parametersFile, experiment);
 		case GridGameManager.CONTINUOUS_NORM_LEARNING:
 			return AgentFactory.getContinuousNormLearningAgent(world);
@@ -107,7 +108,7 @@ public class AgentFactory {
 		
 	}
 	
-	public static SGAgent getNormLearningAgent(World world) {
+	public static SGAgent getDefaultNormLearningAgent(World world) {
 		SGDomain domain = world.getDomain();
 		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
 		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
@@ -129,6 +130,24 @@ public class AgentFactory {
 		//create agents
 		return new NormLearningAgent(domain, agent1RF, -1, 
 				agent1RF.createCorresponingDiffVInit(jplanner), true);
+	}
+	
+	public static SGAgent getNormLearningAgent(World world, String params) {
+		if (params == null) {
+			return AgentFactory.getDefaultNormLearningAgent(world);
+		}
+		
+		SGDomain domain = world.getDomain();
+		List<SGAgentType> types = Arrays.asList(GridGame.getStandardGridGameAgentType(domain));
+		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(domain, types);
+		Domain cmdp = mdpdg.generateDomain();
+		
+		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
+		JointReward jr = GridGameExtreme.getSimultaneousGoalRewardFunction(1.0, 0.0);
+		
+		
+		
+		return NormLearningAgentFactory.getNormLearningAgent(params, domain, types, jr, tf);
 		
 	}
 	

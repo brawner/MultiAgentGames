@@ -1,5 +1,8 @@
 package networking.server;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +24,7 @@ import networking.common.TokenCastException;
 
 public class MatchConfiguration {
 	private static final String AGENTS = "agents";
+	private static final String PARAMS = "params";
 	private static final int DEFAULT_MAX_TURNS = 30;
 	private static final int DEFAULT_MAX_ROUNDS = 20;
 	
@@ -102,7 +106,7 @@ public class MatchConfiguration {
 	}// TODO Auto-generated constructor stub
 
 
-	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections) {
+	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections, String paramsDirectory) {
 		try {
 			String worldId = token.getString(GridGameManager.WORLD_ID);
 			if (worldId == null) {
@@ -133,7 +137,20 @@ public class MatchConfiguration {
 			}
 			for (Token agentToken : agentTokens) {
 				String agentTypeStr = agentToken.getString(GridGameManager.AGENT_TYPE);
-				configuration.addAgentType(agentTypeStr, GridGameManager.REPEATED_AGENTS.contains(agentTypeStr));
+				if (agentTypeStr == null) {
+					System.err.println("Agent's type was not specified");
+					return null;
+				}
+				String params = agentToken.getString(PARAMS);
+				if (params != null) {
+					Path path = Paths.get(paramsDirectory, params + ".properties");
+					if (!Files.exists(path)) {
+						System.err.println(path.toString() + " does not exist");
+						return null;
+					}
+					params = Paths.get(paramsDirectory, params).toString();
+				}
+				configuration.addAgentType(agentTypeStr, GridGameManager.REPEATED_AGENTS.contains(agentTypeStr), params);
 			}
 			return configuration;
 		
@@ -228,7 +245,7 @@ public class MatchConfiguration {
 			
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
-			SGAgent agent = AgentFactory.getNewAgentForWorld(world, agentTypeStr);
+			SGAgent agent = AgentFactory.getNewAgentForWorld(world, agentTypeStr, null);
 			SGAgentType agentType = 
 					new SGAgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
 			agent.joinWorld(world, agentType);
@@ -322,9 +339,9 @@ public class MatchConfiguration {
 		}
 	}
 	
-	public void addAgentType(String agentType, boolean repeated) {
+	public void addAgentType(String agentType, boolean repeated, String params) {
 		if (repeated) {
-			SGAgent agent = AgentFactory.getNewAgentForWorld(this.baseWorld, agentType);
+			SGAgent agent = AgentFactory.getNewAgentForWorld(this.baseWorld, agentType, params);
 			this.addAgent(agent);
 		}
 
@@ -348,7 +365,7 @@ public class MatchConfiguration {
 	 * @param agentType
 	 */
 	public void addAgentType(String agentType) {
-		this.addAgentType(agentType, false);
+		this.addAgentType(agentType, false, null);
 	}
 	
 	/**

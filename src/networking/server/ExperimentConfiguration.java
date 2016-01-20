@@ -185,7 +185,7 @@ public class ExperimentConfiguration {
 
 	
 	public static ExperimentConfiguration createConfigurationFromExperimentStr(String experimentType,
-			String yamlString, GridGameServerCollections collections) 
+			String yamlString, GridGameServerCollections collections, String paramsDirectory) 
 	{
 		GridGameExperimentToken token = GridGameExperimentToken.tokenFromJSONString(yamlString);
 		List<GridGameExperimentToken> matches;
@@ -199,7 +199,7 @@ public class ExperimentConfiguration {
 		String activeGameId = collections.getUniqueThreadId();
 		ExperimentConfiguration expConfiguration = new ExperimentConfiguration(experimentType, activeGameId);
 		for (GridGameExperimentToken match : matches) {
-			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections);
+			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections, paramsDirectory);
 			if (matchConfig == null) {
 				throw new RuntimeException("Setting up match failed");
 			}
