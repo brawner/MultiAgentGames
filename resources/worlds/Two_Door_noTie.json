@@ -1,5 +1,5 @@
 {
-	"description":"Two agents, Two goals, box, two walls",
+	"description":"Two agents, Two goals, box, two walls, no ties",
 	"width":5,
 	"height":3,
 	"agents": [
@@ -13,5 +13,6 @@
 	"horizontal_walls": [
 	{"pos": 2, "end1": 0, "end2": 1},
 	{"pos": 1, "end1": 3, "end2": 4}
-	]
+	],
+	"random_tie_breaks": false
 }

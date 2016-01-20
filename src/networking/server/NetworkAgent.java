@@ -1,37 +1,48 @@
 package networking.server;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
 
 /**
  * A subclass of the StochasticGames agent. This implements the required methods for the World to call when running a game
  * @author brawner
  *
  */
-public class NetworkAgent extends Agent {
+public class NetworkAgent extends SGAgent {
 	/**
 	 * The current action specified by the connected person
 	 */
-	private GroundedSingleAction currentAction;
-	
-	/**
-	 * To protect concurrent access
-	 */
-	private ReentrantReadWriteLock lock;
+	private GroundedSGAgentAction currentAction;
 	
 	/**
 	 * The associated game handler.
 	 */
 	private final GameHandler handler;
 	
+	private Boolean gameStarted;
 	
-	public NetworkAgent(GameHandler handler) {
+	private static Map<GameHandler, NetworkAgent> agentMap = 
+			Collections.synchronizedMap(new HashMap<GameHandler, NetworkAgent>());
+	
+	private NetworkAgent(GameHandler handler) {
 		this.handler = handler;
-		this.lock = new ReentrantReadWriteLock();
+		this.gameStarted = false;
+	}
+	
+	public static NetworkAgent getNetworkAgent(GameHandler handler) {
+		synchronized(NetworkAgent.agentMap) {
+			NetworkAgent agent = NetworkAgent.agentMap.get(handler);
+			if (agent == null) {
+				agent = new NetworkAgent(handler);
+				NetworkAgent.agentMap.put(handler, agent);
+			}
+			return agent;
+		}
 	}
 
 	/**
@@ -39,7 +50,11 @@ public class NetworkAgent extends Agent {
 	 */
 	@Override
 	public void gameStarting() {
-		
+		this.gameStarted = true;
+	}
+	
+	public Boolean isGameStarted() {
+		return this.gameStarted;
 	}
 	
 	/**
@@ -48,28 +63,30 @@ public class NetworkAgent extends Agent {
 	@Override
 	public void gameStarting(State startState) {
 		this.handler.updateClient(startState);
+		this.gameStarted = true;
 	}
 
 	/**
 	 * Attempts to get an action from the connected user. If no action has been specified, then it asks the user for a new action.
 	 */
 	@Override
-	public GroundedSingleAction getAction(State s) {
-		this.lock.readLock().lock();
-		GroundedSingleAction action = this.currentAction;
-		this.lock.readLock().unlock();
+	public GroundedSGAgentAction getAction(State s) {
+		GroundedSGAgentAction action = null;
+		synchronized(this) {
+			action = this.currentAction;
+		}
 		
 		if (action == null) {
 			this.handler.begForAction(s);
 		}
 		while (action == null && this.world.isOk() && this.handler.isConnected()) {
-			this.lock.readLock().lock();
-			action = this.currentAction;
-			this.lock.readLock().unlock();	
+			synchronized(this) {
+				action = this.currentAction;
+			}
 		}
-		this.lock.writeLock().lock();
-		this.currentAction = null;
-		this.lock.writeLock().unlock();
+		synchronized(this) {
+			this.currentAction = null;
+		}
 		
 		return action;
 	}
@@ -92,17 +109,17 @@ public class NetworkAgent extends Agent {
 	@Override
 	public void gameTerminated() {
 		this.handler.gameCompleted();
-
+		this.gameStarted = false;
 	}
 	
 	/**
 	 * Sets the client's requested action for the next turn.
 	 * @param action
 	 */
-	public void setNextAction(GroundedSingleAction action) {
-		this.lock.writeLock().lock();
-		this.currentAction = action;
-		this.lock.writeLock().unlock();
+	public void setNextAction(GroundedSGAgentAction action) {
+		synchronized(this) {
+			this.currentAction = action;
+		}
 	}
 
 }

@@ -1,7 +1,5 @@
 package networking.server;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -11,13 +9,14 @@ import networking.common.TokenCastException;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.AgentType;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.SingleAction;
 import burlap.oomdp.stochasticgames.World;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.ObParamSGAgentAction.GroundedObParamSGAgentAction;
+import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
 
 /**
  * Handles direct game management with the connected client.
@@ -85,12 +84,15 @@ public class GameHandler {
 	 */
 	private double currentScore;
 	private SGDomain domain;
+	
+	private final String turkId;
 
-	public GameHandler(GridGameManager server, Session session, String threadId) {
+	public GameHandler(GridGameManager server, Session session, String threadId, String turkId) {
 		this.server = server;
 		this.session = session;
 		this.threadId = threadId;
 		this.currentScore = 0.0;
+		this.turkId = turkId;
 	}
 
 	/**
@@ -111,15 +113,18 @@ public class GameHandler {
 				this.appendToActionRecord(msg);
 
 			} else if (msgType.equals(TAKE_ACTION)) {
-				String actionName = msg.getString(ACTION);
-				List<String> actionParams = msg.getStringList(ACTION_PARAMS);
-				String[] params = actionParams.toArray(new String[actionParams.size()]);
-				SingleAction action = this.domain.getSingleAction(actionName);
-				GroundedSingleAction groundedAction = new GroundedSingleAction(agent.getAgentName(), action, params);
-				this.agent.setNextAction(groundedAction);
-				response.setString(RESULT, SUCCESS);
-
-
+				if (this.agent.isGameStarted()) {
+					String actionName = msg.getString(ACTION);
+					List<String> actionParams = msg.getStringList(ACTION_PARAMS);
+					String[] params = actionParams.toArray(new String[actionParams.size()]);
+					SGAgentAction action = this.domain.getSingleAction(actionName);
+					GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent.getAgentName(), action, params);
+					this.agent.setNextAction(groundedAction);
+					response.setString(RESULT, SUCCESS);
+				} else {
+					response.setString("Game_started", "Game was not started");
+					response.setError(true);
+				}
 			}else if(msgType.equals(INITIALIZE)){
 
 			}else if (msgType.equals(HEARTBEAT)){
@@ -129,7 +134,7 @@ public class GameHandler {
 				
 			}
 		} catch (TokenCastException e) {
-
+			
 			System.out.flush();
 			response.setError(true);
 		}
@@ -178,6 +183,9 @@ public class GameHandler {
 		this.updateClient(msg);
 	}
 
+	public String getParticipantId() {
+		return this.turkId;
+	}
 	/**
 	 * After each joint action, the world needs to update the client. This handles that update.
 	 * @param s
@@ -242,11 +250,11 @@ public class GameHandler {
 	 * @param world
 	 */
 	public void addNetworkAgent(World world) {
-		this.agent = new NetworkAgent(this);
+		this.agent = NetworkAgent.getNetworkAgent(this);
 		this.domain = world.getDomain();
 
-		AgentType agentType = 
-				new AgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getSingleActions());
+		SGAgentType agentType = 
+				new SGAgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getAgentActions());
 
 		agent.joinWorld(world, agentType);
 	}

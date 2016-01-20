@@ -1,0 +1,26 @@
+{
+	"description":"Two agents in hall, intersection with goals at either end of horizontal hall, no tie",
+	"width":7,
+	"height":3,
+	"agents": [
+	{"x":5, "y":1},
+	{"x":1, "y":1}
+	],
+	"goals": [
+	{"x":0, "y":1, "gt":1},
+	{"x":6, "y":1, "gt":2}
+	],
+	"horizontal_walls": [
+	{"pos": 1, "end1": 0, "end2": 1},
+	{"pos": 1, "end1": 3, "end2": 6},
+	{"pos": 2, "end1": 0, "end2": 3},
+	{"pos": 2, "end1": 5, "end2": 6}
+	],
+	"vertical_walls": [
+	{"pos": 2, "end1": 0, "end2": 0},
+	{"pos": 4, "end1": 2, "end2": 2},
+	{"pos": 3, "end1": 0, "end2": 0},
+	{"pos": 5, "end1": 2, "end2": 2}
+	],
+	"random_tie_breaks": false
+}

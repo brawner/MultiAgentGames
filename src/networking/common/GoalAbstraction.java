@@ -5,9 +5,9 @@ import java.util.List;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.auxiliary.StateAbstraction;
-import burlap.oomdp.core.ObjectInstance;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.Agent;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.SGAgent;
 
 /**
  * Abstracts the goals away, so that an agent cannot tell which goal another agent is attempting to go to.
@@ -23,6 +23,10 @@ public class GoalAbstraction implements StateAbstraction{
 	public State abstraction(State s) {
 		List<ObjectInstance> goalObjects = this.reference.getObjectsOfClass(GridGame.CLASSGOAL);
 		List<ObjectInstance> goalsToRemove = s.getObjectsOfClass(GridGame.CLASSGOAL);
+		if (goalObjects.equals(goalsToRemove)) {
+			return s;
+		}
+		
 		
 		State abstracted = s.copy();
 		for (ObjectInstance goal : goalsToRemove) {
@@ -38,7 +42,7 @@ public class GoalAbstraction implements StateAbstraction{
 	 * Replaces the goal objects with the goals from the reference state, except for the goals that match the agent's number
 	 * and do not exist in the current state.
 	 */
-	public State abstraction(State state, Agent agent) {
+	public State abstraction(State state, SGAgent agent) {
 		// Copy state
 		State abstracted = state.copy();
 		
@@ -53,13 +57,13 @@ public class GoalAbstraction implements StateAbstraction{
 		List<ObjectInstance> goalsNotToAdd = new ArrayList<ObjectInstance>();
 		
 		ObjectInstance agentObject = abstracted.getObject(agent.getAgentName());
-		int playerNum = agentObject.getDiscValForAttribute(GridGame.ATTPN);
+		int playerNum = agentObject.getIntValForAttribute(GridGame.ATTPN);
 		
 		// Iterate through all the goal objects
 		for (ObjectInstance goalToAdd : goalObjects) {
 			
 			// If the goal type doesn't match this player number, then it should be added regardless
-			int goalType = goalToAdd.getDiscValForAttribute(GridGame.ATTGT);
+			int goalType = goalToAdd.getIntValForAttribute(GridGame.ATTGT);
 			if (goalType != playerNum + 1) {
 				continue;
 			}
@@ -75,6 +79,10 @@ public class GoalAbstraction implements StateAbstraction{
 			if (!found) {
 				goalsNotToAdd.add(goalToAdd);
 			}
+		}
+		
+		if (actualGoals.equals(goalObjects)) {
+			return abstracted;
 		}
 		
 		// Remove all the goals from the state

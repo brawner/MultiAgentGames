@@ -13,19 +13,30 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import networking.common.GridGameExtreme;
-import burlap.behavior.stochasticgame.GameAnalysis;
+import networking.server.GameHandler;
+import networking.server.ExperimentConfiguration;
+import burlap.behavior.policy.Policy;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
+import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
+import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
-import burlap.oomdp.core.State;
-import burlap.oomdp.stochasticgames.GroundedSingleAction;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGDomain;
+import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
+import burlap.oomdp.stochasticgames.explorers.SGVisualExplorer;
+import burlap.oomdp.visualizer.Visualizer;
 
 
 public class Analysis {
@@ -44,8 +55,11 @@ public class Analysis {
 		public void write(FileWriter writer) throws IOException {
 			writer.append(turkId).append(",").append(Integer.toString(x)).append(",");
 			writer.append(Integer.toString(y)).append(",").append(Integer.toString(rt));
+			writer.append(",");
 			if (action != null) {
-				writer.append(",").append(action);
+				writer.append(action);
+			} else {
+				writer.append("null");
 			}
 		}
 	}
@@ -66,6 +80,8 @@ public class Analysis {
 	
 	public static class Round implements Comparable<Round>{
 		public List<Turn> turns = new ArrayList<Turn>();
+		public double rewardAgent1 = 0;
+		public double rewardAgent2 = 0;
 		public int roundNumber;
 		public void write(FileWriter writer, String id) throws IOException {
 			for (Turn turn : turns) {
@@ -80,11 +96,20 @@ public class Analysis {
 	
 	public static class Match {
 		public List<Round> rounds = new ArrayList<Round>();
+		public double rewardAgent1 = 0;
+		public double rewardAgent2 = 0;
+		public String turkId1;
+		public String turkId2;
 		public String matchId;
 		public void write(FileWriter writer) throws IOException {
 			for (Round round : rounds) {
 				round.write(writer, matchId);
 			}
+		}
+		
+		public void writeRewards(FileWriter writer) throws IOException {
+			writer.append(matchId).append(",").append(turkId1).append(",").append(Double.toString(rewardAgent1));
+			writer.append(",").append(turkId2).append(",").append(Double.toString(rewardAgent2));
 		}
 	}
 	
@@ -96,10 +121,18 @@ public class Analysis {
 				match.write(writer);
 			}
 		}
+		
+		public void writeRewards(FileWriter writer) throws IOException {
+			for (Map.Entry<String, Match> entry : matches.entrySet()) {
+				Match match = entry.getValue();
+				match.writeRewards(writer);
+				writer.append("\n");
+			}
+		}
 	}
 	
-	public static Round getGameResult(String filename) {
-		int s = filename.lastIndexOf("_");
+	public static Round getGameResult(String filename, List<GameAnalysis> games) {
+		int s = filename.lastIndexOf("/") + 4;
 		int end = filename.lastIndexOf(".");
 		int roundNumber = Integer.parseInt(filename.substring(s+1,end));
 		String text;
@@ -109,16 +142,28 @@ public class Analysis {
 			e.printStackTrace();
 			return null;
 		}	
-		GameAnalysis analysis = GameAnalysis.parseStringIntoGameAnalysis(text, domain, sp);
+		GameAnalysis analysis = GameAnalysis.legacyParseStringIntoGameAnalysis(text, domain, sp);
+		if (analysis.states.isEmpty()) {
+			analysis = GameAnalysis.parseFileIntoGA(filename, domain);
+			if (analysis.states.isEmpty()) {
+				System.err.println(filename + " didn't contain a full game");
+				
+				return null;
+			}
+		}
+		games.add(analysis);
 		List<JointAction> actions = analysis.getJointActions();
 		List<State> states = analysis.getStates();
 		Round round = new Round();
 		round.roundNumber = roundNumber;
+		double sumReward1 = 0.0;
+		double sumReward2 = 0.0;
 		for (int i = 0; i < actions.size(); i++) {
 			JointAction action = actions.get(i);
 			State state = states.get(i);
-			GroundedSingleAction agent1Action = action.action("agent0");
-			GroundedSingleAction agent2Action = action.action("agent1");
+			GroundedSGAgentAction agent1Action = action.action("agent0");
+			GroundedSGAgentAction agent2Action = action.action("agent1");
+			
 			Turn turn = new Turn();
 			turn.agent1.name = agent1Action.actingAgent;
 			turn.agent1.action = agent1Action.actionName();
@@ -129,6 +174,9 @@ public class Analysis {
 			turn.agent2.x = state.getObject("agent1").getIntValForAttribute(GridGame.ATTX);
 			turn.agent2.y = state.getObject("agent1").getIntValForAttribute(GridGame.ATTY);
 			turn.turnNumber = i;
+			sumReward1 += analysis.getRewardForAgent(i+1, "agent0");
+			sumReward2 += analysis.getRewardForAgent(i+1, "agent1");
+			
 			round.turns.add(turn);
 		}
 		
@@ -143,7 +191,8 @@ public class Analysis {
 		turn.agent2.y = state.getObject("agent1").getIntValForAttribute(GridGame.ATTY);
 		turn.turnNumber = round.turns.size();
 		round.turns.add(turn);
-		
+		round.rewardAgent1 = sumReward1;
+		round.rewardAgent2 = sumReward2;
 		return round;
 	}
 	
@@ -176,7 +225,7 @@ public class Analysis {
 		}
 	}
 
-	public static Match getMatch(final String baseDir, String number) {
+	public static Match getMatch(final String baseDir, String number, List<GameAnalysis> games) {
 		final String filePattern = number;
 		File file = new File(baseDir);
 		FilenameFilter filter = new FilenameFilter() {
@@ -197,7 +246,15 @@ public class Analysis {
 				matchNum = Integer.parseInt(children[i].substring(s,e));
 				
 			}
-			match.rounds.add(getGameResult(baseDir + "/" + children[i]));
+			Round r = getGameResult(baseDir + "/" + children[i], games);
+			if (r != null) {
+				match.rounds.add(r);
+				match.rewardAgent1 += r.rewardAgent1;
+				match.rewardAgent2 += r.rewardAgent2;
+			}
+		}
+		if (match.rounds.isEmpty()) {
+			return null;
 		}
 		if (matchNum != null) {
 			match.matchId = matchNum.toString();
@@ -219,17 +276,22 @@ public class Analysis {
 			int roundNum = Integer.parseInt(children[i].substring(s+1,e))-1;
 			addReactionTimes(baseDir + "/" + children[i], match.rounds.get(roundNum));
 		}
+		if (match.rounds.size() > 0) {
+			match.turkId1 = match.rounds.get(0).turns.get(0).agent1.turkId;
+			match.turkId2 = match.rounds.get(0).turns.get(0).agent2.turkId;
+		}
 		
 		return match;
 	}
 	
 	// 1000009,name_2,agent0,human,2015_09_15_17_32_46_680_277064168
-	public static Experiment loadExperiment(String baseDir, String filename) {
+	public static Experiment loadExperiment(String baseDir, String filename, List<List<GameAnalysis>> games) {
 		Experiment experiment = new Experiment();
 		Path path = Paths.get(baseDir, filename).toAbsolutePath();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(path.toString()));
 			String line;
+			
 			while ((line = reader.readLine()) != null) {
 				String[] split = line.split(",");
 				if (split.length != 5) {
@@ -239,8 +301,13 @@ public class Analysis {
 				String filePrefix = split[4];
 				
 				if (!experiment.matches.containsKey(filePrefix)) {
-					Match match = getMatch(baseDir, filePrefix);
-					experiment.matches.put(filePrefix, match);
+					List<GameAnalysis> matchGames = new ArrayList<GameAnalysis>();
+					games.add(matchGames);
+					
+					Match match = getMatch(baseDir, filePrefix, matchGames);
+					if (match != null) {
+						experiment.matches.put(filePrefix, match);
+					}
 				}
 			}
 			reader.close();
@@ -253,18 +320,204 @@ public class Analysis {
 		return experiment;
 	}
 	
-	public static void write(String filename, Experiment experiment) {
+	public static Match loadMatch(String dir, List<List<GameAnalysis>> allGames) {
+		File file = new File(dir);
+		if (!file.isDirectory()) {
+			return null;
+		}
+		FilenameFilter filter = new FilenameFilter() {
+			
+			@Override
+			public boolean accept(File dir, String name) {
+				return name.contains(".game");
+			}
+		};
+		Match match = new Match();
+		String[] children = file.list(filter);
+		String filename = file.getName();
+		Integer matchNum = Integer.parseInt(filename.substring(5));
+		for (int i = 0; i < children.length; ++i) {
+			if (matchNum == null) {
+				int s = children[i].indexOf("episode") + "episode".length();
+				int e = children[i].lastIndexOf("_");
+				matchNum = Integer.parseInt(children[i].substring(s,e));
+				
+			}
+			List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+			Round r = getGameResult(dir + "/" + children[i], games);
+			if (r != null) {
+				match.rounds.add(r);
+				match.rewardAgent1 += r.rewardAgent1;
+				match.rewardAgent2 += r.rewardAgent2;
+				allGames.add(games);
+			}
+		}
+		if (match.rounds.isEmpty()) {
+			return null;
+		}
+		if (matchNum != null) {
+			match.matchId = matchNum.toString();
+		}
+		
+		Collections.sort(match.rounds);
+		
+		return match;
+	}
+	
+	public static Experiment loadExperiment(String baseDir, List<List<GameAnalysis>> games) {
+		File dir = new File(baseDir);
+		if (!dir.isDirectory()) {
+			throw new RuntimeException(baseDir + " is not a directory");
+		}
+		
+		File[] gameDirs = dir.listFiles();
+		Experiment exp = new Experiment();
+		for (File d : gameDirs) {
+			Match match = loadMatch(d.getAbsolutePath(), games);
+			if (match != null) {
+				exp.matches.put(d.getName(), match);
+			}
+		}
+		return exp;
+	}
+	
+	public static ObservedPolicy getPolicyFromGames(List<GameAnalysis> games, String abstractedAgent, List<State> states) {
+		ObservedPolicy policy = new ObservedPolicy(abstractedAgent);
+		for (GameAnalysis game : games) {
+			for (int i = 0; i < game.maxTimeStep(); i++) {
+				policy.addStateActionObservation(game.getState(i), game.getActionForAgent(i, abstractedAgent));
+				states.add(game.getState(i));
+			}
+		}
+		
+		return policy;
+	}
+	
+	public static void visualizePolicy(List<List<State>> states, String abstractedAgent, List<ObservedPolicy> policies) {
+		Visualizer vis = GGVisualizer.getVisualizer(5, 3);
+		
+		PolicyGlyphPainter2D spp = ArrowActionGlyph.getNSEWPolicyGlyphPainter(GridGame.CLASSAGENT, 
+				GridGame.ATTX, GridGame.ATTY, 
+				GridGame.ACTIONNORTH, GridGame.ACTIONSOUTH, GridGame.ACTIONEAST, GridGame.ACTIONWEST);
+		
+		spp.setXYAttByObjectReference(abstractedAgent, GridGame.ATTX, abstractedAgent, GridGame.ATTY);
+		spp.setNumXCells(5);
+		spp.setNumYCells(3);
+		PolicyRenderLayer pLayer = new PolicyRenderLayer(states.get(0), spp, policies.get(0));
+		
+		vis.addRenderLayer(pLayer);
+		
+		
+		String activeAgent = (abstractedAgent.equals("agent0")) ? "agent1" : "agent0";
+		SGPolicyExplorer exp = new SGPolicyExplorer(domain, vis, states.get(0).get(0), states, pLayer, policies, abstractedAgent);
+		exp.addKeyAction("w", activeAgent+":"+GridGame.ACTIONNORTH);
+		exp.addKeyAction("s", activeAgent+":"+GridGame.ACTIONSOUTH);
+		exp.addKeyAction("d", activeAgent+":"+GridGame.ACTIONEAST);
+		exp.addKeyAction("a", activeAgent+":"+GridGame.ACTIONWEST);
+		exp.addKeyAction("q", activeAgent+":"+GridGame.ACTIONNOOP);
+		exp.initGUI();
+//		PolicyExplorerGUI gui = new PolicyExplorerGUI(vis, states, policy);
+//		gui.updateState(states.get(0));
+//		gui.initGUI();
+//		ValueFunction vf = new ValueFunction() {
+//			@Override
+//			public double value(State s) {
+//				return s.toString().length() % 2 == 0 ? 1.0 : 0.0;
+//			}
+//			
+//		};
+//		
+//		PolicyGlyphPainter2D spp = ArrowActionGlyph.getNSEWPolicyGlyphPainter(GridGame.CLASSAGENT, 
+//				GridGame.ATTX, GridGame.ATTY, 
+//				GridGame.ACTIONNORTH, GridGame.ACTIONSOUTH, GridGame.ACTIONEAST, GridGame.ACTIONWEST);
+//		
+//		ValueFunctionVisualizerGUI gui = 
+//				ValueFunctionVisualizerGUI.createGridGameSingleAgentVFVisualizerGUI(states, vf, policy);
+//		gui.setPolicy(policy);
+//		
+//		gui.setSpp(spp);
+//		gui.setState(0);
+//		gui.initGUI();
+	}
+	
+	public static void write(String filename, String rewardsFilename, Experiment experiment) {
 		try {
 			FileWriter writer = new FileWriter(filename);
+			FileWriter rewardWriter = new FileWriter(rewardsFilename);
 			experiment.write(writer);
+			experiment.writeRewards(rewardWriter);
 			writer.close();
+			rewardWriter.close();
 		} catch (IOException e) {
 			System.err.println("Failed to write file");
 			e.printStackTrace();
 		}
 	}
 	
+	public static void writeGameToFile(ExperimentConfiguration configuration, GameAnalysis result, String path) {
+		try {
+			FileWriter writer = new FileWriter(path, true);
+			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
+			List<JointAction> actions = result.jointActions;
+			List<State> states = result.states;
+			int i = 0;
+			for (; i < actions.size(); i++) {
+				JointAction action = actions.get(i);
+				State state = states.get(i);
+				Analysis.writeLineToFile(state, action, configuration.getCurrentMatch().getGameNum().get(), i, writer);
+			}
+			State finalState = states.get(states.size()-1);
+			
+			Analysis.writeLineToFile(finalState, null, configuration.getCurrentMatch().getGameNum().get(), i, writer);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		File file = new File(path);
+		file.setExecutable(true, false);
+		file.setReadable(true, false);
+	}
+	
+	public static void writeLineToFile(State state, JointAction action, int roundNum, int turnNum, FileWriter writer) throws IOException {
+		List<ObjectInstance> agents = state.getObjectsOfClass(GridGame.CLASSAGENT);
+		ObjectInstance first = null;
+		ObjectInstance second = null;
+		for (ObjectInstance agent : agents) {
+			if (agent.getIntValForAttribute(GridGame.ATTPN) == 0) {
+				first = agent;
+			} else if (agent.getIntValForAttribute(GridGame.ATTPN) == 1) {
+				second = agent;
+			}
+		}
+		int a1x = first.getIntValForAttribute(GridGame.ATTX);
+		int a1y = first.getIntValForAttribute(GridGame.ATTY);
+		int a2x = second.getIntValForAttribute(GridGame.ATTX);
+		int a2y = second.getIntValForAttribute(GridGame.ATTY);
+		int matchNum = 0;
+		String name1 = first.getName();
+		String name2 = second.getName();
+		int reaction1 = 0;
+		int reaction2 = 0;
+		String action1 = (action == null) ? "null" : action.action(name1).actionName();
+		String action2 = (action == null) ? "null" : action.action(name2).actionName();
+		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
+		writer.append(Integer.toString(turnNum)).append(",");
+		
+		writer.append(name1).append(",").append(Integer.toString(a1x)).append(",");
+		writer.append(Integer.toString(a1y)).append(",").append(Integer.toString(reaction1)).append(",");
+		writer.append(action1).append(",");
+		
+		writer.append(name2).append(",").append(Integer.toString(a2x)).append(",");
+		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
+		writer.append(action2).append("\n");
+	}
+	
+	
+	
 	public static void main(String[] args) {
+		
+		List<List<GameAnalysis>> games = new ArrayList<List<GameAnalysis>>();
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String directory = (args.length == 0) ? null : args[0];
         File file;
@@ -280,21 +533,47 @@ public class Analysis {
 		String outfilename = (args.length < 2) ? null : args[1];
 		File outFile;
 		while (outfilename == null || (outFile = new File(outfilename)).exists()) {
-			System.out.println("Enter an appropriate output file name");
+			System.out.println("Enter an appropriate results filename");
 			try {
 				outfilename = br.readLine();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}	
 		}
-		
-		Experiment experiment = loadExperiment(file.getAbsolutePath(), "IDMap.csv");
-		if (outFile.exists()) {
-			System.out.println("Cannot overwrite existing data file, choose a different name");
-			return;
+		String rewardsFilename = (args.length < 3) ? null : args[2];
+		File rewardsOutfile;
+		while (rewardsFilename == null || (rewardsOutfile = new File(rewardsFilename)).exists()) {
+			System.out.println("Enter an appropriate rewards file name");
+			try {
+				rewardsFilename = br.readLine();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}	
 		}
 		
-		write(outFile.getAbsolutePath(), experiment);
+		Experiment experiment = loadExperiment(file.getAbsolutePath(), games);
+		
+		
+		
+		/*
+		List<List<GameAnalysis>> games = new ArrayList<List<GameAnalysis>>();
+		Experiment experiment = loadExperiment(file.getAbsolutePath(), "IDMap.csv", games);
+		*/
+//		for (String agent : Arrays.asList("agent0", "agent1")) {
+//			List<ObservedPolicy> policies = new ArrayList<ObservedPolicy>();
+//			List<List<State>> allStates = new ArrayList<List<State>>();
+//			
+//			for (int i = 7; i < 28; i++) {
+//				List<GameAnalysis> list = games.get(i);
+//				List<State> states = new ArrayList<State>();
+//				ObservedPolicy policy = getPolicyFromGames(list, agent, states);
+//				policies.add(policy);
+//				allStates.add(states);
+//			}
+//			visualizePolicy(allStates, agent, policies);
+//		}
+		
+		write(outFile.getAbsolutePath(), rewardsOutfile.getAbsolutePath(), experiment);
 		
 	}
 }

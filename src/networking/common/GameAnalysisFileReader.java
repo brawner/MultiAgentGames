@@ -5,11 +5,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
-import burlap.behavior.stochasticgame.GameSequenceVisualizer;
+import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.auxiliary.StateParser;
-import burlap.oomdp.auxiliary.common.StateJSONParser;
+import burlap.oomdp.legacy.StateJSONParser;
+import burlap.oomdp.legacy.StateParser;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.visualizer.Visualizer;
 import burlap.parallel.Parallel;
@@ -34,7 +34,7 @@ public class GameAnalysisFileReader {
 			}
 			Visualizer visualizer = GGVisualizer.getVisualizer(5, 6);
 			
-			GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, domain, parser, current.getAbsolutePath());
+			GameSequenceVisualizer sequenceVisualizer = new GameSequenceVisualizer(visualizer, domain, current.getAbsolutePath());
 			sequenceVisualizer.initGUI();
 			return true;
 		}
@@ -49,7 +49,7 @@ public class GameAnalysisFileReader {
 	public static void main(String[] args) {
 		String directory = args[0];
 		GridGame gridGame = new GridGame();
-		SGDomain domain = GridGameExtreme.generateDomain(gridGame);
+		SGDomain domain = (SGDomain) gridGame.generateDomain();
 		StateParser parser = new StateJSONParser(domain);
 		
 		
