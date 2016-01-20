@@ -123,6 +123,7 @@ public class GameHandler {
 					response.setString(RESULT, SUCCESS);
 				} else {
 					response.setString("Game_started", "Game was not started");
+					response.setError(true);
 				}
 			}else if(msgType.equals(INITIALIZE)){
 
@@ -133,7 +134,7 @@ public class GameHandler {
 				
 			}
 		} catch (TokenCastException e) {
-
+			
 			System.out.flush();
 			response.setError(true);
 		}
@@ -249,7 +250,7 @@ public class GameHandler {
 	 * @param world
 	 */
 	public void addNetworkAgent(World world) {
-		this.agent = new NetworkAgent(this);
+		this.agent = NetworkAgent.getNetworkAgent(this);
 		this.domain = world.getDomain();
 
 		SGAgentType agentType = 

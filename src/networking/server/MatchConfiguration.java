@@ -16,10 +16,11 @@ import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.SGAgentType;
 import burlap.oomdp.stochasticgames.World;
 import networking.common.GridGameExperimentToken;
+import networking.common.Token;
 import networking.common.TokenCastException;
 
 public class MatchConfiguration {
-	
+	private static final String AGENTS = "agents";
 	private static final int DEFAULT_MAX_TURNS = 30;
 	private static final int DEFAULT_MAX_ROUNDS = 20;
 	
@@ -102,39 +103,45 @@ public class MatchConfiguration {
 
 
 	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections) {
-		String worldId;
 		try {
-			worldId = token.getString(GridGameManager.WORLD_ID);
+			String worldId = token.getString(GridGameManager.WORLD_ID);
+			if (worldId == null) {
+				System.err.println("World id " + worldId + " was not specified");
+				return null;
+			}
+			World world = collections.getWorld(worldId);
+			if (world == null) {
+				System.err.println("World " + worldId + " does not exist");
+				return null;
+			}
+		
+			Integer maxTurns = token.getInt(GridGameExperimentToken.MAX_TURNS);
+			if (maxTurns == null) {
+				maxTurns = DEFAULT_MAX_TURNS;
+			}
+			
+			Integer maxRounds = token.getInt(GridGameExperimentToken.MAX_ROUNDS);
+			if (maxRounds == null) {
+				maxRounds = DEFAULT_MAX_ROUNDS; 
+			}
+			
+			MatchConfiguration configuration = new MatchConfiguration(world, maxTurns, maxRounds);
+			List<GridGameExperimentToken> agentTokens = token.getTokenList(AGENTS);
+			if (agentTokens == null) {
+				System.err.println("Agent tokens were not specified");
+				return null;
+			}
+			for (Token agentToken : agentTokens) {
+				String agentTypeStr = agentToken.getString(GridGameManager.AGENT_TYPE);
+				configuration.addAgentType(agentTypeStr, GridGameManager.REPEATED_AGENTS.contains(agentTypeStr));
+			}
+			return configuration;
+		
 		} catch (TokenCastException e) {
 			e.printStackTrace();
 			return null;
 		}
-		if (worldId == null) {
-			return null;
-		}
-		World world = collections.getWorld(worldId);
-		Integer maxTurns = null;
-		try {
-			maxTurns = token.getInt(GridGameExperimentToken.MAX_TURNS);
-		} catch (TokenCastException e) {
-			e.printStackTrace();
-		}
-		if (maxTurns == null) {
-			maxTurns = DEFAULT_MAX_TURNS;
-		}
-		
-		Integer maxRounds = null;
-		try {
-			maxRounds = token.getInt(GridGameExperimentToken.MAX_ROUNDS);
-		} catch (TokenCastException e) {
-			e.printStackTrace();
-		}
-		if (maxRounds == null) {
-			maxRounds = DEFAULT_MAX_ROUNDS;
-		}
-		
-		return new MatchConfiguration(world, maxTurns, maxRounds);
-		
+			
 	}
 
 	/**
@@ -164,6 +171,9 @@ public class MatchConfiguration {
 	 * @return
 	 */
 	public boolean canAddAgent() {
+		if (this.baseWorld == null) {
+			System.out.print("");
+		}
 		int maxAgentsCanJoin = this.baseWorld.getMaximumAgentsCanJoin();
 		if (maxAgentsCanJoin == -1) {
 			return true;
@@ -192,7 +202,7 @@ public class MatchConfiguration {
 	 * @return
 	 */
 	public World getWorldWithAgents() {
-		World world = this.getBaseWorld();
+		World world = this.getBaseWorld().copy();
 		
 		for (String agentName : this.orderedAgents) {
 			this.addAgentToWorld(world, agentName);

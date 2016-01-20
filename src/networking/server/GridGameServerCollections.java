@@ -339,7 +339,8 @@ public class GridGameServerCollections {
 		
 	}
 	
-	public void addConfiguration(String id, ExperimentConfiguration config) {
+	public void addConfiguration(ExperimentConfiguration config) {
+		String id = config.getActiveGameID();
 		synchronized(this.configurations) {
 			this.configurations.put(id, config);
 		}

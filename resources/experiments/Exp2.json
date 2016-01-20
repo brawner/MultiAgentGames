@@ -1,21 +1,20 @@
-"matches": [
 {
-	"world": "TwoAgentsTwoGoals2",
-	"agent1": "human",
-	"agent2": "human",
-	"max_rounds": 5
-},
-{
-	"world": "TwoAgentsHall_3by5_noWalls",
-	"agent1": "human",
-	"agent2": "human",
-	"max_rounds": 10
+	"matches": [
+	{
+		"world_id": "TwoAgentsTwoGoals2",
+		"agents":[{"agent_type":"human"}, {"agent_type":"human"}],
+		"max_rounds": 5
+	},
+	{
+		"world_id": "TwoAgentsHall_3by5_noWalls",
+		"agents":[{"agent_type":"human"}, {"agent_type":"human"}],
+		"max_rounds": 10
 
-},
-{
-	"world": "TwoAgentsHall_3by5_4Walls",
-	"agent1": "human",
-	"agent2": "human",
-	"max_rounds": 10
+	},
+	{
+		"world_id": "TwoAgentsHall_3by5_4Walls",
+		"agents":[{"agent_type":"human"}, {"agent_type":"human"}],
+		"max_rounds": 10
+	}
+	]
 }
-]

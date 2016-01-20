@@ -60,6 +60,8 @@ public class ExperimentConfiguration {
 	 */
 	private final String uniqueGameID;
 	
+	private final String activeGameID;
+	
 	private final String experimentType;
 	/**
 	 * The game scores that are tracked through an games run. This should be modified at the end of each run with how reward maps to overall score
@@ -72,11 +74,12 @@ public class ExperimentConfiguration {
 	
 	//private String worldId;
 	
-	public ExperimentConfiguration(String experimentType) {
+	public ExperimentConfiguration(String experimentType, String activeGameID) {
 		this.uniqueGameID = generateUniqueID();
 		this.scores = Collections.synchronizedMap(new HashMap<String, Double>());
 		this.matchConfigurations = new ArrayList<MatchConfiguration>();
 		this.experimentType = experimentType;
+		this.activeGameID = activeGameID;
 	}
 	
 	private String generateUniqueID() {
@@ -156,6 +159,10 @@ public class ExperimentConfiguration {
 	}
 	
 	public boolean isFullyConfigured() {
+		if (!this.currentMatch.isFullyConfigured()) {
+			return false;
+		}
+		
 		for (MatchConfiguration match : this.matchConfigurations) {
 			if (!match.isFullyConfigured()) {
 				return false;
@@ -165,6 +172,9 @@ public class ExperimentConfiguration {
 	}
 	
 	public boolean isClosed() {
+		if (!this.currentMatch.isClosed()) {
+			return false;
+		}
 		for (MatchConfiguration match : this.matchConfigurations) {
 			if (!match.isClosed()) {
 				return false;
@@ -186,9 +196,13 @@ public class ExperimentConfiguration {
 			return null;
 		}
 		
-		ExperimentConfiguration expConfiguration = new ExperimentConfiguration(experimentType);
+		String activeGameId = collections.getUniqueThreadId();
+		ExperimentConfiguration expConfiguration = new ExperimentConfiguration(experimentType, activeGameId);
 		for (GridGameExperimentToken match : matches) {
 			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections);
+			if (matchConfig == null) {
+				throw new RuntimeException("Setting up match failed");
+			}
 			expConfiguration.addMatchConfig(matchConfig);
 		}
 		
@@ -198,6 +212,7 @@ public class ExperimentConfiguration {
 	}
 
 	public void setMaxIterations(int i) {
+		this.currentMatch.setMaxIterations(i);
 		for (MatchConfiguration configuration : this.matchConfigurations) {
 			configuration.setMaxIterations(i);
 		}
@@ -208,9 +223,14 @@ public class ExperimentConfiguration {
 	}
 	
 	public void addHandler(String clientId, GameHandler handler) {
+		this.currentMatch.addHandler(clientId, handler);
 		for (MatchConfiguration match : this.matchConfigurations) {
 			match.addHandler(clientId, handler);
 		}
+	}
+	
+	public String getActiveGameID() {
+		return this.activeGameID;
 	}
 	
 
