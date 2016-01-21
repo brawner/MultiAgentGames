@@ -51,6 +51,7 @@ public class Analysis {
 		public int x;
 		public int y;
 		public int rt;
+		public double reward;
 		
 		public void write(FileWriter writer) throws IOException {
 			writer.append(turkId).append(",").append(Integer.toString(x)).append(",");
@@ -61,6 +62,7 @@ public class Analysis {
 			} else {
 				writer.append("null");
 			}
+			
 		}
 	}
 	
@@ -74,6 +76,10 @@ public class Analysis {
 			agent1.write(writer);
 			writer.append(",");
 			agent2.write(writer);
+			writer.append(",");
+			writer.append(Double.toString(agent1.reward));
+			writer.append(",");
+			writer.append(Double.toString(agent1.reward));
 			writer.append("\n");
 		}
 	}
@@ -174,6 +180,8 @@ public class Analysis {
 			turn.agent2.x = state.getObject("agent1").getIntValForAttribute(GridGame.ATTX);
 			turn.agent2.y = state.getObject("agent1").getIntValForAttribute(GridGame.ATTY);
 			turn.turnNumber = i;
+			turn.agent1.reward = analysis.getRewardForAgent(i+1, "agent0");
+			turn.agent2.reward = analysis.getRewardForAgent(i+1, "agent1");
 			sumReward1 += analysis.getRewardForAgent(i+1, "agent0");
 			sumReward2 += analysis.getRewardForAgent(i+1, "agent1");
 			
@@ -185,6 +193,7 @@ public class Analysis {
 		turn.agent1.name = "agent0";
 		turn.agent1.action = null;
 		turn.agent2.name = "agent1";
+		turn.agent2.action = null;
 		turn.agent1.x = state.getObject("agent0").getIntValForAttribute(GridGame.ATTX);
 		turn.agent1.y = state.getObject("agent0").getIntValForAttribute(GridGame.ATTY);
 		turn.agent2.x = state.getObject("agent1").getIntValForAttribute(GridGame.ATTX);

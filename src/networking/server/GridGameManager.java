@@ -802,7 +802,8 @@ public class GridGameManager {
 	}
 	
 	private void writeResultsToFile(GameAnalysis result, ExperimentConfiguration configuration, String futureId, Collection<GameHandler> handlers) {
-		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial" + futureId+"_match_0_round"+configuration.getUniqueGameId();
+		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial_"
+	+ futureId+"_match_0_round_"+configuration.getUniqueGameId();
 		System.out.println("Game " + futureId + ": Writing game result to " + path);
 		result.writeToFile(path);
 		
