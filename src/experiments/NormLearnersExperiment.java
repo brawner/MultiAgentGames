@@ -1,5 +1,6 @@
 package experiments;
 
+import Analysis.Analysis;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
@@ -12,12 +13,17 @@ import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
 import burlap.domain.stochasticgames.gridgame.GGAltVis;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.Domain;
+import burlap.oomdp.core.states.State;
 import burlap.oomdp.singleagent.RewardFunction;
 import burlap.oomdp.statehashing.SimpleHashableStateFactory;
+import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGAgent;
 import burlap.oomdp.stochasticgames.World;
 import burlap.oomdp.visualizer.Visualizer;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import networking.server.ExperimentConfiguration;
 import examples.GridGameNormRF2;
 
 /**
@@ -42,7 +49,33 @@ public class NormLearnersExperiment {
 		this.experiment = experiment;
 	}
 
-	public void runExperiment(boolean visualize) {
+	public static void writeGameToFile(GameAnalysis result, String path, int matchNum, int round) {
+		try {
+			File f = new File(path);
+			f.getParentFile().mkdirs();
+			FileWriter writer = new FileWriter(path, true);
+			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
+			List<JointAction> actions = result.jointActions;
+			List<State> states = result.states;
+			int i = 0;
+			for (; i < actions.size(); i++) {
+				JointAction action = actions.get(i);
+				State state = states.get(i);
+				Analysis.writeLineToFile(state, action, round, i, writer);
+			}
+			State finalState = states.get(states.size()-1);
+			
+			Analysis.writeLineToFile(finalState, null, round, i, writer);
+			writer.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		File file = new File(path);
+		file.setExecutable(true, false);
+		file.setReadable(true, false);
+	}
+	public void runExperiment(boolean visualize, int trial,String outputFolder) {
 
 		results = new ArrayList<List<GameAnalysis>>();
 
@@ -55,6 +88,7 @@ public class NormLearnersExperiment {
 			World w = experiment.getWorld(match);
 			// have them join the world
 			// what the heck?
+			
 			agent0.joinWorld(w, experiment.types.get(0));
 			agent1.joinWorld(w, experiment.types.get(0));
 
@@ -64,6 +98,7 @@ public class NormLearnersExperiment {
 				System.out.println("running round " + round + " of match "+match);
 				GameAnalysis game = w.runGame(experiment.maxTurns);
 				matchList.add(game);
+				writeGameToFile(game,outputFolder+"/summary_"+trial+".csv", match, round);
 			}
 			results.add(matchList);
 
@@ -153,7 +188,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "15");
+		arguments.put("numTrials", "1");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -179,19 +214,22 @@ public class NormLearnersExperiment {
 		Random rand = new Random();
 		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
 
-		return dateStr+"_Exp"+expName;
+		return dateStr+"/"+expName;
 	}
 
 	public static void main(String[] args) {
-		boolean visualize = false;
+		boolean visualize = true;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"corner_1","corner_2","hall_pair","corner_pair"}; //"hall_1","hall_2","door","tunnels","manners",
+		String[] experiments = {"Debug_MM.json"}; 
+		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
 		for(int e =0; e<experiments.length;e++){
 			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
+			if(!experimentFile.contains(".json")){
 			experimentFile+=".csv";
+			}
 
 			// some other folder locations here
 			String outputFolder = currDir+arguments.get("outputF"); //from args
@@ -200,16 +238,21 @@ public class NormLearnersExperiment {
 			String gamesFolder = currDir+arguments.get("gamesF");
 
 			experimentFile = experimentFolder + experimentFile;
-			String uniqueId = NormLearnersExperiment.generateUniqueID(experiments[e]); //edited here too
+			String uniqueId = NormLearnersExperiment.generateUniqueID(experiments[e].split("\\.")[0]); //edited here too
 
 			for (int trial = 0; trial < numTrials; trial++) {
 				Experiment experiment = new Experiment(experimentFile,
 						paramFilesFolder, gamesFolder);
 				NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
-				ex.runExperiment(visualize);
+				
+				ex.runExperiment(visualize, trial, outputFolder+uniqueId);
 				ex.outputTrialResults(outputFolder+uniqueId+"/trial_"+trial+"_");
+				
+				
 			}
 		}
 	}
+
+
 
 }
