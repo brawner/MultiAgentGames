@@ -25,7 +25,6 @@ import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
  */
 public class GameHandler {
 	public final static String TAKE_ACTION = "take_action";
-	public final static String INITIALIZE_GAME = "init_game";
 	public final static String ADD_AGENT = "add_agent";
 	public final static String JOIN_GAME = "join_game";
 	public final static String EXIT_GAME= "exit_game";
@@ -106,9 +105,6 @@ public class GameHandler {
 			String msgType = msg.getString(GridGameManager.MSG_TYPE);
 
 			if (msgType.equals(JOIN_GAME)) {
-				response.setString(GridGameManager.MSG_TYPE, INITIALIZE);
-				response.setString(GridGameManager.WORLD_ID, threadId);
-				response.setString(RESULT, SUCCESS);
 			}else if(msgType.equals(GridGameManager.REACTION_TIME)){
 				this.appendToActionRecord(msg);
 
