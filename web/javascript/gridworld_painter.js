@@ -48,7 +48,11 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 
 	this.walls = {};
 	this.goals = {};
+	this.drawTilesGoals2DWalls.apply(this);
+	this.draw1DWalls.apply(this);
+}
 
+GridWorldPainter.prototype.drawTilesGoals2DWalls = function() {
 	//draw tiles
 	for (var x = 0; x < this.gridworld.width; x++) {
 		for (var y = 0; y < this.gridworld.height; y++) {
@@ -61,12 +65,42 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 				stroke : 'black'
 			};
 
+			//goals
+			for (var g = 0; g < this.gridworld.goals.length; g++) {
+				var goal = this.gridworld.goals[g];
+				this.goals[goal.location] = goal; //store locations of all goals for animations
+				if (String(goal.location) === String([x,y])) {
+					tile_params.fill = this.AGENT_COLORS[goal.agent];
+				}
+			}
+			//walls
 			for (var w = 0; w < this.gridworld.walls.length; w++) {
 				var wall = this.gridworld.walls[w];
 				if (String([wall[0], wall[1]]) == String([x,y])) {
 					this.walls[wall] = 1; //store locations of all walls for animations
 					if (wall.length == 2) {
 						tile_params.fill = 'black';
+					}
+				}
+			}
+			
+			//var rect = new paper.Path.Rectangle(params);
+			var tile = this.paper.add([tile_params])[0];
+		}
+	}
+}
+
+GridWorldPainter.prototype.draw1DWalls = function() {
+for (var x = 0; x < this.gridworld.width; x++) {
+		for (var y = 0; y < this.gridworld.height; y++) {
+
+			for (var w = 0; w < this.gridworld.walls.length; w++) {
+				var wall = this.gridworld.walls[w];
+				if (String([wall[0], wall[1]]) == String([x,y])) {
+					this.walls[wall] = 1; //store locations of all walls for animations
+					if (wall.length == 2) {
+						//tile_params.fill = 'black';
+						continue
 					}
 					else if (wall.length == 3) {
 						var from, to;
@@ -92,31 +126,15 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 						to = [(x+to[0])*this.TILE_SIZE, (this.gridworld.height - (to[1] + y))*this.TILE_SIZE];
 
 						var wall_path = 'M '+from.join(',') + ' L '+to.join(',');
-						var wall_path2 = 'M ' + to.join(',') + ' L ' + from.join(',');
 						console.log(wall_path);
 						var wall_img = this.paper.path(wall_path);
-						var wall_img2 = this.paper.path(wall_path2);
 						wall_img.attr({"stroke-width" : this.WALL_STROKE_SIZE, stroke : 'black'});
-						wall_img.toFront();
-						wall_img2.attr({"stroke-width" : this.WALL_STROKE_SIZE, stroke : 'black'});
 					}
 				}
 			}
-
-			//goals
-			for (var g = 0; g < this.gridworld.goals.length; g++) {
-				var goal = this.gridworld.goals[g];
-				this.goals[goal.location] = goal; //store locations of all goals for animations
-				if (String(goal.location) === String([x,y])) {
-					tile_params.fill = this.AGENT_COLORS[goal.agent];
-				}
-			}
-			//walls
-			
-			//var rect = new paper.Path.Rectangle(params);
-			var tile = this.paper.add([tile_params])[0];
 		}
 	}
+
 }
 
 GridWorldPainter.prototype.reset = function(gridworld, container, agent_name) {
@@ -428,6 +446,8 @@ GridWorldPainter.prototype.hide_waiting = function () {
 
 GridWorldPainter.prototype.hide_score = function () {
 	"use strict";
+	if (typeof this.scoreboard_background !== 'undefined') {
 	this.scoreboard_background.animate({opacity : 0}, 250);
-	this.scoreboard_text.animate({opacity :0}, 250)
+	this.scoreboard_text.animate({opacity :0}, 250);
+	}
 }

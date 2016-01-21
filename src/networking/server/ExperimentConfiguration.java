@@ -63,6 +63,8 @@ public class ExperimentConfiguration {
 	private final String activeGameID;
 	
 	private final String experimentType;
+	
+	private int matchNumber;
 	/**
 	 * The game scores that are tracked through an games run. This should be modified at the end of each run with how reward maps to overall score
 	 */
@@ -80,6 +82,7 @@ public class ExperimentConfiguration {
 		this.matchConfigurations = new ArrayList<MatchConfiguration>();
 		this.experimentType = experimentType;
 		this.activeGameID = activeGameID;
+		this.matchNumber = 0;
 	}
 	
 	private String generateUniqueID() {
@@ -139,10 +142,15 @@ public class ExperimentConfiguration {
 		return this.matchConfigurations.size();
 	}
 	
+	public int getCurrentMatchNumber() {
+		return this.matchNumber;
+	}
+	
 	public void advanceToNextMatch() {
 		if (this.hasNextMatch()) {
 			this.currentMatch = this.matchConfigurations.get(0);
 			this.matchConfigurations.remove(0);
+			this.matchNumber++;
 		}
 	}
 	

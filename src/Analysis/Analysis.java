@@ -13,16 +13,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import networking.common.GridGameExtreme;
-import networking.server.GameHandler;
 import networking.server.ExperimentConfiguration;
-import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
@@ -33,9 +30,9 @@ import burlap.oomdp.core.objects.ObjectInstance;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.legacy.StateJSONParser;
 import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.JointReward;
 import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
-import burlap.oomdp.stochasticgames.explorers.SGVisualExplorer;
 import burlap.oomdp.visualizer.Visualizer;
 
 
@@ -455,20 +452,28 @@ public class Analysis {
 	}
 	
 	public static void writeGameToFile(ExperimentConfiguration configuration, GameAnalysis result, String path) {
+		int matchNum = configuration.getCurrentMatchNumber();
+		int roundNum = configuration.getCurrentMatch().getRoundNumber();
+		String worldType = configuration.getCurrentMatch().getWorldWithAgents().toString().replace(",", " ");
 		try {
+			boolean writeHeaders = Files.exists(Paths.get(path));
 			FileWriter writer = new FileWriter(path, true);
-			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
+			if (writeHeaders) {
+				writer.append("Trial,Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action, agent1_reward, agent2_reward, joint_reward, grid_game\n");
+			}
 			List<JointAction> actions = result.jointActions;
+			List<Map<String, Double>> rewards = result.jointRewards;
 			List<State> states = result.states;
 			int i = 0;
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
+				Map<String, Double> reward = rewards.get(i); 
 				State state = states.get(i);
-				Analysis.writeLineToFile(state, action, configuration.getCurrentMatch().getGameNum().get(), i, writer);
+				Analysis.writeLineToFile(state, action, matchNum, roundNum, i, reward, worldType, writer);
 			}
 			State finalState = states.get(states.size()-1);
 			
-			Analysis.writeLineToFile(finalState, null, configuration.getCurrentMatch().getGameNum().get(), i, writer);
+			Analysis.writeLineToFile(finalState, null, matchNum, roundNum, i, null, worldType, writer);
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -479,7 +484,7 @@ public class Analysis {
 		file.setReadable(true, false);
 	}
 	
-	public static void writeLineToFile(State state, JointAction action, int roundNum, int turnNum, FileWriter writer) throws IOException {
+	public static void writeLineToFile(State state, JointAction action, int matchNum, int roundNum, int turnNum, Map<String, Double> reward, String worldType, FileWriter writer) throws IOException {
 		List<ObjectInstance> agents = state.getObjectsOfClass(GridGame.CLASSAGENT);
 		ObjectInstance first = null;
 		ObjectInstance second = null;
@@ -494,13 +499,18 @@ public class Analysis {
 		int a1y = first.getIntValForAttribute(GridGame.ATTY);
 		int a2x = second.getIntValForAttribute(GridGame.ATTX);
 		int a2y = second.getIntValForAttribute(GridGame.ATTY);
-		int matchNum = 0;
+		int trialNum = 0;
 		String name1 = first.getName();
 		String name2 = second.getName();
 		int reaction1 = 0;
 		int reaction2 = 0;
 		String action1 = (action == null) ? "null" : action.action(name1).actionName();
 		String action2 = (action == null) ? "null" : action.action(name2).actionName();
+		
+		String agent1Reward = (reward == null) ? "0.0" : reward.get(name1).toString();
+		String agent2Reward = (reward == null) ? "0.0" : reward.get(name2).toString();
+		
+		writer.append(Integer.toString(trialNum)).append(",");
 		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
 		writer.append(Integer.toString(turnNum)).append(",");
 		
@@ -510,6 +520,9 @@ public class Analysis {
 		
 		writer.append(name2).append(",").append(Integer.toString(a2x)).append(",");
 		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
+		
+		writer.append(agent1Reward).append(",").append(agent2Reward).append(",");
+		writer.append(agent1Reward + agent2Reward).append(",").append(worldType);
 		writer.append(action2).append("\n");
 	}
 	

@@ -94,7 +94,7 @@ public class GGWebSocketClient implements GGWebSocketListener, ConsoleListener{
 		
 		switch (command) {
 		case "init":
-			msg.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE_GAME);
+			msg.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
 			msg.setString(GridGameManager.WORLD_ID, options[0]);
 			break;
 		case "join":
