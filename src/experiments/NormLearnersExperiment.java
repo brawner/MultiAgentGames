@@ -49,27 +49,22 @@ public class NormLearnersExperiment {
 		this.experiment = experiment;
 	}
 
-<<<<<<< HEAD
+
 	public static void writeGameToFile(GameAnalysis result, String path, int matchNum, int round, String worldType) {
-=======
-	public static void writeGameToFile(GameAnalysis result, String path, int matchNum, int round) {
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
 		try {
 			File f = new File(path);
 			f.getParentFile().mkdirs();
 			FileWriter writer = new FileWriter(path, true);
 			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
 			List<JointAction> actions = result.jointActions;
-<<<<<<< HEAD
+
 			List<Map<String,Double>> rewards = result.jointRewards;
-=======
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
+
 			List<State> states = result.states;
 			int i = 0;
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
 				State state = states.get(i);
-<<<<<<< HEAD
 				Map<String,Double> rewardMap = rewards.get(i);
 				Analysis.writeLineToFile(state, action, matchNum, round, i,  rewardMap, worldType, writer);
 			}
@@ -77,31 +72,19 @@ public class NormLearnersExperiment {
 			State finalState = states.get(states.size()-1);
 			Map<String,Double> rewardMap = rewards.get(rewards.size()-1);
 			Analysis.writeLineToFile(finalState, null, matchNum, round, i, rewardMap, worldType, writer);
-=======
-				Analysis.writeLineToFile(state, action, round, i, writer);
-			}
-			State finalState = states.get(states.size()-1);
 			
-			Analysis.writeLineToFile(finalState, null, round, i, writer);
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-<<<<<<< HEAD
 
-=======
-		
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
 		File file = new File(path);
 		file.setExecutable(true, false);
 		file.setReadable(true, false);
 	}
-<<<<<<< HEAD
+
 	public void runExperiment(int trial,String outputFolder) {
-=======
-	public void runExperiment(boolean visualize, int trial,String outputFolder) {
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
+
 
 		results = new ArrayList<List<GameAnalysis>>();
 
@@ -114,11 +97,6 @@ public class NormLearnersExperiment {
 			World w = experiment.getWorld(match);
 			// have them join the world
 			// what the heck?
-<<<<<<< HEAD
-
-=======
-			
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
 			agent0.joinWorld(w, experiment.types.get(0));
 			agent1.joinWorld(w, experiment.types.get(0));
 
@@ -128,11 +106,8 @@ public class NormLearnersExperiment {
 				System.out.println("running round " + round + " of match "+match);
 				GameAnalysis game = w.runGame(experiment.maxTurns);
 				matchList.add(game);
-<<<<<<< HEAD
+
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
-=======
-				writeGameToFile(game,outputFolder+"/summary_"+trial+".csv", match, round);
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
 			}
 			results.add(matchList);
 
@@ -226,11 +201,8 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-<<<<<<< HEAD
 		arguments.put("numTrials", "2");
-=======
-		arguments.put("numTrials", "1");
->>>>>>> 273ea48588ffaa564d1cd99f8a5e201668555840
+
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
