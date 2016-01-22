@@ -269,6 +269,7 @@ public class Experiment {
 			if(match==0){
 				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent), 
 						paramFilesFolder+paramFilesLists.get(match).get(agent)));
+
 			}else if(agentKindsList.get(match).get(agent).compareTo(agentKindsList.get(match-1).get(agent))==0 &&
 					paramFilesLists.get(match).get(agent).compareTo(paramFilesLists.get(match-1).get(agent))==0){
 				matchAgents.add(agentLists.get(match-1).get(agent));
