@@ -8,8 +8,8 @@
 	},
 	{
 		"world_id": "TwoAgentsHall_3by5_noWalls",
-		"agents":[{"agent_type":"norm_learning","params":"basic_norm"}, 
-		{"agent_type":"norm_learning","params":"basic_norm"}],
+		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
+		{"agent_type":"norm_learning","params":"explore_norm"}],
 		"max_rounds": 2
 
 	},
