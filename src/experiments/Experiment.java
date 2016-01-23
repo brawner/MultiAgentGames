@@ -25,6 +25,9 @@ import networking.server.GridGameManager;
 import networking.server.MatchConfiguration;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
+import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
+import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
+import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.TerminalFunction;
@@ -291,8 +294,15 @@ public class Experiment {
 		switch (agentKind){
 		case "norm_learning":
 			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
-		case "model_based":
+		case "fixed_policy":
+			//return FixedPolicyAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
 			return null;
+		case "model_based":
+			//TODO: actually create this agent
+			return new ModelBasedLearningAgent();
+		case "baseline":
+			//TODO: actually create this agent
+			return BaselineAgentFactory.getBaselineAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
 		case "CD":
 			return null;
 		case "human":
