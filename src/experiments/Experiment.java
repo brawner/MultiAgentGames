@@ -28,6 +28,7 @@ import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFact
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
 import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.TerminalFunction;
@@ -295,8 +296,8 @@ public class Experiment {
 		case "norm_learning":
 			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
 		case "fixed_policy":
-			//return FixedPolicyAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
-			return null;
+			
+			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
 		case "model_based":
 			//TODO: actually create this agent
 			return new ModelBasedLearningAgent();
