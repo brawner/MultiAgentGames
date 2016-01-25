@@ -237,7 +237,7 @@ public class NormLearnersExperiment {
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"Debug_MM.json"}; 
+		String[] experiments = {"Test_CodedNorms.json"}; 
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
 		for(int e =0; e<experiments.length;e++){
 			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
