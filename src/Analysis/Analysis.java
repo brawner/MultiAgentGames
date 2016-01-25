@@ -456,7 +456,7 @@ public class Analysis {
 		int roundNum = configuration.getCurrentMatch().getRoundNumber();
 		String worldType = configuration.getCurrentMatch().getWorldWithAgents().toString().replace(",", " ");
 		try {
-			boolean writeHeaders = Files.exists(Paths.get(path));
+			boolean writeHeaders = !Files.exists(Paths.get(path));
 			FileWriter writer = new FileWriter(path, true);
 			if (writeHeaders) {
 				writer.append("Trial,Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action, agent1_reward, agent2_reward, joint_reward, grid_game\n");

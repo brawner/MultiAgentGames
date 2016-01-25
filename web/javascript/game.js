@@ -148,40 +148,6 @@ var Game = function() {
             var msg = message_writer.urlJoinMsg(label,agents,url_client_id, exp_name, vars);
             console.log(msg)
             connection.Send(msg);
-            /*
-            if (isGameIdValid(label)) {
-
-                var msg = message_writer.configurationMsg(label, agents);
-                connection.Send(msg); 
-
-                var msg = message_writer.runGameMsg(label);
-                connection.Send(msg);
-
-                var msg = message_writer.startGameMsg(label, client_id); 
-                console.log("Sending after valid " + msg);
-                connection.Send(msg);
-             //else create the game and have agent join game
-            }else{
-                //create game
-                var initMsg = message_writer.initializeGameMsg(label);
-                connection.Send(initMsg);
-
-                var configmsg = message_writer.configurationMsg(label, agents);
-                connection.Send(configmsg); 
-
-                var runmsg = message_writer.runGameMsg(label);
-                connection.Send(runmsg);
-
-                var startmsg = message_writer.startGameMsg(label, client_id);  
-                console.log("Sending not valid: " + startmsg);
-                connection.Send(startmsg);
-
-
-            }*/
-            
-    //var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
-       // connection.Send(msg);
-        
     };
 
     this.onActionPress = function (event) {
@@ -220,7 +186,7 @@ var Game = function() {
         var rt_msg = message_writer.log_reaction_time(client_id, agent_name, url_client_id, rt, game_number,action_number);
         connection.Send(rt_msg);
 
-        $(document).unbind('keydown.gridworld');
+        //$(document).unbind('keydown.gridworld');
         var msg = message_writer.updateActionMsg(client_id, action, agent_name);
 
         if(action=='noop'){
@@ -238,11 +204,6 @@ var Game = function() {
 
         send_action();
         //setTimeout(send_action, END_OF_ROUND_PAUSE/4);
-
-
-        
-
-        
     }
 
 	// sets up everything
@@ -599,6 +560,7 @@ var Game = function() {
 
     // Handle a game update, and update the state and visualization
     this.update_game = function(msg) {
+        $(document).bind('keydown.gridworld', this.onActionPress);
         if(agent_waited){
             painter.hide_waiting();
             agent_waited = false;
@@ -632,51 +594,12 @@ var Game = function() {
                 var currentActions = convertActions(updateMsg.action);
 
                 var nextState = getAgentLocals(updateMsg.state);
-
-                //var currentActions = {agent1 :'left', agent2:'right'};
-                //var nextState = {
-                  //      agent1 : {name : 'agent1', location : [1,0], type : 'agent'},
-                   //     agent2 : {name : 'agent2', location : [1,2], type : 'agent'}
-                   // }
                 console.log("current actions:");
                 console.log(currentActions);
                 var animation_time = painter.drawTransition(previousState, currentActions, nextState, clientmdp);
                 text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        "); // +"<br> Other Agent's Score: " + 0);
 
                 previousState = nextState;
-                //note: you need a closure in order to properly reset
-                /*var reset_key_handler = (function (key_handler) {
-                    return function () {
-                        $(document).bind('keydown.gridworld', key_handler);
-                    }
-                })(this.onActionPress);*/
-                
-                /*
-                var load_next_step = $.proxy(function () {
-                    if (round_ended) {
-                        //pause game
-                        //draw score
-                        //hide gridworld
-                        //pause this
-                        //show gridworld - start next round
-                        var draw_score = $.proxy(function () {
-                            $('#task_display').hide();
-                            $('#score_board').show();
-                        },this);
-
-                        var hide_score = $.proxy(function () {
-                            $('#score_board').hide();
-                            $('#task_display').show();
-                            $(document).bind('keydown.gridworld', this.onActionPress);
-                        }, this)
-
-                        setTimeout(draw_score, END_OF_ROUND_PAUSE/2);
-                        setTimeout(hide_score, END_OF_ROUND_PAUSE);
-                    }
-                    else {
-                        $(document).bind('keydown.gridworld', this.onActionPress);
-                    }
-                }, this);*/
 
                 var load_next_step = $.proxy(function () {
                     step_start_time = +new Date;
@@ -697,21 +620,6 @@ var Game = function() {
                 }, this);
 
                 setTimeout(load_next_step, animation_time);
-
-                /*for (var agent in nextState) {
-                    if (clientmdp.inGoal(nextState[agent]['location'], agent)) {
-                        var celebrateGoal = (function (painter, location, agent) {
-                            return function () {
-                                painter.showReward(location, agent, 'Goooaal')
-                            }
-                        })(painter, nextState[agent]['location'], agent)
-                        var th = setTimeout(celebrateGoal, painter.ACTION_ANIMATION_TIME);
-                        //$.subscribe('killtimers', (function (th) {
-                        //        return function () {clearTimeout(th)}
-                        //    })(th)
-                        //)
-                    }
-                }*/
             } 
 
             if(round_ended){
@@ -734,9 +642,6 @@ var Game = function() {
                 setTimeout(load_next_round, END_OF_ROUND_PAUSE);
             }
         }
-        //receive next state data, actions, 
-
-        //do line 56 of demos: should be its own method "update interface(lastState, actions)"
         
     };
 

@@ -246,10 +246,11 @@ public class GridGameManager {
 		GameHandler exitedHandler = this.collections.getHandler(clientId);
 		
 		ExperimentConfiguration configuration = this.collections.getConfiguration(activeId);
-		MatchConfiguration matchConfig = configuration.getCurrentMatch();
-		Collection<GameHandler> handlers = matchConfig.getHandlerLookup().values();
-		handlers.remove(exitedHandler);
-		this.informExperimentOver(configuration, activeId, handlers, true);
+		for (MatchConfiguration config : configuration.getAllMatches()) {
+			Collection<GameHandler> handlers = config.getHandlerLookup().values();
+			handlers.remove(exitedHandler);
+			this.informExperimentOver(configuration, activeId, handlers, true);
+		}
 		
 		this.collections.removeSession(clientId);
 		this.collections.removeHandlers(activeId);
@@ -745,7 +746,8 @@ public class GridGameManager {
 		response.setString(GameHandler.AGENT, agentName);
 		response.setState(GameHandler.STATE, startState, domain);
 		response.setString(GridGameManager.MSG_TYPE, GameHandler.INITIALIZE);
-		response.setString(GridGameManager.IS_READY,"true");
+		boolean isReady = configuration.getCurrentMatch().isFullyConfigured();
+		response.setString(GridGameManager.IS_READY, Boolean.toString(isReady));
 		response.setString(GridGameManager.WORLD_ID, configuration.getActiveGameID());
 	}
 	
@@ -818,7 +820,7 @@ public class GridGameManager {
 		System.out.println("Game " + roundName + ": Writing game result to " + resultPath);
 		result.writeToFile(resultPath);
 		
-		String reactionTimes = Paths.get(directory.toString(), roundName + "_reaction_times.game").toString();
+		String reactionTimes = Paths.get(directory.toString(), roundName + "_reaction_times.csv").toString();
 		try {
 			FileWriter writer = new FileWriter(reactionTimes);
 
