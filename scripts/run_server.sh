@@ -3,6 +3,8 @@ set -e
 source ~/.profile
 
 TIMESTAMP=$(date +"%m_%d_%y__%M_%k")
+mkdir -p "~/grid_games/server_out"
+
 SERVER_OUT_DIR="~/grid_games/server_out/$TIMESTAMP"
 mkdir -p $SERVER_OUT_DIR
 
