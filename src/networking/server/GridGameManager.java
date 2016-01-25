@@ -1,5 +1,6 @@
 package networking.server;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -311,7 +312,7 @@ public class GridGameManager {
 			}
 			switch(msgType) {
 
-			case GameHandler.INITIALIZE_GAME:
+			case GameHandler.INITIALIZE:
 				this.initializeGame(token, response);
 				break;
 			case GameHandler.JOIN_GAME:
@@ -351,9 +352,9 @@ public class GridGameManager {
 				handler.onMessage(token, response);
 			}
 
-			if (session != null && session.isOpen()) {
-				session.getRemote().sendStringByFuture(response.toJSONString());
-			}
+//			if (session != null && session.isOpen()) {
+//				session.getRemote().sendStringByFuture(response.toJSONString());
+//			}
 
 		} catch (TokenCastException e) {
 			response.setString(WHY_ERROR, "Message was not properly parsed");
@@ -802,15 +803,24 @@ public class GridGameManager {
 	}
 	
 	private void writeResultsToFile(GameAnalysis result, ExperimentConfiguration configuration, String futureId, Collection<GameHandler> handlers) {
-		String path = this.analysisDirectory + "/"+configuration.getUniqueGameId()+"_trial" + futureId+"_match_0_round"+configuration.getUniqueGameId();
-		System.out.println("Game " + futureId + ": Writing game result to " + path);
-		result.writeToFile(path);
+		String expType = configuration.getExperimentType();
+		Path directory = Paths.get(this.analysisDirectory, expType);
+		if (!Files.exists(directory)) {
+			File file = new File(directory.toString());
+			file.mkdir();
+		}
+		String trialName = "trial_" + futureId;
+		int currentMatch = configuration.getCurrentMatchNumber();
+		int currentRound = configuration.getCurrentMatch().getRoundNumber();
+		String roundName = trialName + "_match_" + currentMatch + "_round_" + currentRound;
 		
-		String rt_path = 
-				analysisDirectory + "/" + configuration.getUniqueGameId() + 
-				"_reactionTimes_episode" + futureId+"_" + configuration.getUniqueGameId()+".csv";
+		String resultPath = Paths.get(directory.toString(), roundName + ".game").toString();
+		System.out.println("Game " + roundName + ": Writing game result to " + resultPath);
+		result.writeToFile(resultPath);
+		
+		String reactionTimes = Paths.get(directory.toString(), roundName + "_reaction_times.game").toString();
 		try {
-			FileWriter writer = new FileWriter(rt_path);
+			FileWriter writer = new FileWriter(reactionTimes);
 
 			for (GameHandler handler : handlers) {
 				writer.write(handler.getActionRecord());
@@ -829,9 +839,10 @@ public class GridGameManager {
 				names += "_" + participantId ;
 			}
 		}
-		String condensedPath = this.summariesDirectory + "/"+configuration.getUniqueGameId()+"_episode" + futureId + names + ".csv";
-		System.out.println("Game " + futureId + ": Writing summarized game result to " + condensedPath);
-		Analysis.writeGameToFile(configuration, result, condensedPath);
+		
+		String summaryPath = Paths.get(directory.toString(), trialName + "_summary.csv").toString();
+		System.out.println("Game " + futureId + ": Writing summarized game result to " + summaryPath);
+		Analysis.writeGameToFile(configuration, result, summaryPath);
 	}
 	
 	/**

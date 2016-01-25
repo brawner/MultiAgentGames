@@ -537,9 +537,9 @@ public class MatchConfiguration {
 		this.maxTurns.set(maxTurns);
 	}
 	
-	public AtomicInteger getGameNum() {
+	public int getRoundNumber() {
 		
-		return currentRound;
+		return currentRound.get();
 	}
 
 	public Map<String, GameHandler> getHandlerLookup() {
