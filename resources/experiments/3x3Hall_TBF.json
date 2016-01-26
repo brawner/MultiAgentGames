@@ -1,0 +1,15 @@
+{
+	"matches": [
+	{
+		"world_id": "Two_HallDonut_3x3_noTie",
+		"agents":[{"agent_type":"human"}, {"agent_type":"human"}],
+		"max_rounds": 10
+	},
+	{
+		"world_id": "Two_Hall_3x3_noTie",
+		"agents":[{"agent_type":"human"}, {"agent_type":"human"}],
+		"max_rounds": 10
+
+	}
+	]
+}

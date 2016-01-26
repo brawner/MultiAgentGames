@@ -109,6 +109,7 @@ public class NormLearnersExperiment {
 
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
 			}
+			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
 			results.add(matchList);
 
 		}
@@ -187,7 +188,7 @@ public class NormLearnersExperiment {
 	}
 
 	private void outputTrialResults(String outputFolder) {
-
+		System.out.println("Outputting here: "+outputFolder);
 		int match = 0;
 		for(List<GameAnalysis> list : results){
 			int round = 0;
@@ -198,6 +199,18 @@ public class NormLearnersExperiment {
 			match++;
 		}
 	}
+	
+	private void outputMatchResults(String outputFolder, List<GameAnalysis> rounds, int matchNum) {
+		System.out.println("Outputting here: "+outputFolder);
+		
+			int round = 0;
+			for (GameAnalysis ga : rounds) {
+				ga.writeToFile(outputFolder + "match_"+matchNum+"_round_" + round);
+				round++;
+			}
+			round++;
+		}
+	
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
@@ -237,7 +250,7 @@ public class NormLearnersExperiment {
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"Test_CodedNorms.json"}; 
+		String[] experiments = {"test_3x3Halls.json"}; //"Batch_fromUpDown.json", "Test_CodedNorms.json"
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
 		for(int e =0; e<experiments.length;e++){
 			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
@@ -257,11 +270,11 @@ public class NormLearnersExperiment {
 
 			for (int trial = 0; trial < numTrials; trial++) {
 				Experiment experiment = new Experiment(experimentFile,
-						paramFilesFolder, gamesFolder);
+						paramFilesFolder, gamesFolder, outputFolder+uniqueId);
 				NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
 
 				ex.runExperiment(trial, outputFolder+uniqueId);
-				ex.outputTrialResults(outputFolder+uniqueId+"/trial_"+trial+"_");
+
 				ex.visualizeResults();
 
 

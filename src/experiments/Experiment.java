@@ -49,6 +49,7 @@ public class Experiment {
 
 	String paramFilesFolder;
 	String gamesFolder;
+	String outputFolder;
 	
 
 	public SGDomain sgDomain;
@@ -74,11 +75,12 @@ public class Experiment {
 
 	private Integer DEFAULT_MAX_ROUNDS = 20;
 
-	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder) {
+	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder) {
 		// Initialize lists.
 
 		this.paramFilesFolder = paramFilesFolder;
 		this.gamesFolder = gamesFolder;
+		this.outputFolder = outputFolder;
 		this.agentKindLists = new ArrayList<List<String>>();
 		this.paramFileLists = new ArrayList<List<String>>();
 		this.numRounds = new ArrayList<Integer>();
@@ -271,8 +273,8 @@ public class Experiment {
 		System.out.println("Num agents: "+agentKindsList.get(match).size());
 		for(int agent = 0; agent< agentKindsList.get(match).size();agent++){
 			if(match==0){
-				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent), 
-						paramFilesFolder+paramFilesLists.get(match).get(agent)));
+				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent),
+						paramFilesFolder+paramFilesLists.get(match).get(agent), outputFolder));
 
 			}else if(agentKindsList.get(match).get(agent).compareTo(agentKindsList.get(match-1).get(agent))==0 &&
 					paramFilesLists.get(match).get(agent).compareTo(paramFilesLists.get(match-1).get(agent))==0){
@@ -280,7 +282,7 @@ public class Experiment {
 
 			}else{
 				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent), 
-						paramFilesFolder+paramFilesLists.get(match).get(agent)));
+						paramFilesFolder+paramFilesLists.get(match).get(agent),outputFolder));
 			}
 		}
 		return matchAgents;
@@ -288,13 +290,13 @@ public class Experiment {
 
 
 
-	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile) {
+	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile, String outputFile) {
 
 
 		// http://i.imgur.com/9G9h8dt.jpg
 		switch (agentKind){
 		case "norm_learning":
-			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
+			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, this.sgDomain, this.types, this.jr, this.tf);
 		case "fixed_policy":
 			
 			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
