@@ -1,0 +1,17 @@
+{
+	"description":"Two agents, Two goals, 3 by 2 Hall, bottom only, no walls, no ties",
+	"width":3,
+	"height":3,
+	"agents": [
+	{"x":0, "y":1},
+	{"x":2, "y":1}
+	],
+	"goals": [
+	{"x":2, "y":1, "gt":1},
+	{"x":0, "y":1, "gt":2}
+	],
+	"horizontal_walls": [
+	{"pos": 2, "end1": 0, "end2": 2}
+	],
+	"random_tie_breaks": false
+}

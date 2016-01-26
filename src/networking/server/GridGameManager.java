@@ -805,6 +805,7 @@ public class GridGameManager {
 	}
 	
 	private void writeResultsToFile(GameAnalysis result, ExperimentConfiguration configuration, String futureId, Collection<GameHandler> handlers) {
+
 		String expType = configuration.getExperimentType();
 		Path directory = Paths.get(this.analysisDirectory, expType);
 		if (!Files.exists(directory)) {
@@ -815,6 +816,7 @@ public class GridGameManager {
 		int currentMatch = configuration.getCurrentMatchNumber();
 		int currentRound = configuration.getCurrentMatch().getRoundNumber();
 		String roundName = trialName + "_match_" + currentMatch + "_round_" + currentRound;
+
 		
 		String resultPath = Paths.get(directory.toString(), roundName + ".game").toString();
 		System.out.println("Game " + roundName + ": Writing game result to " + resultPath);

@@ -11,12 +11,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import networking.common.GridGameExperimentToken;
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
+import networking.common.Token;
 import networking.common.TokenCastException;
+import networking.server.ExperimentConfiguration;
+import networking.server.GridGameManager;
+import networking.server.MatchConfiguration;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
+import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
+import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
+import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.TerminalFunction;
@@ -28,8 +40,17 @@ import burlap.oomdp.stochasticgames.SGDomain;
 import burlap.oomdp.stochasticgames.World;
 
 public class Experiment {
-	
+
+	private static final String AGENTS = "agents";
+
+	private static final String PARAMS = "params";
+
 	String uniqueId;
+
+	String paramFilesFolder;
+	String gamesFolder;
+	String outputFolder;
+	
 
 	public SGDomain sgDomain;
 	public TerminalFunction tf;
@@ -50,21 +71,31 @@ public class Experiment {
 	List<State> startingStates; // aka the games
 	public int maxTurns;
 
-	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder) {
+	private Integer DEFAULT_MAX_TURNS = 20;
+
+	private Integer DEFAULT_MAX_ROUNDS = 20;
+
+	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder) {
 		// Initialize lists.
-		
+
+		this.paramFilesFolder = paramFilesFolder;
+		this.gamesFolder = gamesFolder;
+		this.outputFolder = outputFolder;
 		this.agentKindLists = new ArrayList<List<String>>();
 		this.paramFileLists = new ArrayList<List<String>>();
 		this.numRounds = new ArrayList<Integer>();
 		this.games = new ArrayList<String>();
 		this.numMatches = 0;
 
-		// Read in experiment parameters from experimentFile.
-		readExperimentFile(experimentFile);
-
+		if(experimentFile.split("\\.")[1].compareTo("csv")==0){
+			// Read in experiment parameters from experimentFile.
+			readExperimentFile(experimentFile);
+		} else {
+			readJSONExperimentFile(experimentFile);
+		}
 		agentLists = new ArrayList<List<SGAgent>>();
 		startingStates = new ArrayList<State>();
-		
+
 		// set basics for all agents (TODO some of this shouldn't be here?)
 		this.gg = new GridGame();
 		this.sgDomain = (SGDomain) gg.generateDomain();
@@ -76,20 +107,112 @@ public class Experiment {
 		// DPrint.toggleCode(this.w.getDebugId(), false);
 		// TODO: fix this...Or is it supposed include other types??? Where is it used?
 		this.types = new ArrayList<SGAgentType>();
-
+		types.add(GridGame.getStandardGridGameAgentType(this.sgDomain));
+		types.add(GridGame.getStandardGridGameAgentType(this.sgDomain));
 		// create objects given types from experiment file
 		for (int match = 0; match < numMatches; match++) {
-			agentLists.add(match, makeAgents(agentKindLists.get(match), paramFileLists.get(match),paramFilesFolder));
+			System.out.println(paramFileLists.get(match).size());
+			agentLists.add(match, makeAgents(agentKindLists, paramFileLists, match,paramFilesFolder));
 			startingStates.add(match, makeState(games.get(match), gamesFolder));
-			
+
 		}
 
-	
+
 
 	}
-	
-	
-	
+
+
+
+	private void readJSONExperimentFile(String experimentFile) {
+
+
+		List<String> params = new ArrayList<String>();
+
+		BufferedReader reader;
+		FileReader fileReader;
+		try {
+			fileReader = 
+					new FileReader(experimentFile);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("The file " + experimentFile + " somehow does not exist");
+		}
+		StringBuilder builder = new StringBuilder();
+		try {
+			String line = "";
+
+			reader = new BufferedReader(fileReader);
+
+			while ((line = reader.readLine()) != null) {
+				builder.append(line);
+			}
+			reader.close();
+		} catch (IOException e) {
+
+		} 
+		String text = builder.toString();
+
+		//now parse the text
+		GridGameExperimentToken token = GridGameExperimentToken.tokenFromJSONString(text);
+		List<GridGameExperimentToken> matches;
+		try {
+			matches = token.getTokenList(GridGameExperimentToken.MATCHES);
+
+			for (GridGameExperimentToken match : matches) {
+				if(match.getInt(GridGameExperimentToken.MAX_TURNS)!=null){
+					this.maxTurns = match.getInt(GridGameExperimentToken.MAX_TURNS);
+				}else{
+					this.maxTurns = DEFAULT_MAX_TURNS;
+				}
+				this.numMatches++;
+				if(match.getInt(GridGameExperimentToken.MAX_ROUNDS)!=null){
+					numRounds.add(Integer.valueOf(match.getInt(GridGameExperimentToken.MAX_ROUNDS)));
+				}else{
+					numRounds.add(DEFAULT_MAX_ROUNDS);
+				}
+
+				games.add(match.getString(GridGameManager.WORLD_ID));
+
+
+				List<String> agentKinds = new ArrayList<String>();
+				List<String> agentParams = new ArrayList<String>();	
+
+				List<GridGameExperimentToken> agentTokens = match.getTokenList(AGENTS);
+				if (agentTokens == null) {
+					System.err.println("Agent tokens were not specified");
+				}
+				for (Token agentToken : agentTokens) {
+					String agentTypeStr;
+					agentTypeStr = agentToken.getString(GridGameManager.AGENT_TYPE);
+
+					if (agentTypeStr == null) {
+						System.err.println("Agent's type was not specified");
+					}
+					String paramFile = agentToken.getString(PARAMS);
+					if (paramFile != null) {
+						Path path = Paths.get(paramFilesFolder, paramFile + ".properties");
+						if (!Files.exists(path)) {
+							System.err.println(path.toString() + " does not exist");
+						}
+
+					}
+					agentKinds.add(agentTypeStr);
+					agentParams.add(paramFile);
+
+				}
+				agentKindLists.add(agentKinds);
+				paramFileLists.add(agentParams);
+
+			}
+		} catch (TokenCastException e) {
+			e.printStackTrace();
+			System.out.println("ERROR!!");
+
+		}
+		System.out.println("Num matches: "+numMatches);
+	}
+
+
+
 	private void readExperimentFile(String experimentFile){
 		File expSetup = new java.io.File(experimentFile);
 		String line = "";
@@ -107,7 +230,7 @@ public class Experiment {
 			while ((line = br.readLine()) != null) {
 				this.numMatches++;
 				String[] matchLine = line.split(",");
-				
+
 				numRounds.add(Integer.valueOf(matchLine[0])/2); // EDITIED HERE
 				games.add(matchLine[1]);
 				List<String> agentKinds = new ArrayList<String>();
@@ -135,40 +258,54 @@ public class Experiment {
 	}
 
 	private State makeState(String gameName, String gamesFolder) {
-		
+
 		GridGameServerToken token = GridGameWorldLoader.loadText(gamesFolder+"/"+gameName+".json");
-		try {
-			String name = token.getString("label");
-		} catch (TokenCastException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		World world = GridGameWorldLoader.loadWorld(token);
 		State state = world.startingState(); 
-		
+
 		return state;
 	}
 
-	private List<SGAgent> makeAgents(List<String> agentKinds, List<String> paramFiles, String paramFilesFolder) {
+	private List<SGAgent> makeAgents(List<List<String>> agentKindsList,List<List<String>> paramFilesLists, int match, String paramFilesFolder) {
 		List<SGAgent> matchAgents = new ArrayList<SGAgent>();
 
-		for(int agent = 0; agent< agentKinds.size();agent++){
-			matchAgents.add(findAndCreateAgentOfKind(agentKinds.get(agent), paramFilesFolder+paramFiles.get(agent)));
+
+		System.out.println("Num agents: "+agentKindsList.get(match).size());
+		for(int agent = 0; agent< agentKindsList.get(match).size();agent++){
+			if(match==0){
+				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent),
+						paramFilesFolder+paramFilesLists.get(match).get(agent), outputFolder));
+
+			}else if(agentKindsList.get(match).get(agent).compareTo(agentKindsList.get(match-1).get(agent))==0 &&
+					paramFilesLists.get(match).get(agent).compareTo(paramFilesLists.get(match-1).get(agent))==0){
+				matchAgents.add(agentLists.get(match-1).get(agent));
+
+			}else{
+				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent), 
+						paramFilesFolder+paramFilesLists.get(match).get(agent),outputFolder));
+			}
 		}
 		return matchAgents;
 	}
 
 
 
-	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile) {
-		
-		types.add(GridGame.getStandardGridGameAgentType(this.sgDomain));
+	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile, String outputFile) {
+
+
 		// http://i.imgur.com/9G9h8dt.jpg
 		switch (agentKind){
 		case "norm_learning":
-			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
+			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, this.sgDomain, this.types, this.jr, this.tf);
+		case "fixed_policy":
+			
+			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
 		case "model_based":
-			return null;
+			//TODO: actually create this agent
+			return new ModelBasedLearningAgent();
+		case "baseline":
+			//TODO: actually create this agent
+			return BaselineAgentFactory.getBaselineAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
 		case "CD":
 			return null;
 		case "human":
@@ -176,9 +313,9 @@ public class Experiment {
 		default:
 			return null;
 		}
-	
+
 	}
-	
+
 	public State getHallwayState() {
 		//TODO: This needs to be generalized for all of our games.
 		State s = GridGame.getCleanState(sgDomain, 2, 2, 2, 2, 5, 3);
@@ -191,7 +328,7 @@ public class Experiment {
 		return s;
 	}
 
-	
+
 	public SGAgent getAgent(int match, int agentNum) {
 		return agentLists.get(match).get(agentNum);
 	}
