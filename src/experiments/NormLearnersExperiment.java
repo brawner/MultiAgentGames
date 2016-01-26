@@ -214,7 +214,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "2");
+		arguments.put("numTrials", "1");
 
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
@@ -250,7 +250,8 @@ public class NormLearnersExperiment {
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"test_3x3Halls.json"}; //"Batch_fromUpDown.json", "Test_CodedNorms.json"
+		String[] experiments = {"Batch_fromLooseUpDown.json"}; 
+		//"Batch_fromUpDown.json", "Test_CodedNorms.json", "Test_LooseNorms.json"Batch_fromLooseUpDown, Test_WaitDownNorms
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
 		for(int e =0; e<experiments.length;e++){
 			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
@@ -274,10 +275,7 @@ public class NormLearnersExperiment {
 				NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
 
 				ex.runExperiment(trial, outputFolder+uniqueId);
-
 				ex.visualizeResults();
-
-
 
 			}
 		}
