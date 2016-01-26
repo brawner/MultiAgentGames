@@ -156,7 +156,7 @@ var Game = function() {
         }
         var action;
         console.log("On action press");
-        //$(document).unbind('keydown.gridworld');
+        $(document).unbind('keydown.gridworld');
         action_number++;
         switch (event.which) {
             case 37: //87: //
@@ -560,7 +560,6 @@ var Game = function() {
 
     // Handle a game update, and update the state and visualization
     this.update_game = function(msg) {
-        $(document).bind('keydown.gridworld', this.onActionPress);
         if(agent_waited){
             painter.hide_waiting();
             agent_waited = false;
