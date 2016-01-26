@@ -1,20 +1,14 @@
 {
 	"matches": [
 	{
-		"world_id": "Two_Corner_noTie_NoWalls",
+		"world_id": "Two_DirCourtyard_5by5",
 		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
 		{"agent_type":"norm_learning","params":"explore_norm"}],
 		"max_rounds": 8
 
 	},
 	{
-		"world_id": "Two_Corner_noTie_2Walls",
-		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
-		{"agent_type":"norm_learning","params":"explore_norm"}],
-		"max_rounds": 8
-	},
-	{
-		"world_id": "Two_Hall_3x5_noTie",
+		"world_id": "Two_IndCourtyard_5by5",
 		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
 		{"agent_type":"norm_learning","params":"explore_norm"}],
 		"max_rounds": 8
