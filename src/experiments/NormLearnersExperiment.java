@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import networking.server.ExperimentConfiguration;
 import examples.GridGameNormRF2;
 
 /**
@@ -250,13 +249,13 @@ public class NormLearnersExperiment {
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"Batch_fromLooseUpDown.json"}; 
+		String[] experiments = {"Debug_MM"}; 
 		//"Batch_fromUpDown.json", "Test_CodedNorms.json", "Test_LooseNorms.json"Batch_fromLooseUpDown, Test_WaitDownNorms
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
 		for(int e =0; e<experiments.length;e++){
 			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
 			if(!experimentFile.contains(".json")){
-				experimentFile+=".csv";
+				experimentFile+=".json";
 
 			}
 
