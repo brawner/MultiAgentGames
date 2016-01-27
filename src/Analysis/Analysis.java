@@ -516,9 +516,14 @@ public class Analysis {
 		String action1 = (action == null) ? "null" : action.action(name1).actionName();
 		String action2 = (action == null) ? "null" : action.action(name2).actionName();
 		
-		String agent1Reward = (reward == null) ? "0.0" : reward.get(name1).toString();
-		String agent2Reward = (reward == null) ? "0.0" : reward.get(name2).toString();
-		
+		String agent1Reward = "0.0";
+		String agent2Reward = "0.0";
+		String totalReward = "0.0";
+		if (reward != null) {
+			agent1Reward = reward.get(name1).toString();
+			agent2Reward = reward.get(name2).toString();
+			totalReward = Double.toString(reward.get(name1) + reward.get(name2));
+		}
 		writer.append(Integer.toString(trialNum)).append(",");
 		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
 		writer.append(Integer.toString(turnNum)).append(",");
@@ -529,10 +534,10 @@ public class Analysis {
 		
 		writer.append(name2).append(",").append(Integer.toString(a2x)).append(",");
 		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
-		
+		writer.append(action2).append(", ");
 		writer.append(agent1Reward).append(",").append(agent2Reward).append(",");
-		writer.append(agent1Reward + agent2Reward).append(",").append(worldType);
-		writer.append(action2).append("\n");
+		writer.append(totalReward).append(",").append(worldType).append("\n");
+		
 	}
 	
 	
