@@ -1,23 +1,17 @@
 {
 	"matches": [
 	{
-		"world_id": "TwoAgentsTwoGoals2Debug",
+		"world_id": "Two_DirCourtyard_5by5",
 		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
 		{"agent_type":"norm_learning","params":"explore_norm"}],
-		"max_rounds": 0
-	},
-	{
-		"world_id": "TwoAgentsHall_3by5_noWalls",
-		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
-		{"agent_type":"norm_learning","params":"explore_norm"}],
-		"max_rounds": 2
+		"max_rounds": 8
 
 	},
 	{
-		"world_id": "TwoAgentsHall_3by5_4Walls",
+		"world_id": "Two_IndCourtyard_5by5",
 		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
 		{"agent_type":"norm_learning","params":"explore_norm"}],
-		"max_rounds": 1
+		"max_rounds": 8
 	}
 	]
 }
