@@ -8,6 +8,7 @@ import java.util.Set;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.policy.Policy.ActionProb;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.JointPolicyToCentralizedPolicy;
 import burlap.oomdp.core.AbstractGroundedAction;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.states.State;
@@ -30,13 +31,16 @@ public class PolicyComparisonWithKLDivergence {
 	private Policy learnedPolicy;
 	private State startState;
 	private HashableStateFactory hsf = new SimpleHashableStateFactory();
+	Domain cmdp;
 	private double alpha = Math.pow(10, -6);
 	
-	public PolicyComparisonWithKLDivergence(Policy truePolicy, Policy learnedPolicy, State startState){
+	public PolicyComparisonWithKLDivergence(Policy truePolicy, Policy learnedPolicy, State startState, Domain cmdp){
 	
-		this.truePolicy = truePolicy;
-		this.learnedPolicy = learnedPolicy;
+		this.cmdp = cmdp;
+		this.truePolicy = new JointPolicyToCentralizedPolicy(truePolicy, cmdp);
+		this.learnedPolicy = new JointPolicyToCentralizedPolicy(learnedPolicy, cmdp);
 		this.startState = startState ;
+		
 		
 	}
 	
