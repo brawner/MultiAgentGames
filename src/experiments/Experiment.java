@@ -23,11 +23,15 @@ import networking.common.TokenCastException;
 import networking.server.ExperimentConfiguration;
 import networking.server.GridGameManager;
 import networking.server.MatchConfiguration;
+import Analysis.PolicyComparisonWithKLDivergence;
+import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
 import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
@@ -75,9 +79,11 @@ public class Experiment {
 
 	private Integer DEFAULT_MAX_ROUNDS = 20;
 
-	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder) {
-		// Initialize lists.
+	private int numSamples = -1;
+	private String trial;
 
+	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder, int numSamples, String trial) {
+		// Initialize lists.
 		this.paramFilesFolder = paramFilesFolder;
 		this.gamesFolder = gamesFolder;
 		this.outputFolder = outputFolder;
@@ -86,6 +92,9 @@ public class Experiment {
 		this.numRounds = new ArrayList<Integer>();
 		this.games = new ArrayList<String>();
 		this.numMatches = 0;
+		this.numSamples =numSamples;
+		this.trial = trial;
+		
 
 		if(experimentFile.split("\\.")[1].compareTo("csv")==0){
 			// Read in experiment parameters from experimentFile.
@@ -120,7 +129,6 @@ public class Experiment {
 
 
 	}
-
 
 
 	private void readJSONExperimentFile(String experimentFile) {
@@ -296,7 +304,8 @@ public class Experiment {
 		// http://i.imgur.com/9G9h8dt.jpg
 		switch (agentKind){
 		case "norm_learning":
-			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, this.sgDomain, this.types, this.jr, this.tf);
+			System.out.println("NumSamples Exp: "+this.numSamples);
+			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, trial, this.numSamples, this.sgDomain, this.types, this.jr, this.tf);
 		case "fixed_policy":
 			
 			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
@@ -339,6 +348,23 @@ public class Experiment {
 
 	public World getWorld(int match) {
 		return new World(sgDomain, jr, tf, startingStates.get(match));
+	}
+
+
+
+	public void comparePolicies(String outputLoc, int matchLearned, int matchCorrect) {
+		// TODO Auto-generated method stub
+		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
+				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
+			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+			
+			PolicyComparisonWithKLDivergence klMetric =
+					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), learnedAgent.learnedJoint, startingStates.get(matchLearned));
+			double value = klMetric.runPolicyComparison();
+			System.out.println("VALUE: "+value);
+		}
+		
 	}
 
 
