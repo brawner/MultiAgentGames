@@ -3,7 +3,7 @@
 	
 	{
 		"world_id": "TwoAgentsHall_3by5_noWalls",
-		"agents":[{"agent_type":"copy_agent","params":"hall1_copyAgent"}, 
+		"agents":[{"agent_type":"copy_agent","params":"hall1_copy_location"}, 
 		{"agent_type":"copy_agent","params":"null_copyAgent"}],
 		"max_rounds": 0
 
@@ -12,7 +12,7 @@
 		"world_id": "TwoAgentsHall_3by5_noWalls",
 		"agents":[{"agent_type":"norm_learning","params":"batch_prevAgents"}, 
 		{"agent_type":"norm_learning","params":"batch_prevAgents"}],
-		"max_rounds": 1
+		"max_rounds": 25
 	}
 	]
 }
