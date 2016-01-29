@@ -41,8 +41,8 @@ public class NormLearnersExperiment {
 			File f = new File(path);
 			f.getParentFile().mkdirs();
 			FileWriter writer = new FileWriter(path, true);
-			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,"
-					+ "agent2_y,agent2_rt,agent2_action\n");
+			writer.append("Trial,Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,"
+					+ "agent2_y,agent2_rt,agent2_action,agent1_rw,agent2_rw, joint_rw, world\n");
 			List<JointAction> actions = result.jointActions;
 
 			List<Map<String,Double>> rewards = result.jointRewards;
@@ -70,9 +70,9 @@ public class NormLearnersExperiment {
 		file.setReadable(true, false);
 	}
 
-	public void runExperiment(int trial,String outputFolder) {
+	public String runExperiment(int trial,int numSamples, String outputFolder) {
 
-
+		String toPrint = "";
 		results = new ArrayList<List<GameAnalysis>>();
 
 		for (int match = 0; match < experiment.numMatches; match++) {
@@ -97,13 +97,16 @@ public class NormLearnersExperiment {
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
 			}
 			//comparePolicies here somehow? 
-
-			experiment.comparePolicies(outputFolder+"/trial_"+trial+"_match_"+match,match, match-1);
 			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
+			
+			double comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1);
+			if(comparisonVal>=0.0){
+				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			}
 			results.add(matchList);
 
 		}
-		// or here?
+		return toPrint;
 
 	}
 
@@ -121,7 +124,7 @@ public class NormLearnersExperiment {
 	}
 
 	private void outputTrialResults(String outputFolder) {
-		System.out.println("Outputting here: "+outputFolder);
+		//System.out.println("Outputting here: "+outputFolder);
 		int match = 0;
 		for(List<GameAnalysis> list : results){
 			int round = 0;
@@ -147,7 +150,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "1");
+		arguments.put("numTrials", "3");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -166,28 +169,35 @@ public class NormLearnersExperiment {
 		return arguments;
 	}
 
-	private static String generateUniqueID(String expName) {
+	private static String generateUniqueID() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
 		Date date = new Date();
 		String dateStr = dateFormat.format(date);
 		Random rand = new Random();
 		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
 
-		return dateStr+"/"+expName;
+		return dateStr;
 	}
 
 	public static void main(String[] args) {
 		boolean visualize = false;
 		int maxNumSamples = 3;
+		int minNumSamples = 1;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = { "IJCAI/exp4_H2H1_ANP_N3"}; // "IJCAI/exp4_H2H1_ANP_N3", "IJCAI/exp2_H1_ANP_N1"//"Batch_fromUpDown", "Batch_fromWaitDown",
+		String[] experiments = { "exp2_H1_ANP_N1","exp2_H1_ANP_N2","exp2_H1_ANP_N3",
+				"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; 
+		//"exp4_H2H1_ANP_N1","exp4_H2H1_ANP_N2","exp4_H2H1_ANP_N3","exp4_H1H2_ANP_N1", "exp4_H1H2_ANP_N2","exp4_H1H2_ANP_N3"
+		
+		// "IJCAI/exp4_H2H1_ANP_N3", "IJCAI/exp2_H1_ANP_N1"//"Batch_fromUpDown", "Batch_fromWaitDown",
 		//"Batch_fromUpDown.json", "Test_CodedNorms.json", "Test_LooseNorms.json"Batch_fromLooseUpDown, Test_WaitDownNorms
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
+		String uniqueTime =  NormLearnersExperiment.generateUniqueID();
 		for(int e =0; e<experiments.length;e++){
-			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
+			String toPrint = "";
+			String experimentFile = "IJCAI/"+experiments[e]; //arguments.get("experiment"); //from args
 			if(!experimentFile.contains(".json")){
 				experimentFile+=".json";
 
@@ -200,8 +210,8 @@ public class NormLearnersExperiment {
 			String gamesFolder = currDir+arguments.get("gamesF");
 
 			experimentFile = experimentFolder + experimentFile;
-			String uniqueId = NormLearnersExperiment.generateUniqueID(experiments[e].split("\\.")[0]);//edited here too
-			int numSamples = 0;
+			String uniqueId = uniqueTime+"/"+experiments[e].split("\\.")[0];//edited here too
+			int numSamples = minNumSamples;
 			if(maxNumSamples<0){
 				numSamples = maxNumSamples;
 			}
@@ -213,11 +223,27 @@ public class NormLearnersExperiment {
 							paramFilesFolder, gamesFolder, outputFolder+uniqueId+"_"+numSamples, numSamples, Integer.toString(trial));
 					NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
 
-					ex.runExperiment(trial, outputFolder+uniqueId+"_"+numSamples);
+					toPrint+=ex.runExperiment(trial, numSamples,outputFolder+uniqueId+"_"+numSamples);
 					ex.visualizeResults(visualize);
 
 				}
 			}
+			
+			try
+			{
+				File outFile = new File (outputFolder+uniqueId);
+				outFile.mkdirs();
+			    FileWriter writer = new FileWriter(outFile.getAbsolutePath()+"/metrics.csv");
+				 
+			    writer.append(toPrint);
+			    writer.flush();
+			    writer.close();
+			}
+			catch(IOException e1)
+			{
+			     e1.printStackTrace();
+			} 
+			
 		}
 	}
 }

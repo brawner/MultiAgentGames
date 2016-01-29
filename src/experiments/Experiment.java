@@ -121,7 +121,7 @@ public class Experiment {
 		types.add(GridGame.getStandardGridGameAgentType(this.sgDomain));
 		// create objects given types from experiment file
 		for (int match = 0; match < numMatches; match++) {
-			System.out.println(paramFileLists.get(match).size());
+			//System.out.println(paramFileLists.get(match).size());
 			agentLists.add(match, makeAgents(agentKindLists, paramFileLists, match,paramFilesFolder));
 			startingStates.add(match, makeState(games.get(match), gamesFolder));
 
@@ -217,7 +217,7 @@ public class Experiment {
 			System.out.println("ERROR!!");
 
 		}
-		System.out.println("Num matches: "+numMatches);
+		//System.out.println("Num matches: "+numMatches);
 	}
 
 
@@ -279,7 +279,7 @@ public class Experiment {
 		List<SGAgent> matchAgents = new ArrayList<SGAgent>();
 
 
-		System.out.println("Num agents: "+agentKindsList.get(match).size());
+		//System.out.println("Num agents: "+agentKindsList.get(match).size());
 		for(int agent = 0; agent< agentKindsList.get(match).size();agent++){
 			if(match==0){
 				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent),
@@ -305,7 +305,7 @@ public class Experiment {
 		// http://i.imgur.com/9G9h8dt.jpg
 		switch (agentKind){
 		case "norm_learning":
-			System.out.println("NumSamples Exp: "+this.numSamples);
+			//System.out.println("NumSamples Exp: "+this.numSamples);
 			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, trial, this.numSamples, this.sgDomain, this.types, this.jr, this.tf);
 		case "fixed_policy":
 			
@@ -321,7 +321,7 @@ public class Experiment {
 		case "human":
 			return null;
 		case "copy_agent":
-			return new CopyGameFilesAgent(parametersFile,outputFile, this.sgDomain);
+			return new CopyGameFilesAgent(parametersFile,outputFile, this.sgDomain, Integer.parseInt(trial));
 		default:
 			return null;
 		}
@@ -355,18 +355,24 @@ public class Experiment {
 
 
 
-	public void comparePolicies(String outputLoc, int matchLearned, int matchCorrect) {
-		// TODO Auto-generated method stub
+	public double comparePolicies(String sourceFolder, int matchLearned, int matchCorrect) {
 		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
 			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
 			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
 
 			PolicyComparisonWithKLDivergence klMetric =
-					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), setAgent.getPolicy(), 
+					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), learnedAgent.getJointPolicy(), 
 							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
 			double value = klMetric.runPolicyComparison();
-			System.out.println("VALUE: "+value);
+			//System.out.println("VALUE: "+value);
+			return value;
+		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
+				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
+			// norm and copy
+			return -1;
+		}else {
+			return -1;
 		}
 		
 	}
