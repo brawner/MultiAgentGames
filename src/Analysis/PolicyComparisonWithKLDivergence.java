@@ -91,7 +91,15 @@ public class PolicyComparisonWithKLDivergence {
 			// actual KL divergence calculation
 			
 			for(ActionProb ap : trueAP){
-				klDistance += ap.pSelection * Math.log(ap.pSelection/actionProbabilityMap.get(ap.ga));
+//				klDistance += ap.pSelection * Math.log(ap.pSelection/actionProbabilityMap.get(ap.ga));
+				double value = ap.pSelection/actionProbabilityMap.get(ap.ga);
+				if(value!=0.){
+					if(value<0){
+						System.err.println("action probabilities negative: true policy - "+ ap.pSelection + ", learned policy - " +actionProbabilityMap.get(ap.ga));
+					}
+					double logValue = Math.log(value);
+					klDistance += ap.pSelection * logValue;
+				}
 			}
 				
 		}
