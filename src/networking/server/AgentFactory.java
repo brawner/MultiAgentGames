@@ -147,7 +147,7 @@ public class AgentFactory {
 		
 		
 		
-		return NormLearningAgentFactory.getNormLearningAgent(params, "outputFolder", domain, types, jr, tf);
+		return NormLearningAgentFactory.getNormLearningAgent(params, "outputFolder", "Trial",-1, domain, types, jr, tf);
 		
 	}
 	

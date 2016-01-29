@@ -1,27 +1,5 @@
 package experiments;
 
-import Analysis.Analysis;
-import burlap.behavior.policy.GreedyQPolicy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
-import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
-import burlap.behavior.stochasticgames.GameAnalysis;
-import burlap.behavior.stochasticgames.agents.HumanAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
-import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
-import burlap.domain.stochasticgames.gridgame.GGAltVis;
-import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.stochasticgames.JointAction;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.visualizer.Visualizer;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -34,8 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import networking.server.GameHandler;
-import examples.GridGameNormRF2;
+import Analysis.Analysis;
+import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
+import burlap.domain.stochasticgames.gridgame.GGAltVis;
+import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.World;
+import burlap.oomdp.visualizer.Visualizer;
 
 /**
  * @author Betsy Hilliard, Carl Trimbach, based on example by James MacGlashan
@@ -56,7 +43,8 @@ public class NormLearnersExperiment {
 			File f = new File(path);
 			f.getParentFile().mkdirs();
 			FileWriter writer = new FileWriter(path, true);
-			writer.append("Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action\n");
+			writer.append("Trial,Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,"
+					+ "agent2_y,agent2_rt,agent2_action,agent1_rw,agent2_rw, joint_rw, world\n");
 			List<JointAction> actions = result.jointActions;
 
 			List<Map<String,Double>> rewards = result.jointRewards;
@@ -85,7 +73,7 @@ public class NormLearnersExperiment {
 			State finalState = states.get(states.size()-1);
 			Map<String,Double> rewardMap = rewards.get(rewards.size()-1);
 			Analysis.writeLineToFile(finalState, null, matchNum, round, i, rewardMap, worldType, writer, participantId1, participantId2);
-			
+
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -96,9 +84,9 @@ public class NormLearnersExperiment {
 		file.setReadable(true, false);
 	}
 
-	public void runExperiment(int trial,String outputFolder) {
+	public String runExperiment(int trial,int numSamples, String outputFolder) {
 
-
+		String toPrint = "";
 		results = new ArrayList<List<GameAnalysis>>();
 
 		for (int match = 0; match < experiment.numMatches; match++) {
@@ -116,92 +104,41 @@ public class NormLearnersExperiment {
 			// play games
 			ArrayList<GameAnalysis> matchList = new ArrayList<GameAnalysis>();
 			for (int round = 0; round < experiment.getNumRounds(match); round++) {
-				System.out.println("running round " + round + " of match "+match);
+				//System.out.println("running round " + round + " of match "+match);
 				GameAnalysis game = w.runGame(experiment.maxTurns);
 				matchList.add(game);
 
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
 			}
+			//comparePolicies here somehow? 
 			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
+			
+			double comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1);
+			if(comparisonVal>=0.0){
+				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			}
 			results.add(matchList);
 
 		}
-
-
-	}
-
-	public void visualizeResults(){
-
-		// visualize results
-
-		Visualizer v = GGAltVis.getVisualizer(7, 6);
-		List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
-		for(List<GameAnalysis> games : results){
-			gamesToSee.addAll(games);
-		}
-		new GameSequenceVisualizer(v, this.experiment.sgDomain, gamesToSee);
+		return toPrint;
 
 	}
 
-	public void runHumanNormAgent() {
-
-		Visualizer v = GGAltVis.getVisualizer(5, 5);
-		HumanAgent human = new HumanAgent(v);
-		human.addKeyAction("w",
-				this.experiment.sgDomain.getSingleAction(GridGame.ACTIONNORTH)
-				.getAssociatedGroundedAction(""));
-		human.addKeyAction("s",
-				this.experiment.sgDomain.getSingleAction(GridGame.ACTIONSOUTH)
-				.getAssociatedGroundedAction(""));
-		human.addKeyAction("d",
-				this.experiment.sgDomain.getSingleAction(GridGame.ACTIONEAST)
-				.getAssociatedGroundedAction(""));
-		human.addKeyAction("a",
-				this.experiment.sgDomain.getSingleAction(GridGame.ACTIONWEST)
-				.getAssociatedGroundedAction(""));
-		human.addKeyAction("x",
-				this.experiment.sgDomain.getSingleAction(GridGame.ACTIONNOOP)
-				.getAssociatedGroundedAction(""));
-
-		// convert grid game to a centralized MDP (which will be used to define
-		// social reward functions)
-		CentralizedDomainGenerator mdpdg = new CentralizedDomainGenerator(
-				experiment.sgDomain, experiment.types);
-		Domain cmdp = mdpdg.generateDomain();
-		RewardFunction crf = new TotalWelfare(experiment.jr);
-
-		// create joint task planner for social reward function and RHIRL leaf
-		// node values
-		final SparseSampling jplanner = new SparseSampling(cmdp, crf,
-				experiment.tf, 0.99, new SimpleHashableStateFactory(), 20, -1);
-		jplanner.toggleDebugPrinting(false);
-
-		// create independent social reward functions to learn for each agent
-		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf,
-				new GreedyQPolicy(jplanner), this.experiment.sgDomain);
-
-		NormLearningAgent agent1 = new NormLearningAgent(
-				this.experiment.sgDomain, agent1RF, -1,
-				agent1RF.createCorresponingDiffVInit(jplanner), false);
-
-		// have them join the world
-		World w = experiment.getWorld(0);
-		human.joinWorld(w, this.experiment.types.get(0));
-		agent1.joinWorld(w, this.experiment.types.get(0));
-
-		// play games
-		results = new ArrayList<List<GameAnalysis>>();
-		ArrayList<GameAnalysis> gameList = new ArrayList<GameAnalysis>();
-		for (int i = 0; i < 5; i++) {
-			System.out.println("running game " + i);
-			GameAnalysis game = w.runGame(20);
-			gameList.add(game);
+	public void visualizeResults(boolean visualize){
+		if(visualize){
+			// visualize results
+			Visualizer v = GGAltVis.getVisualizer(7, 6);
+			List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
+			for(List<GameAnalysis> games : results){
+				gamesToSee.addAll(games);
+			}
+			new GameSequenceVisualizer(v, this.experiment.sgDomain, gamesToSee);
 		}
-		results.add(gameList);
+
 	}
 
 	private void outputTrialResults(String outputFolder) {
-		System.out.println("Outputting here: "+outputFolder);
+		//System.out.println("Outputting here: "+outputFolder);
 		int match = 0;
 		for(List<GameAnalysis> list : results){
 			int round = 0;
@@ -212,23 +149,22 @@ public class NormLearnersExperiment {
 			match++;
 		}
 	}
-	
+
 	private void outputMatchResults(String outputFolder, List<GameAnalysis> rounds, int matchNum) {
-		System.out.println("Outputting here: "+outputFolder);
-		
-			int round = 0;
-			for (GameAnalysis ga : rounds) {
-				ga.writeToFile(outputFolder + "match_"+matchNum+"_round_" + round);
-				round++;
-			}
+		//System.out.println("Outputting here: "+outputFolder);
+
+		int round = 0;
+		for (GameAnalysis ga : rounds) {
+			ga.writeToFile(outputFolder + "match_"+matchNum+"_round_" + round);
 			round++;
 		}
-	
+		round++;
+	}
+
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "1");
-
+		arguments.put("numTrials", "10");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -247,27 +183,35 @@ public class NormLearnersExperiment {
 		return arguments;
 	}
 
-	private static String generateUniqueID(String expName) {
+	private static String generateUniqueID() {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
 		Date date = new Date();
 		String dateStr = dateFormat.format(date);
 		Random rand = new Random();
 		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
 
-		return dateStr+"/"+expName;
+		return dateStr;
 	}
 
 	public static void main(String[] args) {
-		boolean visualize = true;
+		boolean visualize = false;
+		int maxNumSamples = 3;
+		int minNumSamples = 1;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"Debug_MM"}; 
+		String[] experiments = { "exp2_H1_ANP_N1","exp2_H1_ANP_N2","exp2_H1_ANP_N3",
+				"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; 
+		//"exp4_H2H1_ANP_N1","exp4_H2H1_ANP_N2","exp4_H2H1_ANP_N3","exp4_H1H2_ANP_N1", "exp4_H1H2_ANP_N2","exp4_H1H2_ANP_N3"
+		
+		// "IJCAI/exp4_H2H1_ANP_N3", "IJCAI/exp2_H1_ANP_N1"//"Batch_fromUpDown", "Batch_fromWaitDown",
 		//"Batch_fromUpDown.json", "Test_CodedNorms.json", "Test_LooseNorms.json"Batch_fromLooseUpDown, Test_WaitDownNorms
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
+		String uniqueTime =  NormLearnersExperiment.generateUniqueID();
 		for(int e =0; e<experiments.length;e++){
-			String experimentFile = experiments[e]; //arguments.get("experiment"); //from args
+			String toPrint = "";
+			String experimentFile = "IJCAI/"+experiments[e]; //arguments.get("experiment"); //from args
 			if(!experimentFile.contains(".json")){
 				experimentFile+=".json";
 
@@ -280,20 +224,40 @@ public class NormLearnersExperiment {
 			String gamesFolder = currDir+arguments.get("gamesF");
 
 			experimentFile = experimentFolder + experimentFile;
-			String uniqueId = NormLearnersExperiment.generateUniqueID(experiments[e].split("\\.")[0]); //edited here too
-
-			for (int trial = 0; trial < numTrials; trial++) {
-				Experiment experiment = new Experiment(experimentFile,
-						paramFilesFolder, gamesFolder, outputFolder+uniqueId);
-				NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
-
-				ex.runExperiment(trial, outputFolder+uniqueId);
-				ex.visualizeResults();
-
+			String uniqueId = uniqueTime+"/"+experiments[e].split("\\.")[0];//edited here too
+			int numSamples = minNumSamples;
+			if(maxNumSamples<0){
+				numSamples = maxNumSamples;
 			}
+			for (; numSamples<=maxNumSamples; numSamples++){
+				 
+				System.out.println("NUM SAMP: "+numSamples);
+				for (int trial = 0; trial < numTrials; trial++) {
+					Experiment experiment = new Experiment(experimentFile,
+							paramFilesFolder, gamesFolder, outputFolder+uniqueId+"_"+numSamples, numSamples, Integer.toString(trial));
+					NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
+
+					toPrint+=ex.runExperiment(trial, numSamples,outputFolder+uniqueId+"_"+numSamples);
+					ex.visualizeResults(visualize);
+
+				}
+			}
+			
+			try
+			{
+				File outFile = new File (outputFolder+uniqueId);
+				outFile.mkdirs();
+			    FileWriter writer = new FileWriter(outFile.getAbsolutePath()+"/metrics.csv");
+				 
+			    writer.append(toPrint);
+			    writer.flush();
+			    writer.close();
+			}
+			catch(IOException e1)
+			{
+			     e1.printStackTrace();
+			} 
+			
 		}
 	}
-
-
-
 }
