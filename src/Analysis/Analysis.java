@@ -20,6 +20,7 @@ import java.util.Map;
 
 import networking.common.GridGameExtreme;
 import networking.server.ExperimentConfiguration;
+import networking.server.GameHandler;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
@@ -474,15 +475,26 @@ public class Analysis {
 			List<Map<String, Double>> rewards = result.jointRewards;
 			List<State> states = result.states;
 			int i = 0;
+			String participantId1 = null;
+			String participantId2 = null;
+			for (GameHandler handler : configuration.getCurrentMatch().getHandlerLookup().values()) {
+				if (participantId1 == null) {
+					participantId1 = handler.getParticipantId();
+				} else if (participantId2 == null) {
+					participantId2 = handler.getParticipantId();
+				}
+			}
+			
+			
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
 				Map<String, Double> reward = rewards.get(i); 
 				State state = states.get(i);
-				Analysis.writeLineToFile(state, action, matchNum, roundNum, i, reward, worldType, writer);
+				Analysis.writeLineToFile(state, action, matchNum, roundNum, i, reward, worldType, writer, participantId1, participantId2);
 			}
 			State finalState = states.get(states.size()-1);
 			
-			Analysis.writeLineToFile(finalState, null, matchNum, roundNum, i, null, worldType, writer);
+			Analysis.writeLineToFile(finalState, null, matchNum, roundNum, i, null, worldType, writer, participantId1, participantId2);
 			writer.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -493,7 +505,7 @@ public class Analysis {
 		file.setReadable(true, false);
 	}
 	
-	public static void writeLineToFile(State state, JointAction action, int matchNum, int roundNum, int turnNum, Map<String, Double> reward, String worldType, FileWriter writer) throws IOException {
+	public static void writeLineToFile(State state, JointAction action, int matchNum, int roundNum, int turnNum, Map<String, Double> reward, String worldType, FileWriter writer, String participant1Id, String participant2Id) throws IOException {
 		List<ObjectInstance> agents = state.getObjectsOfClass(GridGame.CLASSAGENT);
 		ObjectInstance first = null;
 		ObjectInstance second = null;
@@ -528,11 +540,11 @@ public class Analysis {
 		writer.append(Integer.toString(matchNum)).append(",").append(Integer.toString(roundNum)).append(",");
 		writer.append(Integer.toString(turnNum)).append(",");
 		
-		writer.append(name1).append(",").append(Integer.toString(a1x)).append(",");
+		writer.append(participant1Id).append(",").append(Integer.toString(a1x)).append(",");
 		writer.append(Integer.toString(a1y)).append(",").append(Integer.toString(reaction1)).append(",");
 		writer.append(action1).append(",");
 		
-		writer.append(name2).append(",").append(Integer.toString(a2x)).append(",");
+		writer.append(participant2Id).append(",").append(Integer.toString(a2x)).append(",");
 		writer.append(Integer.toString(a2y)).append(",").append(Integer.toString(reaction2)).append(",");
 		writer.append(action2).append(", ");
 		writer.append(agent1Reward).append(",").append(agent2Reward).append(",");

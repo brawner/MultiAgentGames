@@ -1,15 +1,5 @@
 package experiments;
 
-import Analysis.Analysis;
-import burlap.behavior.stochasticgames.GameAnalysis;
-import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
-import burlap.domain.stochasticgames.gridgame.GGAltVis;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.JointAction;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.visualizer.Visualizer;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,6 +11,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
+import Analysis.Analysis;
+import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
+import burlap.domain.stochasticgames.gridgame.GGAltVis;
+import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.oomdp.core.objects.ObjectInstance;
+import burlap.oomdp.core.states.State;
+import burlap.oomdp.stochasticgames.JointAction;
+import burlap.oomdp.stochasticgames.SGAgent;
+import burlap.oomdp.stochasticgames.World;
+import burlap.oomdp.visualizer.Visualizer;
 
 /**
  * @author Betsy Hilliard, Carl Trimbach, based on example by James MacGlashan
@@ -49,16 +51,28 @@ public class NormLearnersExperiment {
 
 			List<State> states = result.states;
 			int i = 0;
+			
+			String participantId1 = "agent0";
+			String participantId2 = "agent1";
+			List<ObjectInstance> agents = states.get(0).getObjectsOfClass(GridGame.CLASSAGENT);
+			for (ObjectInstance agent : agents) {
+				if (agent.getIntValForAttribute(GridGame.ATTPN) == 0) {
+					participantId1 = agent.getName();
+				} else if (agent.getIntValForAttribute(GridGame.ATTPN)== 1 ) {
+					participantId2 = agent.getName();
+				}
+			}
+			
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
 				State state = states.get(i);
 				Map<String,Double> rewardMap = rewards.get(i);
-				Analysis.writeLineToFile(state, action, matchNum, round, i,  rewardMap, worldType, writer);
+				Analysis.writeLineToFile(state, action, matchNum, round, i,  rewardMap, worldType, writer, participantId1, participantId2);
 			}
 
 			State finalState = states.get(states.size()-1);
 			Map<String,Double> rewardMap = rewards.get(rewards.size()-1);
-			Analysis.writeLineToFile(finalState, null, matchNum, round, i, rewardMap, worldType, writer);
+			Analysis.writeLineToFile(finalState, null, matchNum, round, i, rewardMap, worldType, writer, participantId1, participantId2);
 
 			writer.close();
 		} catch (IOException e) {
