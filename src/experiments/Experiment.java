@@ -33,6 +33,7 @@ import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyB
 import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
+import burlap.behavior.stochasticgames.agents.normlearning.utilityagents.CopyGameFilesAgent;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.TerminalFunction;
@@ -319,6 +320,8 @@ public class Experiment {
 			return null;
 		case "human":
 			return null;
+		case "copy_agent":
+			return new CopyGameFilesAgent(parametersFile,outputFile, this.sgDomain);
 		default:
 			return null;
 		}
@@ -358,9 +361,10 @@ public class Experiment {
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
 			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
 			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
-			
+
 			PolicyComparisonWithKLDivergence klMetric =
-					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), learnedAgent.learnedJoint, startingStates.get(matchLearned));
+					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), setAgent.getPolicy(), 
+							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
 			double value = klMetric.runPolicyComparison();
 			System.out.println("VALUE: "+value);
 		}
