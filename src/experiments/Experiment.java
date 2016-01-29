@@ -31,6 +31,7 @@ import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFact
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
 import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormJointPolicy;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.utilityagents.CopyGameFilesAgent;
@@ -361,8 +362,11 @@ public class Experiment {
 			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
 			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
 
+			NormJointPolicy setPolicy = setAgent.getPolicy();
+			setPolicy.setNoislessPolicy();
+			
 			PolicyComparisonWithKLDivergence klMetric =
-					new PolicyComparisonWithKLDivergence(setAgent.getPolicy(), learnedAgent.getJointPolicy(), 
+					new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
 							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
 			double value = klMetric.runPolicyComparison();
 			//System.out.println("VALUE: "+value);

@@ -95,14 +95,21 @@ public class NormLearnersExperiment {
 				matchList.add(game);
 
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
+				
 			}
 			//comparePolicies here somehow? 
+			
 			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
 			
 			double comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1);
 			if(comparisonVal>=0.0){
 				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
 			}
+
+			//			double comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1);
+			//			if(comparisonVal>=0.0){
+			//				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			//			}
 			results.add(matchList);
 
 		}
@@ -150,7 +157,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "10");
+		arguments.put("numTrials", "1");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -180,17 +187,16 @@ public class NormLearnersExperiment {
 	}
 
 	public static void main(String[] args) {
-		boolean visualize = false;
-		int maxNumSamples = 3;
-		int minNumSamples = 1;
+		boolean visualize = true;
+		int maxNumSamples = 25;
+		int minNumSamples = 25;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = { "exp2_H1_ANP_N1","exp2_H1_ANP_N2","exp2_H1_ANP_N3",
-				"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; 
+		String[] experiments = {"exp2_H1_ANP_N3"}; //"exp2_H1_ANP_N2","exp2_H1_ANP_N3","exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3" 
 		//"exp4_H2H1_ANP_N1","exp4_H2H1_ANP_N2","exp4_H2H1_ANP_N3","exp4_H1H2_ANP_N1", "exp4_H1H2_ANP_N2","exp4_H1H2_ANP_N3"
-		
+
 		// "IJCAI/exp4_H2H1_ANP_N3", "IJCAI/exp2_H1_ANP_N1"//"Batch_fromUpDown", "Batch_fromWaitDown",
 		//"Batch_fromUpDown.json", "Test_CodedNorms.json", "Test_LooseNorms.json"Batch_fromLooseUpDown, Test_WaitDownNorms
 		//"hall_1","hall_2","door","tunnels","manners","corner_1","corner_2","hall_pair","corner_pair"
@@ -216,7 +222,7 @@ public class NormLearnersExperiment {
 				numSamples = maxNumSamples;
 			}
 			for (; numSamples<=maxNumSamples; numSamples++){
-				 
+
 				System.out.println("NUM SAMP: "+numSamples);
 				for (int trial = 0; trial < numTrials; trial++) {
 					Experiment experiment = new Experiment(experimentFile,
@@ -228,22 +234,22 @@ public class NormLearnersExperiment {
 
 				}
 			}
-			
+
 			try
 			{
 				File outFile = new File (outputFolder+uniqueId);
 				outFile.mkdirs();
-			    FileWriter writer = new FileWriter(outFile.getAbsolutePath()+"/metrics.csv");
-				 
-			    writer.append(toPrint);
-			    writer.flush();
-			    writer.close();
+				FileWriter writer = new FileWriter(outFile.getAbsolutePath()+"/metrics.csv");
+
+				writer.append(toPrint);
+				writer.flush();
+				writer.close();
 			}
 			catch(IOException e1)
 			{
-			     e1.printStackTrace();
+				e1.printStackTrace();
 			} 
-			
+
 		}
 	}
 }
