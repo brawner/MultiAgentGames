@@ -30,87 +30,50 @@ import burlap.oomdp.stochasticgames.SGDomain;
 
 public class HumanRobotPolicySimilarityMetric {
 
-
-	public static void main(String[] args){
+	public static double[] calculateMetric(String inputFolder, int exMatch, int learnedMatch, boolean trialSpecific){
 		GridGame gg = new GridGame();
 		SGDomain domain = (SGDomain)gg.generateDomain();
 
 		boolean debugPrint = false;
-
-		//		System.out.println("length of args" + args.length);
-
 		// experiment -> trial -> match -> round ->
 		// assume path with many games each
-		String pathToExperiment = "/home/ng/workspace/Experiment1/";
-		//		String pathString = "/home/ng/workspace/projectforcountingstates/coordinationSplitTrain10/";
-
-		//		String humanDirectory = "/home/ng/workspace/projectforcountingstates/coordinationSplitTrain10/1/human/";
-		//		String agentDirectory = "/home/ng/workspace/projectforcountingstates/coordinationSplitTrain10/1/agent/";
-
-		// get a list of trials 
-
-
-		//		String pathToExperimentHumanTrials = pathToExperiment + "human/";
-		//		String pathToExperimentAgentTrials = pathToExperiment + "agent/";
-
-
+		//String pathToExperiment = "/home/ng/workspace/Experiment1/";
 		String outputFileName = "gameResults10.csv";
 
-		for(int i =0;i<args.length;i++){
-			String str = args[i];
-			if(str.equals("-o")){
-				outputFileName=args[i+1];
-			}
-			if(str.equals("-p")){
-				pathToExperiment=args[i+1];
-			}
-			//			if(str.equals("-d")){
-			//				debugPrint = Boolean.parseBoolean(args[i+1]);
-			//			}
-
-		}
-
-		//
 
 
-
-		File experimentLocation = new File(pathToExperiment);
+		File experimentLocation = new File(inputFolder);
 		//		File agentExperimentLocation = new File(pathToExperimentAgentTrials);
 
-		System.out.println("Experiment folder: " + pathToExperiment);
+		System.out.println("Experiment folder: " + inputFolder);
 
 		String[] humanGameFiles = experimentLocation.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_0");
+				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_"+exMatch);
 			}
 		});
+		
 
 		String[] agentGameFiles = experimentLocation.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_1");
+				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_"+learnedMatch);
 			}
 		});
+		System.out.println("Num human: "+humanGameFiles.length+" Agent files: "+agentGameFiles.length);
 
 		// create a hashmap of trials
-
-		Map<String, ArrayList<String>> humanFileMap = getDataStructure(humanGameFiles);
-
-		Map<String, ArrayList<String>> agentFileMap = getDataStructure(agentGameFiles);
+		Map<String, ArrayList<String>> humanFileMap = getDataStructure(humanGameFiles, trialSpecific);
+		Map<String, ArrayList<String>> agentFileMap = getDataStructure(agentGameFiles, trialSpecific);
 
 		String outputString = "";
 		outputString = outputString + "Game Number"+  ","  + "similar actions from similar states"+ "," + "Total similar states" + "," + "Ratio of similar actions" +"," + "Ratio of similar states"+ "\n";
 
-
-
 		// now iterate over trials and matches find the same keys in both sets and run analysis
-
-
-
-
 		// assume we have two directories over here humans and agents over here
 
+		double[] results = new double[4];
 		for(String trialStr: humanFileMap.keySet()){
 
 			if(!agentFileMap.containsKey(trialStr)){
@@ -118,41 +81,18 @@ public class HumanRobotPolicySimilarityMetric {
 				System.exit(-100);
 			}
 
-
-			// each match directory has a human directory and an agent directory with multiple games
-			//				String humanDirectoryPath = pathToExperiment + trialStr + "/" + matchStr + "/human/";
-			//				String agentDirectoryPath = pathToExperiment + trialStr + "/" + matchStr + "/agent/";
-
-			//				System.out.println(humanDirectoryPath);
-			//				System.out.println(agentDirectoryPath);
-
-
-
-
-			//		+ 		"/learned_1.game";
-			//				File humanFolder = new File(humanDirectoryPath);
-			//				File agentFolder = new File(agentDirectoryPath);
-
 			List<File> humanListOfFiles = new ArrayList<File>();//humanFolder.listFiles();
 			List<File> agentListOfFiles = new ArrayList<File>();//agentFolder.listFiles();
 
-			//				System.out.println("trial " + trialStr + " match " + matchStr);
-
-			//				System.out.println("trial " + agentFileMap.containsKey(trialStr)  + " match " +  agentFileMap.get(trialStr).containsKey(matchStr));
-
 			for(String humanFile :humanFileMap.get(trialStr)){
-				humanListOfFiles.add(new File(pathToExperiment + humanFile));
+				humanListOfFiles.add(new File(inputFolder + humanFile));
 			}
 
 			for(String agentFile :agentFileMap.get(trialStr)){
-				agentListOfFiles.add(new File(pathToExperiment + agentFile));
+				agentListOfFiles.add(new File(inputFolder + agentFile));
 			}
 
 			SimpleHashableStateFactory shf = new SimpleHashableStateFactory();
-
-
-			//		Map<Integer,State> integerStateMap = new HashMap<Integer,State>();
-
 
 			Map<HashableState,HashMap<JointAction,Integer>> humanStateActionCount = new HashMap<HashableState,HashMap<JointAction,Integer>>();
 			Map<HashableState,HashMap<JointAction,Integer>> robotStateActionCount = new HashMap<HashableState,HashMap<JointAction,Integer>>();
@@ -173,7 +113,6 @@ public class HumanRobotPolicySimilarityMetric {
 				//				System.out.println(jal.size() + " " + sl.size());
 				for(int stateCount=0;stateCount<sl.size()-1;stateCount++){
 					HashableState sTemp = shf.hashState(sl.get(stateCount));
-
 
 					JointAction jaTemp = jal.get(stateCount);
 					if(humanStateActionCount.containsKey(sTemp)){
@@ -222,8 +161,6 @@ public class HumanRobotPolicySimilarityMetric {
 				}
 			}
 
-
-
 			}
 
 
@@ -238,15 +175,9 @@ public class HumanRobotPolicySimilarityMetric {
 
 				for(HashableState s1:robotStateActionCount.keySet()){
 					if(s.equals(s1)){
-						//					System.out.println(humanStateActionCount.get(s).size());
-						//					System.out.println(s.getCompleteStateDescription());
-						//					System.out.println(s1.getCompleteStateDescription());
-						//					System.out.println(s.hashCode());
-						//					System.out.println(s1.hashCode());
 						tempCount+=1;
 						break;
 					}
-
 					//				break;
 				}
 				//			break;
@@ -254,8 +185,6 @@ public class HumanRobotPolicySimilarityMetric {
 
 
 			//		System.out.println("robot state");
-
-
 
 			for(HashableState s:humanStateActionCount.keySet()){
 				Map<JointAction,Integer> humanJaM = humanStateActionCount.get(s);
@@ -325,8 +254,6 @@ public class HumanRobotPolicySimilarityMetric {
 					}
 				}
 
-
-
 				//					System.out.println(equalityFlag + " frequencyR "+ freqRobot +" frequencyH "+ freqHuman);
 				//					System.out.println(" Robot num "+ robotMaxJaCount +" robot denom "+ robotTotalCount);
 
@@ -339,18 +266,11 @@ public class HumanRobotPolicySimilarityMetric {
 						System.out.println("action robot "+ jaR.actionName());
 					}
 				}
-
-
-
-
-
 			}
 			//				System.out.println("total equal states: " + tempCount);
 
 			//				System.out.println(humanStateActionCount.keySet().size());
 			//				System.out.println(robotStateActionCount.keySet().size());
-
-
 			//
 			//		GameAnalysis ga = null;
 			//		ga = GameAnalysis.parseFileIntoGA(fileName, domain);
@@ -366,15 +286,13 @@ public class HumanRobotPolicySimilarityMetric {
 			//	
 			//		}
 
-
-
-
 			//		GameSequenceVisualizer gv = new GameSequenceVisualizer(v, domain, fileName);
 
 			outputString = outputString + trialStr +  ","  + actionSimilarity + "," + stateSimilarity +"," +((double)actionSimilarity)/stateSimilarity +"," +((double)stateSimilarity)/humanStateActionCount.size() +"\n";
-
-
-
+			results[0] = actionSimilarity;
+			results[1] = stateSimilarity;
+			results[2] = ((double)actionSimilarity)/stateSimilarity;
+			results[3] = ((double)stateSimilarity)/humanStateActionCount.size();
 		}
 		if(debugPrint)		System.out.println(outputString);
 
@@ -389,17 +307,20 @@ public class HumanRobotPolicySimilarityMetric {
 		} finally {
 			try {writer.close();} catch (Exception ex) {/*ignore*/}
 		}
-
+		return results;
 	}
 
-	public static Map<String, ArrayList<String>> getDataStructure(String[] gameFiles){
+
+	public static Map<String, ArrayList<String>> getDataStructure(String[] gameFiles, boolean trialSpecific){
 		Map<String,  ArrayList<String>> fileMap = new HashMap<String, ArrayList<String>>();
 
 		for(String fileName : gameFiles){
 			String[] parts = fileName.split("_");
 			// check if humanFileMap has a trial
-			String trialStr =parts[0] + "_"+ parts[1];
-
+			String trialStr ="trial_x";
+			if(trialSpecific){
+				trialStr =parts[0] + "_"+ parts[1];
+			}
 			if(fileMap.containsKey(trialStr)){
 				fileMap.get(trialStr).add(fileName);
 			}
@@ -409,7 +330,6 @@ public class HumanRobotPolicySimilarityMetric {
 			}
 			// check if that trial's map has the match
 		}
-
 		return fileMap;
 	}
 }

@@ -5,14 +5,14 @@
 		"world_id": "TwoAgentsHall_3by5_noWalls",
 		"agents":[{"agent_type":"fixed_policy","params":"upDown_policy"}, 
 		{"agent_type":"fixed_policy","params":"upDown_policy"}],
-		"max_rounds": 25
+		"max_rounds": 30
 
 	},
 	{
 		"world_id": "TwoAgentsHall_3by5_noWalls",
 		"agents":[{"agent_type":"norm_learning","params":"batch_prevAgents"}, 
 		{"agent_type":"norm_learning","params":"batch_prevAgents"}],
-		"max_rounds": 25
+		"max_rounds": 1
 	}
 	]
 }

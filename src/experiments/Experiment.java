@@ -23,6 +23,7 @@ import networking.common.TokenCastException;
 import networking.server.ExperimentConfiguration;
 import networking.server.GridGameManager;
 import networking.server.MatchConfiguration;
+import Analysis.HumanRobotPolicySimilarityMetric;
 import Analysis.PolicyComparisonWithKLDivergence;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
@@ -369,12 +370,17 @@ public class Experiment {
 					new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
 							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
 			double value = klMetric.runPolicyComparison();
+			
+			double[] metrics = HumanRobotPolicySimilarityMetric.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+			System.out.println("VALUE: "+metrics[2]);
+			return metrics[2];
 			//System.out.println("VALUE: "+value);
-			return value;
+			//return value;
 		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
 			// norm and copy
-			return -1;
+			double[] metrics = HumanRobotPolicySimilarityMetric.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+			return metrics[2];
 		}else {
 			return -1;
 		}
