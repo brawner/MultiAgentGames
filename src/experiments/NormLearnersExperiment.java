@@ -174,7 +174,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "100");
+		arguments.put("numTrials", "10");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -206,7 +206,7 @@ public class NormLearnersExperiment {
 	public static void main(String[] args) {
 		boolean visualize = false;
 		int minNumSamples = 1;
-		int maxNumSamples = 15;
+		int maxNumSamples = 8;
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
