@@ -30,7 +30,7 @@ import burlap.oomdp.stochasticgames.SGDomain;
 
 public class HumanRobotPolicySimilarityMetric {
 
-	public static double[] calculateMetric(String inputFolder, int exMatch, int learnedMatch, boolean trialSpecific){
+	public double[] calculateMetric(String inputFolder, int exMatch, int learnedMatch, boolean trialSpecific){
 		GridGame gg = new GridGame();
 		SGDomain domain = (SGDomain)gg.generateDomain();
 

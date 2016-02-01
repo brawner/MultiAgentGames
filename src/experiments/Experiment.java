@@ -358,20 +358,20 @@ public class Experiment {
 
 
 	public double comparePolicies(String sourceFolder, int matchLearned, int matchCorrect) {
+		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
 		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
-			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
-			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
-
-			NormJointPolicy setPolicy = setAgent.getPolicy();
-			setPolicy.setNoislessPolicy();
-			
-			PolicyComparisonWithKLDivergence klMetric =
-					new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
-							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
-			double value = klMetric.runPolicyComparison();
-			
-			double[] metrics = HumanRobotPolicySimilarityMetric.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+//			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+//			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+//
+//			NormJointPolicy setPolicy = setAgent.getPolicy();
+//			setPolicy.setNoislessPolicy();
+//			
+//			PolicyComparisonWithKLDivergence klMetric =
+//					new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
+//							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
+//			double value = klMetric.runPolicyComparison();
+			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
 			System.out.println("VALUE: "+metrics[2]);
 			return metrics[2];
 			//System.out.println("VALUE: "+value);
@@ -379,7 +379,7 @@ public class Experiment {
 		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
 			// norm and copy
-			double[] metrics = HumanRobotPolicySimilarityMetric.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
 			return metrics[2];
 		}else {
 			return -1;
