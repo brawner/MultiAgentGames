@@ -30,9 +30,11 @@ import burlap.oomdp.stochasticgames.SGDomain;
 
 public class HumanRobotPolicySimilarityMetric {
 
-	public double[] calculateMetric(String inputFolder, int exMatch, int learnedMatch, boolean trialSpecific){
+	public double[] calculateMetric(String inputFolder, int exampleMatch, int learnedMatch, boolean trialSpecific){
 		GridGame gg = new GridGame();
 		SGDomain domain = (SGDomain)gg.generateDomain();
+		final int exMatch = exampleMatch;
+		final int learnMatch = learnedMatch;
 
 		boolean debugPrint = false;
 		// experiment -> trial -> match -> round ->
@@ -58,7 +60,7 @@ public class HumanRobotPolicySimilarityMetric {
 		String[] agentGameFiles = experimentLocation.list(new FilenameFilter() {
 			@Override
 			public boolean accept(File current, String name) {
-				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_"+learnedMatch);
+				return name.toLowerCase().contains(".game") && name.toLowerCase().contains("match_"+learnMatch);
 			}
 		});
 		System.out.println("Num human: "+humanGameFiles.length+" Agent files: "+agentGameFiles.length);
