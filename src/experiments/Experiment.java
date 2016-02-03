@@ -57,7 +57,7 @@ public class Experiment {
 	String paramFilesFolder;
 	String gamesFolder;
 	String outputFolder;
-	
+
 
 	public SGDomain sgDomain;
 	public TerminalFunction tf;
@@ -97,7 +97,7 @@ public class Experiment {
 		this.numMatches = 0;
 		this.numSamples =numSamples;
 		this.trial = trial;
-		
+
 
 		if(experimentFile.split("\\.")[1].compareTo("csv")==0){
 			// Read in experiment parameters from experimentFile.
@@ -310,7 +310,7 @@ public class Experiment {
 			//System.out.println("NumSamples Exp: "+this.numSamples);
 			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, trial, this.numSamples, this.sgDomain, this.types, this.jr, this.tf);
 		case "fixed_policy":
-			
+
 			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
 		case "model_based":
 			//TODO: actually create this agent
@@ -357,34 +357,39 @@ public class Experiment {
 
 
 
-	public double comparePolicies(String sourceFolder, int matchLearned, int matchCorrect) {
+	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL) {
 		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
 		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
-//			NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
-//			NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
-//
-//			NormJointPolicy setPolicy = setAgent.getPolicy();
-//			setPolicy.setNoislessPolicy();
-//			
-//			PolicyComparisonWithKLDivergence klMetric =
-//					new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
-//							startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
-//			double value = klMetric.runPolicyComparison();
-			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
-			System.out.println("VALUE: "+metrics[2]);
-			return metrics[2];
-			//System.out.println("VALUE: "+value);
-			//return value;
+			if(useKL){
+				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+
+				NormJointPolicy setPolicy = setAgent.getPolicy();
+				setPolicy.setNoislessPolicy();
+
+				PolicyComparisonWithKLDivergence klMetric =
+						new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
+								startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
+				double value = klMetric.runPolicyComparison();
+				System.out.println("VALUE: "+value);
+				return value+"";
+			}else{
+				double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+				System.out.println("VALUE: "+metrics[2]);
+				return metrics[2]+","+metrics[3];
+				//System.out.println("VALUE: "+value);
+				//return value;
+			}
 		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
 			// norm and copy
 			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
-			return metrics[2];
+			return metrics[2]+","+metrics[3];
 		}else {
-			return -1;
+			return "-1";
 		}
-		
+
 	}
 
 

@@ -51,7 +51,7 @@ public class NormLearnersExperiment {
 
 			List<State> states = result.states;
 			int i = 0;
-			
+
 			String participantId1 = "agent0";
 			String participantId2 = "agent1";
 			List<ObjectInstance> agents = states.get(0).getObjectsOfClass(GridGame.CLASSAGENT);
@@ -62,7 +62,7 @@ public class NormLearnersExperiment {
 					participantId2 = agent.getName();
 				}
 			}
-			
+
 			for (; i < actions.size(); i++) {
 				JointAction action = actions.get(i);
 				State state = states.get(i);
@@ -109,28 +109,28 @@ public class NormLearnersExperiment {
 				matchList.add(game);
 
 				writeGameToFile(game,outputFolder+"/trial_"+trial+"_summary.csv", match, round, experiment.games.get(match));
-				
+
 			}
 			//comparePolicies here somehow? 
-			
+
 			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
-			
-			//			double comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1);
-			//			if(comparisonVal>=0.0){
-			//				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
-			//			}
+
+			String comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1, true);
+			if(comparisonVal.compareTo("-1")!=0){
+				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			}
 			results.add(matchList);
 
 		}
 		if(calcMetric){
-		double comparisonVal = experiment.comparePolicies(outputFolder+"/", experiment.numMatches-1, experiment.numMatches-2);
-		if(comparisonVal>=0.0){
-			toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			String comparisonVal = experiment.comparePolicies(outputFolder+"/", experiment.numMatches-1, experiment.numMatches-2,false);
+			if(comparisonVal.compareTo("-1")!=0){
+				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			}
+			
 		}
 		return toPrint;
-		}else{
-			return "";
-		}
+		
 
 	}
 
@@ -174,7 +174,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "10");
+		arguments.put("numTrials", "18");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -205,13 +205,16 @@ public class NormLearnersExperiment {
 
 	public static void main(String[] args) {
 		boolean visualize = false;
-		int minNumSamples = 1;
-		int maxNumSamples = 8;
+		int minNumSamples = 0;
+		int maxNumSamples = 12; //12
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; // "exp2_H2_ANP_N2","exp2_H2_ANP_N3" //"exp2_H1_ANP_N2","exp2_H1_ANP_N3","exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3" 
+		String[] experiments = {"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; 
+		//"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"
+		
+		// "exp2_H2_ANP_N2","exp2_H2_ANP_N3" //"exp2_H1_ANP_N2","exp2_H1_ANP_N3","exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3" 
 		//"exp4_H2H1_ANP_N1","exp4_H2H1_ANP_N2","exp4_H2H1_ANP_N3","exp4_H1H2_ANP_N1", "exp4_H1H2_ANP_N2","exp4_H1H2_ANP_N3"
 
 		// "IJCAI/exp4_H2H1_ANP_N3", "IJCAI/exp2_H1_ANP_N1"//"Batch_fromUpDown", "Batch_fromWaitDown",
@@ -238,7 +241,7 @@ public class NormLearnersExperiment {
 			if(maxNumSamples<0){
 				numSamples = maxNumSamples;
 			}
-			for (; numSamples<=maxNumSamples; numSamples++){
+			for (; numSamples<=maxNumSamples; numSamples+=2){
 
 				System.out.println("NUM SAMP: "+numSamples);
 				for (int trial = 0; trial < numTrials; trial++) {
