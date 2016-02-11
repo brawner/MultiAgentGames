@@ -9,7 +9,6 @@ import burlap.behavior.policy.Policy;
 import burlap.behavior.policy.Policy.ActionProb;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.JointPolicyToCentralizedPolicy;
 import burlap.oomdp.core.AbstractGroundedAction;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
@@ -34,6 +33,7 @@ public class TrajectoryKLDivergenceMetric {
 	private Policy truePolicy;
 	private Policy learnedPolicy;
 	private State startState;
+//	private HashableStateFactory hsf = new SimpleHashableStateFactory();
 //	Domain cmdp;
 	TerminalFunction tf;
 	private double alpha = Math.pow(10, -6);
@@ -41,11 +41,8 @@ public class TrajectoryKLDivergenceMetric {
 	private Map<String, Double> trueTrajectoryMap;
 	
 	
-	public TrajectoryKLDivergenceMetric(Policy truePolicy, Policy learnedPolicy, State startState,  TerminalFunction tf){
+	public TrajectoryKLDivergenceMetric(Policy truePolicy, Policy learnedPolicy, State startState, TerminalFunction tf){
 		this.tf = tf;
-//		this.cmdp = cmdp;
-//		this.truePolicy = new JointPolicyToCentralizedPolicy(truePolicy, cmdp);
-//		this.learnedPolicy = new JointPolicyToCentralizedPolicy(learnedPolicy, cmdp);
 		this.truePolicy = truePolicy;
 		this.learnedPolicy = learnedPolicy;
 		this.startState = startState;
@@ -94,7 +91,6 @@ public class TrajectoryKLDivergenceMetric {
 			}
 		}
 		
-		klDistance = klDistance/trueTrajectoryMap.keySet().size(); 
 		
 		
 		return klDistance;
