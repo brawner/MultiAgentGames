@@ -1,0 +1,18 @@
+{
+	"matches": [
+	
+	{
+		"world_id": "TwoAgentsHall_3by5_4Walls",
+		"agents":[{"agent_type":"fixed_policy","params":"loose_upDown_policy_h2"}, 
+		{"agent_type":"fixed_policy","params":"loose_upDown_policy_h2"}],
+		"max_rounds": 30
+
+	},
+	{
+		"world_id": "TwoAgentsHall_3by5_4Walls",
+		"agents":[{"agent_type":"norm_learning","params":"random_policy"}, 
+		{"agent_type":"norm_learning","params":"random_policy"}],
+		"max_rounds": 1
+	}
+	]
+}

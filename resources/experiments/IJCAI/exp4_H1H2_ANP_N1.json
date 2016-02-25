@@ -5,14 +5,14 @@
 		"world_id": "TwoAgentsHall_3by5_noWalls",
 		"agents":[{"agent_type":"fixed_policy","params":"upDown_policy"}, 
 		{"agent_type":"fixed_policy","params":"upDown_policy"}],
-		"max_rounds": 25
+		"max_rounds": 10
 
 	},
 	{
 		"world_id": "TwoAgentsHall_3by5_4Walls",
 		"agents":[{"agent_type":"fixed_policy","params":"upDown_policy_h2"}, 
 		{"agent_type":"fixed_policy","params":"upDown_policy_h2"}],
-		"max_rounds": 25
+		"max_rounds": 10
 
 	},
 	{

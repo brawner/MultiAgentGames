@@ -78,7 +78,6 @@ public class ImportanceSamplingBasedTrajectoryKLDivergence {
 		}
 		
 		
-		
 		double klDistance =0.;
 		
 		for(String str : trueTrajectoryMap.keySet()){

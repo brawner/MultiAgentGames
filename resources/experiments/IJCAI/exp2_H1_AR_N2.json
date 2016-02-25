@@ -5,14 +5,14 @@
 		"world_id": "TwoAgentsHall_3by5_noWalls",
 		"agents":[{"agent_type":"fixed_policy","params":"wait_down_policy"}, 
 		{"agent_type":"fixed_policy","params":"wait_down_policy"}],
-		"max_rounds": 60
+		"max_rounds": 20
 
 	},
 	{
 		"world_id": "TwoAgentsHall_3by5_noWalls",
-		"agents":[{"agent_type":"norm_learning","params":"batch_prevAgents"}, 
-		{"agent_type":"norm_learning","params":"batch_prevAgents"}],
-		"max_rounds": 10
+		"agents":[{"agent_type":"fixed_policy","params":"random_policy"}, 
+		{"agent_type":"fixed_policy","params":"random_policy"}],
+		"max_rounds": 1
 	}
 	]
 }

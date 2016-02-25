@@ -1,0 +1,16 @@
+{
+	"matches": [
+	{
+		"world_id": "Two_IndCourtyard_5by5",
+		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
+		{"agent_type":"norm_learning","params":"explore_norm"}],
+		"max_rounds": 10
+	},
+	{
+		"world_id": "Two_DirCourtyard_5by5",
+		"agents":[{"agent_type":"norm_learning","params":"explore_norm"}, 
+		{"agent_type":"norm_learning","params":"explore_norm"}],
+		"max_rounds": 10
+	}
+	]
+}

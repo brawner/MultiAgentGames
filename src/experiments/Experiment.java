@@ -24,6 +24,7 @@ import networking.server.ExperimentConfiguration;
 import networking.server.GridGameManager;
 import networking.server.MatchConfiguration;
 import Analysis.HumanRobotPolicySimilarityMetric;
+import Analysis.ImportanceSamplingBasedTrajectoryKLDivergence;
 import Analysis.PolicyComparisonWithKLDivergence;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
@@ -357,7 +358,9 @@ public class Experiment {
 
 
 
-	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL) {
+	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL, 
+			boolean useImpSampling, TerminalFunction tf) {
+		System.out.println("Comparing policies started");
 		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
 		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
@@ -373,10 +376,27 @@ public class Experiment {
 								startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
 				double value = klMetric.runPolicyComparison();
 				System.out.println("VALUE: "+value);
+				System.out.println("Comparing policies ended");
 				return value+"";
+			}else if(useImpSampling){
+				System.out.println("Using Imp sampling");
+				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+
+				NormJointPolicy setPolicy = setAgent.getPolicy();
+				setPolicy.setNoislessPolicy();
+				System.out.println("set noiseless");
+				ImportanceSamplingBasedTrajectoryKLDivergence impSamp = 
+						new ImportanceSamplingBasedTrajectoryKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
+								startingStates.get(matchLearned), learnedAgent.getCmdpDomain(), tf);
+				System.out.println("running comparison");
+				double result = impSamp.runPolicyComparison(12000);
+				System.out.println("Comparing policies ended");
+				return result+"";
 			}else{
 				double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
 				System.out.println("VALUE: "+metrics[2]);
+				System.out.println("Comparing policies ended");
 				return metrics[2]+","+metrics[3];
 				//System.out.println("VALUE: "+value);
 				//return value;
@@ -385,8 +405,10 @@ public class Experiment {
 				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
 			// norm and copy
 			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+			System.out.println("Comparing policies ended");
 			return metrics[2]+","+metrics[3];
 		}else {
+			System.out.println("Comparing policies ended");
 			return "-1";
 		}
 

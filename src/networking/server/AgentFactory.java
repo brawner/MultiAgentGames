@@ -6,6 +6,7 @@ import java.util.Random;
 
 import networking.common.GridGameExtreme;
 import burlap.behavior.policy.GreedyQPolicy;
+import burlap.behavior.singleagent.learnfromdemo.mlirl.support.DifferentiableRF;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
@@ -19,6 +20,7 @@ import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
 import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
 import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
 import burlap.behavior.stochasticgames.madynamicprogramming.policies.EGreedyMaxWellfare;
+import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.TerminalFunction;
@@ -126,10 +128,14 @@ public class AgentFactory {
 
 		//create independent social reward functions to learn for each agent
 		final GridGameNormRF2 agent1RF = new GridGameNormRF2(crf, new GreedyQPolicy(jplanner), domain);
-		agent1RF.randomizeParameters(-0.0001, 0.0001, new Random());
+		//agent1RF.randomizeParameters(-0.0001, 0.0001, new Random());
 		//create agents
-		return new NormLearningAgent(domain, agent1RF, -1, 
-				agent1RF.createCorresponingDiffVInit(jplanner), true);
+		
+		//TODO: fix the trial string here
+		return new NormLearningAgent(domain, agent1RF, -1,
+				agent1RF.createCorresponingDiffVInit(jplanner), "");
+		
+		
 	}
 	
 	public static SGAgent getNormLearningAgent(World world, String params) {

@@ -115,22 +115,25 @@ public class NormLearnersExperiment {
 
 			outputMatchResults(outputFolder+"/trial_"+trial+"_", matchList, match);
 
-			String comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1, true);
-			if(comparisonVal.compareTo("-1")!=0){
-				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
-			}
+			//			String comparisonVal = experiment.comparePolicies(outputFolder+"/trial_"+trial+"_", match, match-1, true);
+			//			if(comparisonVal.compareTo("-1")!=0){
+			//				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
+			//			}
 			results.add(matchList);
 
 		}
+		calcMetric = false;
 		if(calcMetric){
-			String comparisonVal = experiment.comparePolicies(outputFolder+"/", experiment.numMatches-1, experiment.numMatches-2,false);
+			String comparisonVal = experiment.comparePolicies(outputFolder+"/", experiment.numMatches-1, experiment.numMatches-2,
+					false,true,experiment.tf);
 			if(comparisonVal.compareTo("-1")!=0){
 				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
 			}
-			
+
 		}
+		System.out.println("Outputting results");
 		return toPrint;
-		
+
 
 	}
 
@@ -174,7 +177,7 @@ public class NormLearnersExperiment {
 
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
-		arguments.put("numTrials", "18");
+		arguments.put("numTrials", "10");
 		arguments.put("experiment", "corner_2");
 		arguments.put("outputF","/grid_games/results/");
 		arguments.put("gamesF","/resources/worlds");
@@ -204,16 +207,17 @@ public class NormLearnersExperiment {
 	}
 
 	public static void main(String[] args) {
-		boolean visualize = false;
-		int minNumSamples = 0;
-		int maxNumSamples = 12; //12
+		boolean visualize = true;
+		int increment = 2;
+		int minNumSamples = 50;
+		int maxNumSamples = 50; //12
 		String currDir = System.getProperty("user.dir");
 		Map<String, String> arguments = parseArguments(args);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"}; 
+		String[] experiments = {"exp2_H1_ANS_N3"}; //"exp2_H1_ANP_N1","exp2_H1_AT_N1","exp2_H1_ANS_N0","exp2_H1_ANP_N0","exp2_H1_AT_N0","exp2_H1_ANS_N2","exp2_H1_ANP_N2","exp2_H1_AT_N2"
 		//"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"
-		
+
 		// "exp2_H2_ANP_N2","exp2_H2_ANP_N3" //"exp2_H1_ANP_N2","exp2_H1_ANP_N3","exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3" 
 		//"exp4_H2H1_ANP_N1","exp4_H2H1_ANP_N2","exp4_H2H1_ANP_N3","exp4_H1H2_ANP_N1", "exp4_H1H2_ANP_N2","exp4_H1H2_ANP_N3"
 
@@ -223,7 +227,8 @@ public class NormLearnersExperiment {
 		String uniqueTime =  NormLearnersExperiment.generateUniqueID();
 		for(int e =0; e<experiments.length;e++){
 			String toPrint = "";
-			String experimentFile = "IJCAI/"+experiments[e]; //arguments.get("experiment"); //from args
+			String experimentFile = "IJCAI/"+experiments[e];
+			//String experimentFile = experiments[e];//arguments.get("experiment"); //from args
 			if(!experimentFile.contains(".json")){
 				experimentFile+=".json";
 
@@ -241,28 +246,34 @@ public class NormLearnersExperiment {
 			if(maxNumSamples<0){
 				numSamples = maxNumSamples;
 			}
-			for (; numSamples<=maxNumSamples; numSamples+=2){
-
-				System.out.println("NUM SAMP: "+numSamples);
-				for (int trial = 0; trial < numTrials; trial++) {
-					Experiment experiment = new Experiment(experimentFile,
-							paramFilesFolder, gamesFolder, outputFolder+uniqueId+"_"+numSamples, numSamples, Integer.toString(trial));
-					NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
-					boolean calcMetric = false;
-					if(trial==numTrials-1){
-						calcMetric = true;
-					}
-					toPrint+=ex.runExperiment(trial, numSamples,outputFolder+uniqueId+"_"+numSamples, calcMetric);
-					ex.visualizeResults(visualize);
-				}
-			}
-
+			
 			try {
 				File outFile = new File (outputFolder+uniqueId);
 				outFile.mkdirs();
 				FileWriter writer = new FileWriter(outFile.getAbsolutePath()+"/metrics.csv");
 
-				writer.append(toPrint);
+				for (; numSamples<=maxNumSamples; numSamples+=increment){
+
+
+					for (int trial = 0; trial < numTrials; trial++) {
+						Experiment experiment = new Experiment(experimentFile,
+								paramFilesFolder, gamesFolder, outputFolder+uniqueId+"_"+numSamples, numSamples, Integer.toString(trial));
+						NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
+						boolean calcMetric = true;
+
+						if(trial==numTrials-1){
+							calcMetric = true;
+						}
+						toPrint+=ex.runExperiment(trial, numSamples,outputFolder+uniqueId+"_"+numSamples, calcMetric);
+						ex.visualizeResults(visualize);
+					}
+					System.out.println("NUM SAMP Finished: "+numSamples);
+					writer.append(toPrint);
+					toPrint="";
+				}
+
+				
+
 				writer.flush();
 				writer.close();
 			}
@@ -270,6 +281,7 @@ public class NormLearnersExperiment {
 			{
 				e1.printStackTrace();
 			} 
+			System.out.println("Done outputing results");
 		}
 	}
 }

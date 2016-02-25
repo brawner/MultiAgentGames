@@ -9,6 +9,7 @@ import networking.common.TokenCastException;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.oomdp.core.Domain;
 import burlap.oomdp.core.states.State;
 import burlap.oomdp.stochasticgames.JointAction;
 import burlap.oomdp.stochasticgames.SGAgentType;
