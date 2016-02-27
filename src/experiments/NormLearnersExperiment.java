@@ -122,10 +122,12 @@ public class NormLearnersExperiment {
 			results.add(matchList);
 
 		}
-		calcMetric = false;
+		//TODO: switch when done
+		//TODO: change compare policies to run this
+		calcMetric = true;
 		if(calcMetric){
 			String comparisonVal = experiment.comparePolicies(outputFolder+"/", experiment.numMatches-1, experiment.numMatches-2,
-					false,true,experiment.tf);
+					false,false, true,experiment.tf);
 			if(comparisonVal.compareTo("-1")!=0){
 				toPrint+=trial+","+numSamples+","+comparisonVal+"\n";
 			}
@@ -207,15 +209,18 @@ public class NormLearnersExperiment {
 	}
 
 	public static void main(String[] args) {
-		boolean visualize = true;
+		boolean visualize = false;
 		int increment = 2;
-		int minNumSamples = 50;
-		int maxNumSamples = 50; //12
-		String currDir = System.getProperty("user.dir");
+		int minNumSamples = 10;
+		int maxNumSamples = 10; //12
+		String currDir = System.getProperty("user.dir"); 
+//				+ "/MultiAgentGames" ;
 		Map<String, String> arguments = parseArguments(args);
+		
+		System.out.println(currDir);
 
 		int numTrials = Integer.parseInt(arguments.get("numTrials")); //from args
-		String[] experiments = {"exp2_H1_ANS_N3"}; //"exp2_H1_ANP_N1","exp2_H1_AT_N1","exp2_H1_ANS_N0","exp2_H1_ANP_N0","exp2_H1_AT_N0","exp2_H1_ANS_N2","exp2_H1_ANP_N2","exp2_H1_AT_N2"
+		String[] experiments = {"exp2_H1_ANP_N1"}; //"exp2_H1_ANP_N1","exp2_H1_AT_N1","exp2_H1_ANS_N0","exp2_H1_ANP_N0","exp2_H1_AT_N0","exp2_H1_ANS_N2","exp2_H1_ANP_N2","exp2_H1_AT_N2"
 		//"exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3"
 
 		// "exp2_H2_ANP_N2","exp2_H2_ANP_N3" //"exp2_H1_ANP_N2","exp2_H1_ANP_N3","exp2_H2_ANP_N1","exp2_H2_ANP_N2","exp2_H2_ANP_N3" 

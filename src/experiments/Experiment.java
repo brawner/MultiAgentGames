@@ -26,8 +26,11 @@ import networking.server.MatchConfiguration;
 import Analysis.HumanRobotPolicySimilarityMetric;
 import Analysis.ImportanceSamplingBasedTrajectoryKLDivergence;
 import Analysis.PolicyComparisonWithKLDivergence;
+import Analysis.SampledNormFollowingRatio;
+import Analysis.SampledPrecisionMetric;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.stochasticgames.JointPolicy;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
@@ -37,6 +40,9 @@ import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormJ
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.utilityagents.CopyGameFilesAgent;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.DecentralizedPoliciesToJointPolicies;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.DecentralizedPolicy;
+import burlap.behavior.stochasticgames.auxiliary.jointmdp.JointPolicyToCentralizedPolicy;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
 import burlap.oomdp.core.TerminalFunction;
@@ -359,7 +365,7 @@ public class Experiment {
 
 
 	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL, 
-			boolean useImpSampling, TerminalFunction tf) {
+			boolean useImpSampling, boolean usePrecRecall, TerminalFunction tf) {
 		System.out.println("Comparing policies started");
 		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
 		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
@@ -378,11 +384,61 @@ public class Experiment {
 				System.out.println("VALUE: "+value);
 				System.out.println("Comparing policies ended");
 				return value+"";
-			}else if(useImpSampling){
+			}
+			else if(usePrecRecall){
+				System.out.println("Using precision recall");
+				
+				//TODO: do we know the length of optimal trajectory?? I think it is 6
+				int optimalTrajectoryLength = 6;
+				int numSamples = 1000;
+
+				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(1));
+				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+				
+
+				Policy laDecentralizedPolicy = learnedAgent.dp;
+							
+				Policy p = new JointPolicyToCentralizedPolicy(setAgent.getPolicy(), learnedAgent.getCmdpDomain());
+				
+				Policy setDecentralizedPolicy = new DecentralizedPolicy(p, setAgent.getAgentName());
+				
+				
+
+				NormJointPolicy setPolicy = setAgent.getPolicy();
+				
+				SampledPrecisionMetric precision = new SampledPrecisionMetric(setPolicy, learnedAgent.getJointPolicy(), 
+						startingStates.get(matchLearned), learnedAgent.getCmdpDomain(), tf);
+				
+				double prec = precision.runPolicyComparison(numSamples);
+				
+
+				SampledNormFollowingRatio recall= new SampledNormFollowingRatio(setDecentralizedPolicy, laDecentralizedPolicy, startingStates.get(matchLearned),learnedAgent.getCmdpDomain(),  tf, optimalTrajectoryLength);
+				
+				double rec = recall.runPolicyComparison(numSamples);
+				
+
+				System.out.println("Comparing policies ended: precision "+prec + ", recall " + rec);
+				
+				
+				return prec + " "+ rec;
+				
+				
+				
+			}
+			
+			
+			
+			else if(useImpSampling){
 				System.out.println("Using Imp sampling");
 				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
 				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
 
+				
+				
+				//TODO: add comparison metric here
+				
+				
+				
 				NormJointPolicy setPolicy = setAgent.getPolicy();
 				setPolicy.setNoislessPolicy();
 				System.out.println("set noiseless");

@@ -22,7 +22,7 @@ public class SampledPrecisionMetric {
 	private Map<String, Double> learnedTrajectoryMap;
 	private Map<String, Double> trueTrajectoryMap;
 
-	SampledPrecisionMetric(Policy truePolicy, Policy learnedPolicy, State startState, Domain cmdp, TerminalFunction tf){
+	public SampledPrecisionMetric(Policy truePolicy, Policy learnedPolicy, State startState, Domain cmdp, TerminalFunction tf){
 		this.tf = tf;
 		this.cmdp = cmdp;
 		this.truePolicy = new JointPolicyToCentralizedPolicy(truePolicy, cmdp);
