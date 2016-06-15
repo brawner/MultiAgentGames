@@ -1,0 +1,18 @@
+{
+	"matches": [
+	
+	{
+		"world_id": "Two_DirCourtyard_5by5",
+		"agents":[{"agent_type":"fixed_policy","params":"upDown_policy"}, 
+		{"agent_type":"fixed_policy","params":"upDown_policy"}],
+		"max_rounds": 60
+
+	},
+	{
+		"world_id": "Two_DirCourtyard_5by5",
+		"agents":[{"agent_type":"norm_learning","params":"batch_prevAgents"}, 
+		{"agent_type":"norm_learning","params":"batch_prevAgents"}],
+		"max_rounds": 10
+	}
+	]
+}

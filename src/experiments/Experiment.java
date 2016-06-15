@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import examples.GridGameNormRFFixed;
 import networking.common.GridGameExperimentToken;
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
@@ -36,11 +37,11 @@ import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFact
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
 import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
+import burlap.behavior.stochasticgames.agents.normlearning.rfbasedagents.NormSetRFAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormJointPolicy;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
 import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
 import burlap.behavior.stochasticgames.agents.normlearning.utilityagents.CopyGameFilesAgent;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.DecentralizedPoliciesToJointPolicies;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.DecentralizedPolicy;
 import burlap.behavior.stochasticgames.auxiliary.jointmdp.JointPolicyToCentralizedPolicy;
 import burlap.domain.stochasticgames.gridgame.GridGame;
@@ -319,6 +320,8 @@ public class Experiment {
 		case "fixed_policy":
 
 			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
+		case "fixed_reward_fn":
+			return NormSetRFAgentFactory.getFixedRFAgent(this.jr, parametersFile, this.sgDomain);
 		case "model_based":
 			//TODO: actually create this agent
 			return new ModelBasedLearningAgent();
@@ -420,7 +423,7 @@ public class Experiment {
 				System.out.println("Comparing policies ended: precision "+prec + ", recall " + rec);
 				
 				
-				return prec + " "+ rec;
+				return prec + ","+ rec;
 				
 				
 				

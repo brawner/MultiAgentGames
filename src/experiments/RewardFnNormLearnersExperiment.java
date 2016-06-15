@@ -26,64 +26,17 @@ import burlap.oomdp.visualizer.Visualizer;
 
 /**
  * @author Betsy Hilliard, Carl Trimbach, based on example by James MacGlashan
+ * 
+ * This version switches to the model where 
  */
-public class NormLearnersExperiment {
+public class RewardFnNormLearnersExperiment extends NormLearnersExperiment{
 
-	Experiment experiment;
-
-	List<List<GameAnalysis>> results;
-
-	public NormLearnersExperiment(Experiment experiment) {
-		this.experiment = experiment;
+	public RewardFnNormLearnersExperiment(Experiment experiment) {
+		super(experiment);
+	
 	}
 
-
-	public static void writeGameToFile(GameAnalysis result, String path, int matchNum, int round, String worldType) {
-		try {
-			File f = new File(path);
-			f.getParentFile().mkdirs();
-			FileWriter writer = new FileWriter(path, true);
-			writer.append("Trial,Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,"
-					+ "agent2_y,agent2_rt,agent2_action,agent1_rw,agent2_rw, joint_rw, world\n");
-			List<JointAction> actions = result.jointActions;
-
-			List<Map<String,Double>> rewards = result.jointRewards;
-
-			List<State> states = result.states;
-			int i = 0;
-
-			String participantId1 = "agent0";
-			String participantId2 = "agent1";
-			List<ObjectInstance> agents = states.get(0).getObjectsOfClass(GridGame.CLASSAGENT);
-			for (ObjectInstance agent : agents) {
-				if (agent.getIntValForAttribute(GridGame.ATTPN) == 0) {
-					participantId1 = agent.getName();
-				} else if (agent.getIntValForAttribute(GridGame.ATTPN)== 1 ) {
-					participantId2 = agent.getName();
-				}
-			}
-
-			for (; i < actions.size(); i++) {
-				JointAction action = actions.get(i);
-				State state = states.get(i);
-				Map<String,Double> rewardMap = rewards.get(i);
-				Analysis.writeLineToFile(state, action, matchNum, round, i,  rewardMap, worldType, writer, participantId1, participantId2);
-			}
-
-			State finalState = states.get(states.size()-1);
-			Map<String,Double> rewardMap = rewards.get(rewards.size()-1);
-			Analysis.writeLineToFile(finalState, null, matchNum, round, i, rewardMap, worldType, writer, participantId1, participantId2);
-
-			writer.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		File file = new File(path);
-		file.setExecutable(true, false);
-		file.setReadable(true, false);
-	}
-
+	@Override
 	public String runExperiment(int trial,int numSamples, String outputFolder, boolean calcMetric) {
 
 		String toPrint = "";
@@ -136,47 +89,9 @@ public class NormLearnersExperiment {
 		System.out.println("Outputting results");
 		return toPrint;
 
-
 	}
 
-	public void visualizeResults(boolean visualize){
-		if(visualize){
-			// visualize results
-			Visualizer v = GGAltVis.getVisualizer(7, 6);
-			List<GameAnalysis> gamesToSee = new ArrayList<GameAnalysis>();
-			for(List<GameAnalysis> games : results){
-				gamesToSee.addAll(games);
-			}
-			new GameSequenceVisualizer(v, this.experiment.sgDomain, gamesToSee);
-		}
-
-	}
-
-	public void outputTrialResults(String outputFolder) {
-		//System.out.println("Outputting here: "+outputFolder);
-		int match = 0;
-		for(List<GameAnalysis> list : results){
-			int round = 0;
-			for (GameAnalysis ga : list) {
-				ga.writeToFile(outputFolder + "match_"+match+"_round_" + round);
-				round++;
-			}
-			match++;
-		}
-	}
-
-	public void outputMatchResults(String outputFolder, List<GameAnalysis> rounds, int matchNum) {
-		//System.out.println("Outputting here: "+outputFolder);
-
-		int round = 0;
-		for (GameAnalysis ga : rounds) {
-			ga.writeToFile(outputFolder + "match_"+matchNum+"_round_" + round);
-			round++;
-		}
-		round++;
-	}
-
-
+	
 	private static Map<String, String> parseArguments(String[] args){
 		HashMap<String, String> arguments = new HashMap<String,String>();
 		arguments.put("numTrials", "1");
@@ -198,16 +113,7 @@ public class NormLearnersExperiment {
 		return arguments;
 	}
 
-	public static String generateUniqueID() {
-		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SS");
-		Date date = new Date();
-		String dateStr = dateFormat.format(date);
-		Random rand = new Random();
-		String randVal = Integer.toString(rand.nextInt(Integer.MAX_VALUE));
-
-		return dateStr;
-	}
-
+	
 	public static void main(String[] args) {
 		boolean visualize = true;
 		int increment = 1;
@@ -262,7 +168,7 @@ public class NormLearnersExperiment {
 					for (int trial = 0; trial < numTrials; trial++) {
 						Experiment experiment = new Experiment(experimentFile,
 								paramFilesFolder, gamesFolder, outputFolder+uniqueId+"_"+numSamples, numSamples, Integer.toString(trial));
-						NormLearnersExperiment ex = new NormLearnersExperiment(experiment);
+						RewardFnNormLearnersExperiment ex = new RewardFnNormLearnersExperiment(experiment);
 						boolean calcMetric = true;
 
 						if(trial==numTrials-1){
