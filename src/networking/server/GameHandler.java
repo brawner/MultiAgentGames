@@ -1,21 +1,14 @@
 package networking.server;
 
-import java.util.List;
-import java.util.Map;
-
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.action.Action;
-import burlap.mdp.core.action.ActionType;
 import burlap.mdp.core.action.SimpleAction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;
-import burlap.mdp.stochasticgames.SGDomain;
-import burlap.mdp.stochasticgames.agent.SGAgentType;
 import burlap.mdp.stochasticgames.world.World;
 
 /**
@@ -76,18 +69,18 @@ public class GameHandler {
 	 */
 	private String threadId;
 
-	private GridGameManager server;
+	//private GridGameManager server;
 
 	/**
 	 * The connected users current score. This is probably not where this should be tracked.
 	 */
 	private double currentScore;
-	private SGDomain domain;
+	//private SGDomain domain;
 	
 	private final String turkId;
 
 	public GameHandler(GridGameManager server, Session session, String threadId, String turkId) {
-		this.server = server;
+		//this.server = server;
 		this.session = session;
 		this.threadId = threadId;
 		this.currentScore = 0.0;
@@ -245,11 +238,7 @@ public class GameHandler {
 	 */
 	public void addNetworkAgent(World world) {
 		this.agent = NetworkAgent.getNetworkAgent(this);
-		this.domain = world.getDomain();
-
-		SGAgentType agentType = 
-				new SGAgentType(GridGame.CLASS_AGENT , this.domain.getActionTypes());
-
+		//this.domain = world.getDomain();
 		world.join(this.agent);
 	}
 

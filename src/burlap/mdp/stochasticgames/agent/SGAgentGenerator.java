@@ -1,7 +1,5 @@
 package burlap.mdp.stochasticgames.agent;
 
-import burlap.domain.stochasticdomain.world.NetworkWorld;
-import burlap.mdp.stochasticgames.agent.SGAgent;
 import burlap.mdp.stochasticgames.world.World;
 
 public interface SGAgentGenerator {

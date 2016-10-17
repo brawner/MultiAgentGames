@@ -1,7 +1,5 @@
 package burlap.oomdp.stochasticgames.Callables;
 
-import java.util.Map;
-
 import burlap.mdp.auxiliary.StateMapping;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;

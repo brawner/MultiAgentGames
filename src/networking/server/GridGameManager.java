@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -34,8 +33,6 @@ import Analysis.Analysis;
 import burlap.behavior.stochasticgames.GameEpisode;
 import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.mdp.core.state.State;
-import burlap.mdp.stochasticgames.SGDomain;
-import burlap.mdp.stochasticgames.agent.SGAgent;
 import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
 import burlap.mdp.stochasticgames.agent.SimpleSGAgentGenerator;
 import burlap.mdp.stochasticgames.world.World;
@@ -126,7 +123,7 @@ public class GridGameManager {
 	private final String gameDirectory;
 	private final String paramsDirectory;
 	private final String analysisDirectory;
-	private final String summariesDirectory;
+	//private final String summariesDirectory;
 	private final String experimentDirectory;
 
 	/**
@@ -153,7 +150,7 @@ public class GridGameManager {
 		this.gameExecutor = Executors.newCachedThreadPool();
 		this.gameDirectory = gameDirectory;
 		this.analysisDirectory = analysisDirectory;
-		this.summariesDirectory = summariesDirectory;
+		//this.summariesDirectory = summariesDirectory;
 		this.experimentDirectory = experimentDirectory;
 		this.paramsDirectory = paramsDirectory;
 		this.collections.addWorldTokens(this.loadWorlds(null));
@@ -453,7 +450,7 @@ public class GridGameManager {
 
 		NetworkWorld baseWorld = matchConfiguration.getWorldWithAgents();
 		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
-		SGDomain domain = baseWorld.getDomain();
+		//SGDomain domain = baseWorld.getDomain();
 		State startState = baseWorld.startingState();
 		String agentName = matchConfiguration.getAgentName(handler);
 		response.setString(GameHandler.AGENT, agentName);
@@ -724,7 +721,7 @@ public class GridGameManager {
 		
 		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 		
-		SGDomain domain = baseWorld.getDomain();
+		//SGDomain domain = baseWorld.getDomain();
 		State startState = baseWorld.startingState();
 		String agentName = configuration.getCurrentMatch().getAgentName(handler);
 		response.setString(GameHandler.AGENT, agentName);
@@ -737,7 +734,7 @@ public class GridGameManager {
 	
 	private ExperimentConfiguration initGame(String experimentType, boolean runDebug, GridGameServerToken response) {
 		Path fileName = Paths.get(this.experimentDirectory, experimentType + ".json").toAbsolutePath();
-		List<String> params = new ArrayList<String>();
+		//List<String> params = new ArrayList<String>();
 		if (!Files.exists(fileName)) {
 			response.setError(true);
 			response.setString(WHY_ERROR, "The experiment " + experimentType + " does not exist on this server");
@@ -779,7 +776,7 @@ public class GridGameManager {
 	}
 	
 	private GameHandler addHumanAgent(ExperimentConfiguration configuration, String clientId, String turkId, Session session, GridGameServerToken response) {
-		String agentName = "unset";
+		//String agentName = "unset";
 		GameHandler handler = new GameHandler(this, session, configuration.getActiveGameID(), turkId);
 
 		this.collections.addHandler(clientId, configuration.getActiveGameID(), handler);
@@ -820,13 +817,13 @@ public class GridGameManager {
 			e.printStackTrace();
 		}
 		
-		String names = "";
-		for (GameHandler handler : handlers) {
-			String participantId = handler.getParticipantId();
-			if (participantId != null) {
-				names += "_" + participantId ;
-			}
-		}
+		//String names = "";
+//		for (GameHandler handler : handlers) {
+//			String participantId = handler.getParticipantId();
+//			if (participantId != null) {
+//				names += "_" + participantId ;
+//			}
+//		}
 		
 		String summaryPath = Paths.get(directory.toString(), trialName + "_summary.csv").toString();
 		System.out.println("Game " + futureId + ": Writing summarized game result to " + summaryPath);
@@ -899,10 +896,10 @@ public class GridGameManager {
 	}
 	
 	private void processForeverAgents(ExperimentConfiguration configuration) {
-		MatchConfiguration currentMatch = configuration.getCurrentMatch();
-		List<SGAgent> agents = currentMatch.getRepeatedAgents();
-		World world = currentMatch.getBaseWorld();
-		
+//		MatchConfiguration currentMatch = configuration.getCurrentMatch();
+//		List<SGAgent> agents = currentMatch.getRepeatedAgents();
+//		World world = currentMatch.getBaseWorld();
+//		
 		// TODO: this was for agents that needed the batch data to learn from
 //		for (SGAgent agent : agents) {
 //			if (agent instanceof ForeverNormLearningAgent) {

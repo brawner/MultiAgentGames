@@ -8,17 +8,13 @@ import java.util.List;
 import javax.swing.JFrame;
 
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
-import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
-import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
-import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.state.State;
 import burlap.visualizer.Visualizer;
 
 public class PolicyExplorerGUI extends JFrame {
 
 	private Visualizer visualizer;
-	private PolicyGlyphPainter2D spp;
+	//private PolicyGlyphPainter2D spp;
 	/**
 	 * 
 	 */

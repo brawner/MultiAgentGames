@@ -500,8 +500,6 @@ public class Analysis {
 		int a2x = players[1].x;
 		int a2y = players[1].y;
 		int trialNum = 0;
-		String name1 = players[0].name();
-		String name2 = players[1].name();
 		int reaction1 = 0;
 		int reaction2 = 0;
 		String action1 = (action == null) ? "null" : action.action(0).actionName();

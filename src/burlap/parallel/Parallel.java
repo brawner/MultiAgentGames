@@ -18,7 +18,7 @@ public class Parallel {
 	// The number of available processors used for parallel execution
 	private static final int numCores = Runtime.getRuntime().availableProcessors();
 	public static final double NO_TIME_LIMIT = -1.0;
-	private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
+	//private static final TimeUnit timeUnit = TimeUnit.MICROSECONDS;
 	// Initializes the parallel executor. If you want to save a small amonut of overhead, 
 	// and reuse the same executor, create an instantiation first.
 	private final ExecutorService executor;

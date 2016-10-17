@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
-import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.mdp.stochasticgames.world.World;
 
 public class SimpleSGAgentGenerator implements SGAgentGenerator {

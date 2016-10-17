@@ -69,9 +69,7 @@ public class Experiment {
 
 	private Integer DEFAULT_MAX_ROUNDS = 20;
 
-	private int numSamples = -1;
-	private String trial;
-
+	
 	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder, SGAgentGenerator agentGenerator, int numSamples, String trial) {
 		// Initialize lists.
 		this.paramFilesFolder = paramFilesFolder;
@@ -82,8 +80,6 @@ public class Experiment {
 		this.numRounds = new ArrayList<Integer>();
 		this.games = new ArrayList<String>();
 		this.numMatches = 0;
-		this.numSamples =numSamples;
-		this.trial = trial;
 		this.agentGenerator = agentGenerator;
 
 
@@ -125,8 +121,7 @@ public class Experiment {
 	private void readJSONExperimentFile(String experimentFile) {
 
 
-		List<String> params = new ArrayList<String>();
-
+		
 		BufferedReader reader;
 		FileReader fileReader;
 		try {

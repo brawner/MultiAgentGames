@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import networking.server.GameHandler;
-import burlap.mdp.core.Domain;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.SimpleAction;
 import burlap.mdp.core.oo.ObjectParameterizedAction;

@@ -22,6 +22,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class Token extends LinkedHashMap<String, Object> {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3028248146340480288L;
 	private static final String ERROR_KEY = "Error";
 	
 	public Token() {

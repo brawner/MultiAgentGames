@@ -9,9 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
-import burlap.parallel.Concurrent;
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.common.messages.WorldFile;
@@ -25,7 +23,6 @@ import networking.server.GridGameManager;
 public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListener{
 
 	private static ConsoleInteraction singleton;
-	private static Future<Boolean> future;
 	private BufferedReader reader;
 	private final Map<String, String> worlds;
 	private final Map<String, String> activeWorlds;
@@ -43,7 +40,6 @@ public class ConsoleInteraction implements Callable<Boolean>, GGWebSocketListene
 	public static ConsoleInteraction connect(ConsoleListener listener) {
 		if (ConsoleInteraction.singleton == null) {
 			ConsoleInteraction.singleton = new ConsoleInteraction();
-			ConsoleInteraction.future = Concurrent.run(ConsoleInteraction.singleton);
 		}
 		ConsoleInteraction.singleton.addListener(listener);
 		return ConsoleInteraction.singleton;

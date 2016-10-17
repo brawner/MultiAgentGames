@@ -27,14 +27,12 @@ public class WorldLoadingStateGenerator implements StateGenerator{
 	private final OOState allGoalsUnsetAgents;
 	private final OOState noGoalsUnsetAgents;
 	private final int goalsPerAgent;
-	private final boolean useImmutableStates;
 	
-	private WorldLoadingStateGenerator(OOState allGoalsUnsetAgents, OOState noGoalsUnsetAgents, int goalsPerAgent, boolean useImmutableStates) {
+	private WorldLoadingStateGenerator(OOState allGoalsUnsetAgents, OOState noGoalsUnsetAgents, int goalsPerAgent) {
 		super();
 		this.allGoalsUnsetAgents = allGoalsUnsetAgents;
 		this.noGoalsUnsetAgents = noGoalsUnsetAgents;
 		this.goalsPerAgent = goalsPerAgent;
-		this.useImmutableStates = useImmutableStates;
 	}
 	
 	private static List<ObjectInstance> pruneGoals(List<ObjectInstance> goals, int goalsPerAgent) {
@@ -66,10 +64,6 @@ public class WorldLoadingStateGenerator implements StateGenerator{
 	}
 	
 	public static WorldLoadingStateGenerator stateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent) throws TokenCastException {
-		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent, false);
-	}
-	
-	public static WorldLoadingStateGenerator stateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent, boolean useImmutableStates) throws TokenCastException {
 		Integer width = fileToken.getInt(WorldFile.WIDTH);
 		Integer height = fileToken.getInt(WorldFile.HEIGHT);
 		List<GridGameServerToken> agentObjects = fileToken.getTokenList(WorldFile.AGENTS);
@@ -149,7 +143,7 @@ public class WorldLoadingStateGenerator implements StateGenerator{
 		OOState noGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, null, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
-		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent, useImmutableStates);
+		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent);
 	}
 	
 	private static OOState generateBaseState(SGDomain domain, List<List<Integer>> agentPositions, List<List<Integer>> goalPositions,

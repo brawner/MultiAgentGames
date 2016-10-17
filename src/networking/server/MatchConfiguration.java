@@ -19,11 +19,8 @@ import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.oo.state.ObjectInstance;
-import burlap.mdp.stochasticgames.agent.AgentFactory;
 import burlap.mdp.stochasticgames.agent.SGAgent;
 import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
-import burlap.mdp.stochasticgames.agent.SGAgentType;
-import burlap.mdp.stochasticgames.world.World;
 
 public class MatchConfiguration {
 	private static final String AGENTS = "agents";
@@ -242,16 +239,16 @@ public class MatchConfiguration {
 		if (this.repeatedAgents.containsKey(agentName)) {
 			SGAgent agent = this.repeatedAgents.get(agentName);
 			//SGAgentType agentType = agent.getAgentType();
-			SGAgentType agentType = 
-					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getActionTypes());
+//			SGAgentType agentType = 
+//					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getActionTypes());
 			if (!this.agentGenerator.isValidAgent(world, agent)) {
 				world.join(agent);
 			}
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
 			SGAgent agent = this.agentGenerator.generateAgent(agentTypeStr, "");
-			SGAgentType agentType = 
-					new SGAgentType(agentTypeStr, world.getDomain().getActionTypes());
+//			SGAgentType agentType = 
+//					new SGAgentType(agentTypeStr, world.getDomain().getActionTypes());
 			if (!this.agentGenerator.isValidAgent(world, agent)) {
 				world.join(agent);
 			}

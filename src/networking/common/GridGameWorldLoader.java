@@ -36,7 +36,7 @@ public class GridGameWorldLoader {
 	}
 	
 	private static WorldLoadingStateGenerator generateStateGenerator(GridGameServerToken fileToken, final SGDomain domain, int goalsPerAgent, boolean useImmutableStates) throws TokenCastException {
-		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent, useImmutableStates);
+		return WorldLoadingStateGenerator.stateGenerator(fileToken, domain, goalsPerAgent);
 	}
 	
 	public static NetworkWorld loadWorld(GridGameServerToken token, boolean useImmutableStates) {
@@ -185,7 +185,7 @@ public class GridGameWorldLoader {
 
 		List<GridGameServerToken> worlds = new ArrayList<GridGameServerToken>();
 
-		int count = 0;
+		//int count = 0;
 		for (File f : files) {
 			if (f.isFile()) {
 				String filename = f.getAbsolutePath();
