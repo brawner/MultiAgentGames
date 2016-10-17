@@ -5,26 +5,24 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import burlap.behavior.stochasticgames.auxiliary.GameSequenceVisualizer;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.legacy.StateJSONParser;
-import burlap.oomdp.legacy.StateParser;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.stochasticgames.SGDomain;
 import burlap.parallel.Parallel;
 import burlap.parallel.Parallel.ForEachCallable;
+import burlap.visualizer.Visualizer;
 
 public class GameAnalysisFileReader {
 
 	public static class VisualizerCallable extends ForEachCallable<File, Boolean> {
 		private final SGDomain domain;
-		private final StateParser parser;
 		private final File directory;
 		
-		public VisualizerCallable(SGDomain domain, StateParser parser, File directory) {
+		public VisualizerCallable(SGDomain domain, File directory) {
 			this.domain = domain;
-			this.parser = parser;
 			this.directory = directory;
 		}
 		@Override
@@ -41,7 +39,7 @@ public class GameAnalysisFileReader {
 
 		@Override
 		public ForEachCallable<File, Boolean> copy() {
-			return new VisualizerCallable(this.domain, this.parser, this.directory);
+			return new VisualizerCallable(this.domain, this.directory);
 		}
 		
 	}
@@ -50,7 +48,6 @@ public class GameAnalysisFileReader {
 		String directory = args[0];
 		GridGame gridGame = new GridGame();
 		SGDomain domain = (SGDomain) gridGame.generateDomain();
-		StateParser parser = new StateJSONParser(domain);
 		
 		
 		Path path = GridGameWorldLoader.expandDirectory(directory);
@@ -59,7 +56,7 @@ public class GameAnalysisFileReader {
 			System.err.println(directory + " could not be found. Check the path");
 		}
 		List<File> directories = Arrays.asList(file.listFiles());
-		VisualizerCallable callable = new VisualizerCallable(domain, parser, null);
+		VisualizerCallable callable = new VisualizerCallable(domain, null);
 		Parallel.ForEach(directories, callable);
 		
 		

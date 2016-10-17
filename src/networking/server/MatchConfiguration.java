@@ -12,15 +12,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.World;
 import networking.common.GridGameExperimentToken;
 import networking.common.Token;
 import networking.common.TokenCastException;
+import burlap.domain.stochasticdomain.world.NetworkWorld;
+import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.mdp.core.oo.state.OOState;
+import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.stochasticgames.agent.AgentFactory;
+import burlap.mdp.stochasticgames.agent.SGAgent;
+import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
+import burlap.mdp.stochasticgames.agent.SGAgentType;
+import burlap.mdp.stochasticgames.world.World;
 
 public class MatchConfiguration {
 	private static final String AGENTS = "agents";
@@ -31,7 +34,7 @@ public class MatchConfiguration {
 	/**
 	 * The base type of world for this configuration.
 	 */
-	private World baseWorld;
+	private NetworkWorld baseWorld;
 	
 	/**
 	 * A list of the agents in their assigned order. I.e. the first agent added will be agent 0, regardless of what type it is.
@@ -79,8 +82,10 @@ public class MatchConfiguration {
 	 * possibly run forever on a server. Default is 30;
 	 */
 	private final AtomicInteger maxTurns;
+	
+	private final SGAgentGenerator agentGenerator;
 
-	public MatchConfiguration(World world) {
+	public MatchConfiguration(NetworkWorld world, SGAgentGenerator agentGenerator) {
 		this.baseWorld = world;
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
@@ -91,8 +96,9 @@ public class MatchConfiguration {
 		this.numTotalRounds = new AtomicInteger(DEFAULT_MAX_ROUNDS);
 		this.currentRound = new AtomicInteger();
 		this.maxTurns = new AtomicInteger(DEFAULT_MAX_TURNS);
+		this.agentGenerator = agentGenerator;
 	}
-	public MatchConfiguration(World world, int maxTurns, int maxRounds) {
+	public MatchConfiguration(NetworkWorld world, SGAgentGenerator agentGenerator, int maxTurns, int maxRounds) {
 		this.baseWorld = world;
 		this.orderedAgents = Collections.synchronizedList(new ArrayList<String>());
 		this.regeneratedAgents = Collections.synchronizedMap(new HashMap<String, String>());
@@ -103,17 +109,18 @@ public class MatchConfiguration {
 		this.numTotalRounds = new AtomicInteger(maxRounds);
 		this.currentRound = new AtomicInteger();
 		this.maxTurns = new AtomicInteger(maxTurns);
-	}// TODO Auto-generated constructor stub
+		this.agentGenerator = agentGenerator;
+	}
 
 
-	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections, String paramsDirectory) {
+	public static MatchConfiguration getConfigurationFromToken(GridGameExperimentToken token, GridGameServerCollections collections, SGAgentGenerator agentGenerator, String paramsDirectory) {
 		try {
 			String worldId = token.getString(GridGameManager.WORLD_ID);
 			if (worldId == null) {
 				System.err.println("World id " + worldId + " was not specified");
 				return null;
 			}
-			World world = collections.getWorld(worldId);
+			NetworkWorld world = collections.getWorld(worldId);
 			if (world == null) {
 				System.err.println("World " + worldId + " does not exist");
 				return null;
@@ -129,7 +136,7 @@ public class MatchConfiguration {
 				maxRounds = DEFAULT_MAX_ROUNDS; 
 			}
 			
-			MatchConfiguration configuration = new MatchConfiguration(world, maxTurns, maxRounds);
+			MatchConfiguration configuration = new MatchConfiguration(world, agentGenerator, maxTurns, maxRounds);
 			List<GridGameExperimentToken> agentTokens = token.getTokenList(AGENTS);
 			if (agentTokens == null) {
 				System.err.println("Agent tokens were not specified");
@@ -150,7 +157,7 @@ public class MatchConfiguration {
 					}
 					params = Paths.get(paramsDirectory, params).toString();
 				}
-				configuration.addAgentType(agentTypeStr, GridGameManager.REPEATED_AGENTS.contains(agentTypeStr), params);
+				configuration.addAgentType(agentTypeStr,  agentGenerator.isRepeatedAgentType(agentTypeStr), params);
 			}
 			return configuration;
 		
@@ -179,7 +186,7 @@ public class MatchConfiguration {
 	 * Returns a copy of the base world.
 	 * @return
 	 */
-	public World getBaseWorld() {
+	public NetworkWorld getBaseWorld() {
 		return this.baseWorld.copy();
 	}
 	
@@ -188,9 +195,6 @@ public class MatchConfiguration {
 	 * @return
 	 */
 	public boolean canAddAgent() {
-		if (this.baseWorld == null) {
-			System.out.print("");
-		}
 		int maxAgentsCanJoin = this.baseWorld.getMaximumAgentsCanJoin();
 		if (maxAgentsCanJoin == -1) {
 			return true;
@@ -218,8 +222,8 @@ public class MatchConfiguration {
 	 * Returns a copy of the baseworld with all the added agents (that have been added so far).
 	 * @return
 	 */
-	public World getWorldWithAgents() {
-		World world = this.getBaseWorld().copy();
+	public NetworkWorld getWorldWithAgents() {
+		NetworkWorld world = this.getBaseWorld().copy();
 		
 		for (String agentName : this.orderedAgents) {
 			this.addAgentToWorld(world, agentName);
@@ -234,21 +238,23 @@ public class MatchConfiguration {
 	 * @param world
 	 * @param agentName
 	 */
-	private void addAgentToWorld(World world, String agentName) {
+	private void addAgentToWorld(NetworkWorld world, String agentName) {
 		if (this.repeatedAgents.containsKey(agentName)) {
 			SGAgent agent = this.repeatedAgents.get(agentName);
 			//SGAgentType agentType = agent.getAgentType();
 			SGAgentType agentType = 
-					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
-			
-			agent.joinWorld(world, agentType);
-			
+					new SGAgentType(agent.getClass().getSimpleName(), world.getDomain().getActionTypes());
+			if (!this.agentGenerator.isValidAgent(world, agent)) {
+				world.join(agent);
+			}
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
-			SGAgent agent = AgentFactory.getNewAgentForWorld(world, agentTypeStr, null);
+			SGAgent agent = this.agentGenerator.generateAgent(agentTypeStr, "");
 			SGAgentType agentType = 
-					new SGAgentType(agentTypeStr, world.getDomain().getObjectClass(GridGame.CLASSAGENT), world.getDomain().getAgentActions());
-			agent.joinWorld(world, agentType);
+					new SGAgentType(agentTypeStr, world.getDomain().getActionTypes());
+			if (!this.agentGenerator.isValidAgent(world, agent)) {
+				world.join(agent);
+			}
 			
 		} else if (this.networkAgents.containsKey(agentName)) {
 			GameHandler handler = this.networkAgents.get(agentName);
@@ -341,7 +347,7 @@ public class MatchConfiguration {
 	
 	public void addAgentType(String agentType, boolean repeated, String params) {
 		if (repeated) {
-			SGAgent agent = AgentFactory.getNewAgentForWorld(this.baseWorld, agentType, params);
+			SGAgent agent = this.agentGenerator.generateAgent(agentType, params);
 			this.addAgent(agent);
 		}
 
@@ -482,8 +488,8 @@ public class MatchConfiguration {
 	 * @return
 	 */
 	public String getAgentName(GameHandler handler) {
-		World world = this.getWorldWithAgents();
-		State startingState = world.startingState();
+		NetworkWorld world = this.getWorldWithAgents();
+		OOState startingState = (OOState) world.startingState();
 		
 		int pos = -1;
 		synchronized(this.networkAgents) {
@@ -493,8 +499,8 @@ public class MatchConfiguration {
 				}
 			}
 		}
-		List<ObjectInstance> agents = startingState.getObjectsOfClass(GridGame.CLASSAGENT);
-		return (pos == -1) ? null : agents.get(pos).getName();
+		List<ObjectInstance> agents = startingState.objectsOfClass(GridGame.CLASS_AGENT);
+		return (pos == -1) ? null : agents.get(pos).name();
 	}
 
 	/**

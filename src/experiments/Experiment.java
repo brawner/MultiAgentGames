@@ -1,51 +1,37 @@
 package experiments;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import networking.common.GridGameExperimentToken;
 import networking.common.GridGameServerToken;
 import networking.common.GridGameWorldLoader;
 import networking.common.Token;
 import networking.common.TokenCastException;
-import networking.server.ExperimentConfiguration;
 import networking.server.GridGameManager;
-import networking.server.MatchConfiguration;
-import Analysis.HumanRobotPolicySimilarityMetric;
-import Analysis.ImportanceSamplingBasedTrajectoryKLDivergence;
-import Analysis.PolicyComparisonWithKLDivergence;
-import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
-import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgentFactory;
-import burlap.behavior.stochasticgames.agents.normlearning.baselines.BaselineAgentFactory;
-import burlap.behavior.stochasticgames.agents.normlearning.baselines.TeamPolicyBaseline;
-import burlap.behavior.stochasticgames.agents.normlearning.modelbasedagents.ModelBasedLearningAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormJointPolicy;
-import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.setpolicyagents.NormSetStrategyAgentFactory;
-import burlap.behavior.stochasticgames.agents.normlearning.utilityagents.CopyGameFilesAgent;
+import burlap.domain.stochasticdomain.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
+import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.domain.stochasticgames.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.JointReward;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.World;
+import burlap.domain.stochasticgames.gridgame.state.GGAgent;
+import burlap.domain.stochasticgames.gridgame.state.GGGoal;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.oo.OODomain;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.SGDomain;
+import burlap.mdp.stochasticgames.agent.SGAgent;
+import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
+import burlap.mdp.stochasticgames.agent.SGAgentType;
+import burlap.mdp.stochasticgames.model.JointRewardFunction;
+import burlap.mdp.stochasticgames.world.World;
 
 public class Experiment {
 
@@ -62,9 +48,9 @@ public class Experiment {
 
 	public SGDomain sgDomain;
 	public TerminalFunction tf;
-	public JointReward jr;
+	public JointRewardFunction jr;
 	public List<SGAgentType> types;
-
+	private SGAgentGenerator agentGenerator;
 	GridGame gg;
 
 	List<List<String>> agentKindLists;
@@ -86,7 +72,7 @@ public class Experiment {
 	private int numSamples = -1;
 	private String trial;
 
-	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder, int numSamples, String trial) {
+	public Experiment(String experimentFile, String paramFilesFolder, String gamesFolder, String outputFolder, SGAgentGenerator agentGenerator, int numSamples, String trial) {
 		// Initialize lists.
 		this.paramFilesFolder = paramFilesFolder;
 		this.gamesFolder = gamesFolder;
@@ -98,6 +84,7 @@ public class Experiment {
 		this.numMatches = 0;
 		this.numSamples =numSamples;
 		this.trial = trial;
+		this.agentGenerator = agentGenerator;
 
 
 		if(experimentFile.split("\\.")[1].compareTo("csv")==0){
@@ -115,8 +102,8 @@ public class Experiment {
 		this.sgDomain
 		.setJointActionModel(new GridGameStandardMechanicsWithoutTieBreaking(
 				sgDomain, .5));
-		this.tf = new GridGame.GGTerminalFunction(sgDomain);
-		this.jr = new GridGame.GGJointRewardFunction(sgDomain, 0, 10, true);	
+		this.tf = new GridGame.GGTerminalFunction((OODomain) sgDomain);
+		this.jr = new GridGame.GGJointRewardFunction((OODomain) sgDomain, 0, 10, true);	
 		// DPrint.toggleCode(this.w.getDebugId(), false);
 		// TODO: fix this...Or is it supposed include other types??? Where is it used?
 		this.types = new ArrayList<SGAgentType>();
@@ -272,7 +259,7 @@ public class Experiment {
 	private State makeState(String gameName, String gamesFolder) {
 
 		GridGameServerToken token = GridGameWorldLoader.loadText(gamesFolder+"/"+gameName+".json");
-		World world = GridGameWorldLoader.loadWorld(token);
+		NetworkWorld world = GridGameWorldLoader.loadWorld(token);
 		State state = world.startingState(); 
 
 		return state;
@@ -303,42 +290,19 @@ public class Experiment {
 
 
 	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile, String outputFile) {
-
-
-		// http://i.imgur.com/9G9h8dt.jpg
-		switch (agentKind){
-		case "norm_learning":
-			//System.out.println("NumSamples Exp: "+this.numSamples);
-			return NormLearningAgentFactory.getNormLearningAgent(parametersFile, outputFile, trial, this.numSamples, this.sgDomain, this.types, this.jr, this.tf);
-		case "fixed_policy":
-
-			return NormSetStrategyAgentFactory.getSetStrategyAgent(parametersFile, this.sgDomain);
-		case "model_based":
-			//TODO: actually create this agent
-			return new ModelBasedLearningAgent();
-		case "baseline":
-			//TODO: actually create this agent
-			return BaselineAgentFactory.getBaselineAgent(parametersFile, this.sgDomain, this.types, this.jr, this.tf);
-		case "CD":
-			return null;
-		case "human":
-			return null;
-		case "copy_agent":
-			return new CopyGameFilesAgent(parametersFile,outputFile, this.sgDomain, Integer.parseInt(trial));
-		default:
-			return null;
-		}
-
+		return this.agentGenerator.generateAgent(agentKind, parametersFile);
 	}
 
 	public State getHallwayState() {
 		//TODO: This needs to be generalized for all of our games.
-		State s = GridGame.getCleanState(sgDomain, 2, 2, 2, 2, 5, 3);
-		GridGame.setAgent(s, 0, 0, 1, 0);
-		GridGame.setAgent(s, 1, 4, 1, 1);
+		GenericOOState s =  new GenericOOState(
+				new GGAgent(0, 1, 0, "agent0"),
+				new GGAgent(4, 1, 1, "agent1"),
+				new GGGoal(0, 1, 1, "g0"),
+				new GGGoal(1, 4, 2, "g1")
+		);
 
-		GridGame.setGoal(s, 0, 0, 1, 2);
-		GridGame.setGoal(s, 1, 4, 1, 1);
+		GridGame.setBoundaryWalls(s, 5, 3);
 
 		return s;
 	}
@@ -358,61 +322,61 @@ public class Experiment {
 
 
 
-	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL, 
-			boolean useImpSampling, TerminalFunction tf) {
-		System.out.println("Comparing policies started");
-		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
-		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
-				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
-			if(useKL){
-				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
-				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
-
-				NormJointPolicy setPolicy = setAgent.getPolicy();
-				setPolicy.setNoislessPolicy();
-
-				PolicyComparisonWithKLDivergence klMetric =
-						new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
-								startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
-				double value = klMetric.runPolicyComparison();
-				System.out.println("VALUE: "+value);
-				System.out.println("Comparing policies ended");
-				return value+"";
-			}else if(useImpSampling){
-				System.out.println("Using Imp sampling");
-				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
-				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
-
-				NormJointPolicy setPolicy = setAgent.getPolicy();
-				setPolicy.setNoislessPolicy();
-				System.out.println("set noiseless");
-				ImportanceSamplingBasedTrajectoryKLDivergence impSamp = 
-						new ImportanceSamplingBasedTrajectoryKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
-								startingStates.get(matchLearned), learnedAgent.getCmdpDomain(), tf);
-				System.out.println("running comparison");
-				double result = impSamp.runPolicyComparison(12000);
-				System.out.println("Comparing policies ended");
-				return result+"";
-			}else{
-				double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
-				System.out.println("VALUE: "+metrics[2]);
-				System.out.println("Comparing policies ended");
-				return metrics[2]+","+metrics[3];
-				//System.out.println("VALUE: "+value);
-				//return value;
-			}
-		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
-				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
-			// norm and copy
-			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
-			System.out.println("Comparing policies ended");
-			return metrics[2]+","+metrics[3];
-		}else {
-			System.out.println("Comparing policies ended");
-			return "-1";
-		}
-
-	}
+//	public String comparePolicies(String sourceFolder, int matchLearned, int matchCorrect, boolean useKL, 
+//			boolean useImpSampling, TerminalFunction tf) {
+//		System.out.println("Comparing policies started");
+//		HumanRobotPolicySimilarityMetric metricCalc = new HumanRobotPolicySimilarityMetric();
+//		if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
+//				&& agentKindLists.get(matchCorrect).get(0).compareTo("fixed_policy")==0){
+//			if(useKL){
+//				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+//				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+//
+//				NormJointPolicy setPolicy = setAgent.getPolicy();
+//				setPolicy.setNoislessPolicy();
+//
+//				PolicyComparisonWithKLDivergence klMetric =
+//						new PolicyComparisonWithKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
+//								startingStates.get(matchLearned),learnedAgent.getCmdpDomain());
+//				double value = klMetric.runPolicyComparison();
+//				System.out.println("VALUE: "+value);
+//				System.out.println("Comparing policies ended");
+//				return value+"";
+//			}else if(useImpSampling){
+//				System.out.println("Using Imp sampling");
+//				NormLearningAgent learnedAgent = (NormLearningAgent)(agentLists.get(matchLearned).get(0));
+//				NormSetStrategyAgent setAgent = (NormSetStrategyAgent)agentLists.get(matchCorrect).get(0);
+//
+//				NormJointPolicy setPolicy = setAgent.getPolicy();
+//				setPolicy.setNoislessPolicy();
+//				System.out.println("set noiseless");
+//				ImportanceSamplingBasedTrajectoryKLDivergence impSamp = 
+//						new ImportanceSamplingBasedTrajectoryKLDivergence(setPolicy, learnedAgent.getJointPolicy(), 
+//								startingStates.get(matchLearned), learnedAgent.getCmdpDomain(), tf);
+//				System.out.println("running comparison");
+//				double result = impSamp.runPolicyComparison(12000);
+//				System.out.println("Comparing policies ended");
+//				return result+"";
+//			}else{
+//				double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+//				System.out.println("VALUE: "+metrics[2]);
+//				System.out.println("Comparing policies ended");
+//				return metrics[2]+","+metrics[3];
+//				//System.out.println("VALUE: "+value);
+//				//return value;
+//			}
+//		}else if(agentKindLists.get(matchLearned).get(0).compareTo("norm_learning")==0 
+//				&& agentKindLists.get(matchCorrect).get(0).compareTo("copy_agent")==0){
+//			// norm and copy
+//			double[] metrics = metricCalc.calculateMetric(sourceFolder, matchCorrect, matchLearned, false);
+//			System.out.println("Comparing policies ended");
+//			return metrics[2]+","+metrics[3];
+//		}else {
+//			System.out.println("Comparing policies ended");
+//			return "-1";
+//		}
+//
+//	}
 
 
 }

@@ -9,15 +9,14 @@ import networking.common.TokenCastException;
 import org.eclipse.jetty.websocket.api.Session;
 
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.JointAction;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
-import burlap.oomdp.stochasticgames.agentactions.ObParamSGAgentAction.GroundedObParamSGAgentAction;
-import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.action.ActionType;
+import burlap.mdp.core.action.SimpleAction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.JointAction;
+import burlap.mdp.stochasticgames.SGDomain;
+import burlap.mdp.stochasticgames.agent.SGAgentType;
+import burlap.mdp.stochasticgames.world.World;
 
 /**
  * Handles direct game management with the connected client.
@@ -112,10 +111,7 @@ public class GameHandler {
 			} else if (msgType.equals(TAKE_ACTION)) {
 				if (this.agent.isGameStarted()) {
 					String actionName = msg.getString(ACTION);
-					List<String> actionParams = msg.getStringList(ACTION_PARAMS);
-					String[] params = actionParams.toArray(new String[actionParams.size()]);
-					SGAgentAction action = this.domain.getSingleAction(actionName);
-					GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent.getAgentName(), action, params);
+					Action groundedAction = new SimpleAction(actionName);
 					this.agent.setNextAction(groundedAction);
 					response.setString(RESULT, SUCCESS);
 				} else {
@@ -163,7 +159,7 @@ public class GameHandler {
 	public void begForAction(State s) {
 		GridGameServerToken request = new GridGameServerToken();
 		request.setString(GridGameManager.MSG_TYPE, ACTION_REQUEST);
-		request.setState(STATE, s, this.domain);
+		request.setState(STATE, s);
 		this.updateClient(request);
 	}
 
@@ -173,7 +169,7 @@ public class GameHandler {
 	 */
 	public void updateClient(State state) {
 		GridGameServerToken token = new GridGameServerToken();
-		token.setState(STATE, state, this.domain);
+		token.setState(STATE, state);
 		GridGameServerToken msg = new GridGameServerToken();
 		msg.setToken(UPDATE, token);
 		msg.setString(GridGameManager.MSG_TYPE, UPDATE);
@@ -192,10 +188,11 @@ public class GameHandler {
 	 * @param isTerminal
 	 */
 	public void updateClient(State s, JointAction jointAction,
-			Map<String, Double> jointReward, State sprime, boolean isTerminal) {
-		this.currentScore += jointReward.get(this.agent.getAgentName());
+			double[] jointReward, State sprime, boolean isTerminal) {
+		
+		this.currentScore += jointReward[this.agent.getAgentNum()];
 		GridGameServerToken token = new GridGameServerToken();
-		token.setState(STATE, sprime, this.domain);
+		token.setState(STATE, sprime);
 		token.setDouble(SCORE, this.currentScore);
 		token.setToken(ACTION, GridGameServerToken.tokenFromJointAction(jointAction));
 		token.setObject(REWARD, jointReward);
@@ -251,9 +248,9 @@ public class GameHandler {
 		this.domain = world.getDomain();
 
 		SGAgentType agentType = 
-				new SGAgentType(GridGame.CLASSAGENT, this.domain.getObjectClass(GridGame.CLASSAGENT), this.domain.getAgentActions());
+				new SGAgentType(GridGame.CLASS_AGENT , this.domain.getActionTypes());
 
-		agent.joinWorld(world, agentType);
+		world.join(this.agent);
 	}
 
 	public boolean isConnected() {

@@ -3,21 +3,23 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.JointAction;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
+import burlap.domain.stochasticdomain.world.NetworkWorld;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.JointAction;
+import burlap.mdp.stochasticgames.agent.SGAgentBase;
+import burlap.mdp.stochasticgames.world.World;
 
 /**
  * A subclass of the StochasticGames agent. This implements the required methods for the World to call when running a game
  * @author brawner
  *
  */
-public class NetworkAgent extends SGAgent {
+public class NetworkAgent extends SGAgentBase {
 	/**
 	 * The current action specified by the connected person
 	 */
-	private GroundedSGAgentAction currentAction;
+	private Action currentAction;
 	
 	/**
 	 * The associated game handler.
@@ -49,7 +51,13 @@ public class NetworkAgent extends SGAgent {
 	 * Basic game starting method, not used here.
 	 */
 	@Override
-	public void gameStarting() {
+	public void gameStarting(World w, int i) {
+		NetworkWorld nw = (NetworkWorld)w;
+		if (nw.getCurrentWorldState() == null) {
+			nw.generateNewCurrentState();
+		}
+		State state = nw.getCurrentWorldState();
+		this.handler.updateClient(state);
 		this.gameStarted = true;
 	}
 	
@@ -60,47 +68,23 @@ public class NetworkAgent extends SGAgent {
 	/**
 	 * The updated game starting method. This overrides Agent's default implementation, and actually updates the client with the new state.
 	 */
-	@Override
-	public void gameStarting(State startState) {
-		this.handler.updateClient(startState);
-		this.gameStarted = true;
-	}
 
 	/**
 	 * Attempts to get an action from the connected user. If no action has been specified, then it asks the user for a new action.
 	 */
-	@Override
-	public GroundedSGAgentAction getAction(State s) {
-		GroundedSGAgentAction action = null;
-		synchronized(this) {
-			action = this.currentAction;
-		}
-		
-		if (action == null) {
-			this.handler.begForAction(s);
-		}
-		while (action == null && this.world.isOk() && this.handler.isConnected()) {
-			synchronized(this) {
-				action = this.currentAction;
-			}
-		}
-		synchronized(this) {
-			this.currentAction = null;
-		}
-		
-		return action;
-	}
+
 
 	/**
 	 * Updates the client with the observed outcome of a world. The state will be abstracted for this particular agent.
 	 */
+
 	@Override
 	public void observeOutcome(State s, JointAction jointAction,
-			Map<String, Double> jointReward, State sprime, boolean isTerminal) {
+			double[] jointReward, State sprime, boolean isTerminal) {
 		this.currentAction = null;
 		//System.out.println("Is terminal: "+isTerminal);
 		this.handler.updateClient(s, jointAction, jointReward, sprime, isTerminal);
-
+		
 	}
 
 	/**
@@ -116,10 +100,35 @@ public class NetworkAgent extends SGAgent {
 	 * Sets the client's requested action for the next turn.
 	 * @param action
 	 */
-	public void setNextAction(GroundedSGAgentAction action) {
+	public void setNextAction(Action action) {
 		synchronized(this) {
 			this.currentAction = action;
 		}
 	}
 
+	@Override
+	public Action action(State s) {
+		Action action = null;
+		synchronized(this) {
+			action = this.currentAction;
+		}
+		
+		if (action == null) {
+			this.handler.begForAction(s);
+		}
+		while (action == null && ((NetworkWorld)this.world).isOk() && this.handler.isConnected()) {
+			synchronized(this) {
+				action = this.currentAction;
+			}
+		}
+		synchronized(this) {
+			this.currentAction = null;
+		}
+		
+		return action;
+	}
+
+	public int getAgentNum() {
+		return -1;
+	}
 }

@@ -12,9 +12,11 @@ import networking.common.GridGameServerToken;
 
 import org.eclipse.jetty.websocket.api.Session;
 
-import burlap.behavior.stochasticgames.GameAnalysis;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.World;
+import burlap.behavior.stochasticgames.GameEpisode;
+import burlap.domain.stochasticdomain.world.NetworkWorld;
+import burlap.mdp.stochasticgames.agent.SGAgent;
+import burlap.mdp.stochasticgames.world.World;
+
 
 /**
  * Handles all synchronous access to the collection objects required by the server. Everything included here should be thread safe, I hope.
@@ -24,13 +26,13 @@ import burlap.oomdp.stochasticgames.World;
 public class GridGameServerCollections {
 
 	private final List<GridGameServerToken> worldTokens;
-	private final Map<String, World> worldLookup;
+	private final Map<String, NetworkWorld> worldLookup;
 	//private final Map<String, World> activeGameWorlds;
-	private final Map<String, World> currentlyRunningWorlds;
+	private final Map<String, NetworkWorld> currentlyRunningWorlds;
 	
 	private final Map<String, Session> sessionLookup;
 	private final Map<String, GameHandler> gameLookup;
-	private final Map<String, Future<GameAnalysis>> futures;
+	private final Map<String, Future<GameEpisode>> futures;
 	private final Map<String, List<String>> handlersAssociatedWithGames;
 	private final Map<String, String> clientToGameLookup;
 	private final Map<String, ExperimentConfiguration> configurations;
@@ -46,15 +48,15 @@ public class GridGameServerCollections {
 		this.activeIdCounter = new AtomicLong(1000);
 		this.clientIdCounter = new AtomicLong(1000000);
 		
-		this.worldLookup = Collections.synchronizedMap(new HashMap<String, World>());
+		this.worldLookup = Collections.synchronizedMap(new HashMap<String, NetworkWorld>());
 		this.continousLearningAgents = Collections.synchronizedMap(new HashMap<String, Map<String, SGAgent>>());
 		
 		//this.activeGameWorlds = Collections.synchronizedMap(new HashMap<String, World>());
-		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, World>());
+		this.currentlyRunningWorlds = Collections.synchronizedMap(new HashMap<String, NetworkWorld>());
 		
 		this.sessionLookup = Collections.synchronizedMap(new HashMap<String, Session>());
 		this.gameLookup = Collections.synchronizedMap(new HashMap<String, GameHandler>());
-		this.futures = Collections.synchronizedMap(new HashMap<String, Future<GameAnalysis>>());
+		this.futures = Collections.synchronizedMap(new HashMap<String, Future<GameEpisode>>());
 		this.handlersAssociatedWithGames = Collections.synchronizedMap(new HashMap<String, List<String>>());
 		this.clientToGameLookup = Collections.synchronizedMap(new HashMap<String, String>());
 		this.configurations = Collections.synchronizedMap(new HashMap<String, ExperimentConfiguration>());
@@ -209,13 +211,13 @@ public class GridGameServerCollections {
 		return handlers;
 	}
 	
-	public World getWorld(String id) {
+	public NetworkWorld getWorld(String id) {
 		synchronized(this.worldLookup) {
 			return this.worldLookup.get(id);
 		}
 	}
 	
-	public void addWorld(String id, World world) {
+	public void addWorld(String id, NetworkWorld world) {
 		synchronized(this.worldLookup) {
 			this.worldLookup.put(id,  world);
 		}
@@ -244,35 +246,7 @@ public class GridGameServerCollections {
 		}
 	}
 	
-	
-	
-	
-	
-	/*
-	public World getActiveWorld(String id) {
-		synchronized(this.activeGameWorlds) {
-			return this.activeGameWorlds.get(id);
-		}
-	}
-	
-	public Map<String, World> getActiveWorlds() {
-		synchronized(this.activeGameWorlds) {
-			return new HashMap<String, World>(this.activeGameWorlds);
-		}
-	}
-	public void addActiveWorld(String id, World world) {
-		synchronized(this.activeGameWorlds) {
-			this.activeGameWorlds.put(id,  world);
-		}
-	}
-	
-	public World removeActiveWorld(String id) {
-		synchronized(this.activeGameWorlds) {
-			return this.activeGameWorlds.remove(id);
-		}
-	}*/
-	
-	public void addRunningWorld(String id, World world) {
+	public void addRunningWorld(String id, NetworkWorld world) {
 		synchronized(this.currentlyRunningWorlds) {
 			this.currentlyRunningWorlds.put(id,  world);
 		}
@@ -284,15 +258,15 @@ public class GridGameServerCollections {
 		}
 	}
 	
-	public Future<GameAnalysis> getFuture(String id) {
+	public Future<GameEpisode> getFuture(String id) {
 		synchronized(this.futures) {
 			return this.futures.get(id);
 		}
 	}
 	
-	public String getFutureId(Future<GameAnalysis> future) {
+	public String getFutureId(Future<GameEpisode> future) {
 		synchronized(this.futures) {
-			for (Map.Entry<String, Future<GameAnalysis>> entry : this.futures.entrySet()) {
+			for (Map.Entry<String, Future<GameEpisode>> entry : this.futures.entrySet()) {
 				if (entry.getValue().equals(future)) {
 					return entry.getKey();
 				}
@@ -301,13 +275,13 @@ public class GridGameServerCollections {
 		return null;
 	}
 	
-	public void addFuture(String id, Future<GameAnalysis> future) {
+	public void addFuture(String id, Future<GameEpisode> future) {
 		synchronized(this.futures){ 
 			this.futures.put(id, future);
 		}
 	}
 	
-	public Future<GameAnalysis> removeFuture(String id) {
+	public Future<GameEpisode> removeFuture(String id) {
 		synchronized(this.futures) {
 			return this.futures.get(id);
 		}

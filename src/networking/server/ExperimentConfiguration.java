@@ -3,47 +3,16 @@ package networking.server;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import networking.common.GridGameExperimentToken;
-import networking.common.GridGameExtreme;
 import networking.common.TokenCastException;
-import burlap.behavior.policy.GreedyQPolicy;
-import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
-import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
-import burlap.behavior.stochasticgames.agents.RandomSGAgent;
-import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
-import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQLAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.ForeverNormLearningAgent;
-import burlap.behavior.stochasticgames.agents.normlearning.NormLearningAgent;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.CentralizedDomainGenerator;
-import burlap.behavior.stochasticgames.auxiliary.jointmdp.TotalWelfare;
-import burlap.behavior.stochasticgames.madynamicprogramming.backupOperators.MaxQ;
-import burlap.behavior.stochasticgames.madynamicprogramming.dpplanners.MAValueIteration;
-import burlap.behavior.stochasticgames.madynamicprogramming.policies.EGreedyMaxWellfare;
-import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.statehashing.HashableStateFactory;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.stochasticgames.JointReward;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.World;
-import examples.GridGameNormRF2;
+import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
 
 /**
  * The GridGameConfiguration class tracks how a game is to be configured. Instead of configuring a world, the configuration
@@ -193,7 +162,7 @@ public class ExperimentConfiguration {
 
 	
 	public static ExperimentConfiguration createConfigurationFromExperimentStr(String experimentType,
-			String yamlString, GridGameServerCollections collections, String paramsDirectory) 
+			String yamlString, GridGameServerCollections collections, String paramsDirectory, SGAgentGenerator agentGenerator) 
 	{
 		GridGameExperimentToken token = GridGameExperimentToken.tokenFromJSONString(yamlString);
 		List<GridGameExperimentToken> matches;
@@ -207,7 +176,7 @@ public class ExperimentConfiguration {
 		String activeGameId = collections.getUniqueThreadId();
 		ExperimentConfiguration expConfiguration = new ExperimentConfiguration(experimentType, activeGameId);
 		for (GridGameExperimentToken match : matches) {
-			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections, paramsDirectory);
+			MatchConfiguration matchConfig = MatchConfiguration.getConfigurationFromToken(match, collections, agentGenerator, paramsDirectory);
 			if (matchConfig == null) {
 				throw new RuntimeException("Setting up match failed");
 			}

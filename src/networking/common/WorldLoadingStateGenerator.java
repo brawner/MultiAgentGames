@@ -10,23 +10,26 @@ import java.util.Map;
 import networking.common.GridGameWorldLoader.WorldLoaderException;
 import networking.common.messages.WorldFile;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.ObjectClass;
-import burlap.oomdp.core.objects.MutableObjectInstance;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.FixedSizeImmutableState;
-import burlap.oomdp.core.states.ImmutableState;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.stochasticgames.SGAgent;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.SGStateGenerator;
+import burlap.domain.stochasticgames.gridgame.state.GGAgent;
+import burlap.domain.stochasticgames.gridgame.state.GGGoal;
+import burlap.domain.stochasticgames.gridgame.state.GGWall.GGHorizontalWall;
+import burlap.domain.stochasticgames.gridgame.state.GGWall.GGVerticalWall;
+import burlap.mdp.auxiliary.StateGenerator;
+import burlap.mdp.core.oo.state.MutableOOState;
+import burlap.mdp.core.oo.state.OOState;
+import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.SGDomain;
+import burlap.mdp.stochasticgames.agent.SGAgent;
 
-public class WorldLoadingStateGenerator extends SGStateGenerator{
-	private final State allGoalsUnsetAgents;
-	private final State noGoalsUnsetAgents;
+public class WorldLoadingStateGenerator implements StateGenerator{
+	private final OOState allGoalsUnsetAgents;
+	private final OOState noGoalsUnsetAgents;
 	private final int goalsPerAgent;
 	private final boolean useImmutableStates;
 	
-	private WorldLoadingStateGenerator(State allGoalsUnsetAgents, State noGoalsUnsetAgents, int goalsPerAgent, boolean useImmutableStates) {
+	private WorldLoadingStateGenerator(OOState allGoalsUnsetAgents, OOState noGoalsUnsetAgents, int goalsPerAgent, boolean useImmutableStates) {
 		super();
 		this.allGoalsUnsetAgents = allGoalsUnsetAgents;
 		this.noGoalsUnsetAgents = noGoalsUnsetAgents;
@@ -42,13 +45,13 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		List<ObjectInstance> res = new ArrayList<ObjectInstance>();
 		Map<Integer, List<ObjectInstance>> goalsByAgent = new HashMap<Integer, List<ObjectInstance>>();
 		for (ObjectInstance goal : goals) {
-			int goalType = goal.getIntValForAttribute(GridGame.ATTGT);
+			int goalType = (Integer)goal.get(GridGame.VAR_GT);
 			List<ObjectInstance> agentsGoals = goalsByAgent.get(goalType);
 			if (agentsGoals == null) {
 				agentsGoals = new ArrayList<ObjectInstance>();
 				goalsByAgent.put(goalType, agentsGoals);
 			}
-			agentsGoals.add(goal.copy());
+			agentsGoals.add((ObjectInstance)goal.copy());
 		}
 		
 		for (Map.Entry<Integer, List<ObjectInstance>> entry : goalsByAgent.entrySet()) {
@@ -73,7 +76,6 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		List<GridGameServerToken> goalObjects = fileToken.getTokenList(WorldFile.GOALS);
 		List<GridGameServerToken> horizontalWallObjects = fileToken.getTokenList(WorldFile.HORIZONTAL_WALLS);
 		List<GridGameServerToken> verticalWallObjects = fileToken.getTokenList(WorldFile.VERTICAL_WALLS);
-		List<GridGameServerToken> rewardObjects = fileToken.getTokenList(WorldFile.REWARDS);
 		if (agentObjects == null) {
 			throw new WorldLoaderException("Agents are not properly specified");
 		}
@@ -83,8 +85,8 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		
 		final List<List<Integer>> agentPositions = new ArrayList<List<Integer>>();
 		for (GridGameServerToken agentObj : agentObjects) {
-			Integer startX = agentObj.getInt(GridGame.ATTX);
-			Integer startY = agentObj.getInt(GridGame.ATTY);
+			Integer startX = agentObj.getInt(GridGame.VAR_X);
+			Integer startY = agentObj.getInt(GridGame.VAR_Y);
 			if (startX == null || startY == null) {
 				throw new RuntimeException("Parsing file token failed\n" + fileToken.toJSONString());
 			}
@@ -93,12 +95,12 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		
 		final List<List<Integer>> goalPositions = new ArrayList<List<Integer>>();
 		for (GridGameServerToken goalObj : goalObjects) {
-			Integer startX = goalObj.getInt(GridGame.ATTX);
-			Integer startY = goalObj.getInt(GridGame.ATTY);
+			Integer startX = goalObj.getInt(GridGame.VAR_X);
+			Integer startY = goalObj.getInt(GridGame.VAR_Y);
 			if (startX == null || startY == null) {
 				throw new RuntimeException("Parsing file token failed\n" + fileToken.toJSONString());
 			}
-			Integer goalType = goalObj.getInt(GridGame.ATTGT);
+			Integer goalType = goalObj.getInt(GridGame.VAR_GT);
 			if (goalType == null) {
 				goalType = 0;
 			}
@@ -108,10 +110,10 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		final List<List<Integer>> horizontalWallPositions = new ArrayList<List<Integer>>();
 		if (horizontalWallObjects != null) {
 			for (GridGameServerToken wallObject : horizontalWallObjects) {
-				Integer startX = wallObject.getInt(GridGame.ATTE1);
-				Integer endX = wallObject.getInt(GridGame.ATTE2);
-				Integer startY = wallObject.getInt(GridGame.ATTP);
-				Integer wallType = wallObject.getInt(GridGame.ATTWT);
+				Integer startX = wallObject.getInt(GridGame.VAR_E1);
+				Integer endX = wallObject.getInt(GridGame.VAR_E2);
+				Integer startY = wallObject.getInt(GridGame.VAR_POS);
+				Integer wallType = wallObject.getInt(GridGame.VAR_WT);
 				if (startX == null || endX == null || startY == null) {
 					throw new RuntimeException("Parsing file token failed\n" + fileToken.toJSONString());
 				}
@@ -126,13 +128,13 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		final List<List<Integer>> verticalWallPositions = new ArrayList<List<Integer>>();
 		if (verticalWallObjects != null) {
 			for (GridGameServerToken wallObject : verticalWallObjects) {
-				Integer startX = wallObject.getInt(GridGame.ATTP);
-				Integer startY = wallObject.getInt(GridGame.ATTE1);
-				Integer endY = wallObject.getInt(GridGame.ATTE2);
+				Integer startX = wallObject.getInt(GridGame.VAR_POS);
+				Integer startY = wallObject.getInt(GridGame.VAR_E1);
+				Integer endY = wallObject.getInt(GridGame.VAR_E2);
 				if (startX == null || startY == null || endY == null) {
 					throw new RuntimeException("Parsing file token failed\n" + fileToken.toJSONString());
 				}
-				Integer wallType = wallObject.getInt(GridGame.ATTWT);
+				Integer wallType = wallObject.getInt(GridGame.VAR_WT);
 				if (wallType == null) {
 					wallType = 0;
 				}
@@ -141,36 +143,24 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 		}
 		
 		final List<List<Integer>> rewardPositions = new ArrayList<List<Integer>>();
-		if (rewardObjects != null) {
-			for (GridGameServerToken rewardObject : rewardObjects) {
-				Integer x = rewardObject.getInt(GridGame.ATTX);
-				Integer y = rewardObject.getInt(GridGame.ATTY);
-				Integer cost = rewardObject.getInt(GridGameExtreme.ATTVALUE);
-				if (x == null || y == null || cost == null) {
-					throw new RuntimeException("Parsing file token failed\n" + fileToken.toJSONString());
-				}
-				rewardPositions.add(Arrays.asList(x, y, cost));
-			}
-		}
-		State allGoalsUnsetAgents =  WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, goalPositions, 
+		OOState allGoalsUnsetAgents =  WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, goalPositions, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
-		State noGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, null, 
+		OOState noGoalsUnsetAgents = WorldLoadingStateGenerator.generateBaseState(domain, agentPositions, null, 
 				horizontalWallPositions, verticalWallPositions, rewardPositions, width, height);
 		
 		return new WorldLoadingStateGenerator(allGoalsUnsetAgents, noGoalsUnsetAgents, goalsPerAgent, useImmutableStates);
 	}
 	
-	private static State generateBaseState(SGDomain domain, List<List<Integer>> agentPositions, List<List<Integer>> goalPositions,
+	private static OOState generateBaseState(SGDomain domain, List<List<Integer>> agentPositions, List<List<Integer>> goalPositions,
 			List<List<Integer>> horizontalWalls, List<List<Integer>> verticalWalls, List<List<Integer>> rewards, int width, int height) {
-		int numGoals = (goalPositions == null) ? 0 : goalPositions.size();
-		State state = GridGame.getCleanState(domain, agentPositions.size(), numGoals, horizontalWalls.size() + 2, verticalWalls.size() + 2, width, height);
+		List<ObjectInstance> stateObjects = new ArrayList<ObjectInstance>();
 		
 		for (int i = 0; i < agentPositions.size(); i++) {
 			List<Integer> positions = agentPositions.get(i);
 			int x = positions.get(0);
 			int y = positions.get(1);
-			GridGame.setAgent(state, i, x, y, i);
+			stateObjects.add(new GGAgent(x, y, i, "agent" + i));
 		}
 		
 		if (goalPositions != null) {
@@ -179,7 +169,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 				int x = goal.get(0);
 				int y = goal.get(1);
 				int goalType = goal.get(2);
-				GridGame.setGoal(state, i, x, y, goalType);
+				stateObjects.add(new GGGoal(x, y, goalType, "goal" + i));
 			}
 		}
 		
@@ -189,7 +179,7 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			int x2 = wall.get(1);
 			int y = wall.get(2);
 			int wallType = wall.get(3);
-			GridGame.setHorizontalWall(state, i + 2, y, x1, x2, wallType);
+			stateObjects.add(new GGHorizontalWall(x1, x2, y, wallType, "hwall" + i));
 		}
 		
 		for (int i = 0 ; i < verticalWalls.size(); i++) {
@@ -198,38 +188,46 @@ public class WorldLoadingStateGenerator extends SGStateGenerator{
 			int y1 = wall.get(1);
 			int y2 = wall.get(2);
 			int wallType = wall.get(3);
-
-			GridGame.setVerticalWall(state, i + 2, x, y1, y2, wallType);
+			stateObjects.add(new GGVerticalWall(y1, y2, x, wallType, "vwall" + i));
 		}
+			
+		GenericOOState state = new GenericOOState(stateObjects.toArray(new ObjectInstance[stateObjects.size()]));
+				
+		GridGame.setBoundaryWalls(state, width, height);
+		
+		
 		
 		return state;
 	}
 
-	@Override
 	public State generateState(List<SGAgent> agents) {
 		
-		State copy = this.noGoalsUnsetAgents.copy();
-		List<ObjectInstance> goals = this.allGoalsUnsetAgents.getObjectsOfClass(GridGame.CLASSGOAL);
+		MutableOOState copy = (MutableOOState)this.generateState();
+		List<ObjectInstance> goals = this.allGoalsUnsetAgents.objectsOfClass(GridGame.CLASS_GOAL);
 		List<ObjectInstance> goalsToAdd = WorldLoadingStateGenerator.pruneGoals(goals, this.goalsPerAgent);
 		
 		for (ObjectInstance goal : goalsToAdd) {
 			copy = copy.addObject(goal);
 		}
 		
-		List<ObjectInstance> agentObjects = copy.getObjectsOfClass(GridGame.CLASSAGENT);
+		List<ObjectInstance> agentObjects = copy.objectsOfClass(GridGame.CLASS_AGENT);
 		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
 			SGAgent agent = agents.get(i);
 			ObjectInstance agentObject = agentObjects.get(i);
-			copy = copy.renameObject(agentObject.getName(), agent.getAgentName());
+			copy = copy.renameObject(agentObject.name(), agent.agentName());
 		}
-		if (this.noGoalsUnsetAgents instanceof FixedSizeImmutableState) {
-			return new FixedSizeImmutableState(copy);
-		}
-		return (this.useImmutableStates) ? new ImmutableState(copy) : copy;
+		return copy;
 	}
 	
 	public State generateAbstractedState() {
 		return this.allGoalsUnsetAgents;
 	}
+
+	@Override
+	public State generateState() {
+		return this.noGoalsUnsetAgents.copy();
+	}
+	
+	
 
 }

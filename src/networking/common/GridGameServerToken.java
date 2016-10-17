@@ -8,14 +8,13 @@ import java.util.List;
 import java.util.Map;
 
 import networking.server.GameHandler;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.legacy.StateJSONParser;
-import burlap.oomdp.stochasticgames.JointAction;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.agentactions.GroundedSGAgentAction;
-import burlap.oomdp.stochasticgames.agentactions.ObParamSGAgentAction.GroundedObParamSGAgentAction;
-import burlap.oomdp.stochasticgames.agentactions.SGAgentAction;
+import burlap.mdp.core.Domain;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.action.SimpleAction;
+import burlap.mdp.core.oo.ObjectParameterizedAction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.JointAction;
+import burlap.mdp.stochasticgames.SGDomain;
 
 
 /**
@@ -86,42 +85,41 @@ public class GridGameServerToken extends Token {
 		}
 	}
 	
-	public State getState(String key, Domain domain) {
+	public State getState(String key) {
 		Object object = this.getObject(key);
 		if (object == null) {
 			return null;
 		}
 		try {
-			List<Map<String, Object>> objects = (List<Map<String, Object>>)object;
-			StateJSONParser parser = new StateJSONParser(domain);
-			return parser.JSONPreparedToState(objects);
+			State state = (State)object;
+			return state;
 		
 		} catch (ClassCastException e) {
 			throw e;
 		}
 	}
 	
-	public void setState(String key, State state, Domain domain) {
-		StateJSONParser parser = new StateJSONParser(domain);
-		List<Map<String, Object>> objects = parser.getJSONPrepared(state);
-		this.setObject(key, objects);
+	public void setState(String key, State state) {
+		this.setObject(key, state);
 	}
 	
 	public static GridGameServerToken tokenFromJointAction(JointAction jointAction) {
 		GridGameServerToken token = new GridGameServerToken();
-		List<Object> actions = new ArrayList<Object>();
-		for (Map.Entry<String, GroundedSGAgentAction> entry : jointAction.actions.entrySet()) {
-			GroundedSGAgentAction action = entry.getValue();
+		List<Object> actionTokens = new ArrayList<Object>();
+		List<Action> actions = jointAction.getActions();
+		for (int agentNum = 0; agentNum < actions.size(); agentNum++) {
+			Action action = actions.get(agentNum);
 			GridGameServerToken actionToken = new GridGameServerToken();
 			actionToken.setString(GameHandler.ACTION, action.actionName());
-			String agentName = entry.getKey();
-			actionToken.setString(GameHandler.AGENT, agentName);
-			actionToken.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(action.getParametersAsString()));
-			
-			actions.add(actionToken);
+			actionToken.setInt(GameHandler.AGENT, agentNum);
+			if (action instanceof ObjectParameterizedAction) {
+				String[] params = ((ObjectParameterizedAction)action).getObjectParameters();
+				actionToken.setStringList(GameHandler.ACTION_PARAMS, Arrays.asList(params));
+			}
+			actionTokens.add(actionToken);
 		}
 		
-		token.setList(JOINT_ACTION, actions);
+		token.setList(JOINT_ACTION, actionTokens);
 		return token;
 	}
 
@@ -139,11 +137,8 @@ public class GridGameServerToken extends Token {
 			for (Object object : actions) {
 				GridGameServerToken action = new GridGameServerToken((LinkedHashMap<String, Object>)object);
 				String actionName = action.getString(GameHandler.ACTION);
-				String agent = action.getString(GameHandler.AGENT);
-				List<String> params = action.getStringList(GameHandler.ACTION_PARAMS);
-				SGAgentAction singleAction = domain.getSingleAction(actionName);
-				GroundedSGAgentAction groundedAction = new GroundedObParamSGAgentAction(agent, singleAction, params.toArray(new String[params.size()]));
-				jointAction.addAction(groundedAction);
+				Action singleAction = new SimpleAction(actionName);
+				jointAction.addAction(singleAction);
 			}
 		} catch (TokenCastException e) {
 			e.printStackTrace();

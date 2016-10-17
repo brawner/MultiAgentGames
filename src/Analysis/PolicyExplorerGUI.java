@@ -12,8 +12,8 @@ import burlap.behavior.singleagent.auxiliary.valuefunctionvis.PolicyRenderLayer;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.ArrowActionGlyph;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.common.PolicyGlyphPainter2D;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.core.state.State;
+import burlap.visualizer.Visualizer;
 
 public class PolicyExplorerGUI extends JFrame {
 
@@ -29,13 +29,13 @@ public class PolicyExplorerGUI extends JFrame {
 		this.visualizer = visualizer;
 		this.visualizer.setPreferredSize(new Dimension(500, 300));
 		
-		PolicyGlyphPainter2D spp = ArrowActionGlyph.getNSEWPolicyGlyphPainter(GridGame.CLASSAGENT, GridGame.ATTX, GridGame.ATTY,
-				GridGame.ACTIONNORTH, GridGame.ACTIONSOUTH, GridGame.ACTIONEAST, GridGame.ACTIONWEST);
-		spp.setNumXCells(5);
-		spp.setNumYCells(3);
-		PolicyRenderLayer renderLayer = new PolicyRenderLayer(states, spp, policy);
-		
-		this.visualizer.addRenderLayer(renderLayer);
+//		PolicyGlyphPainter2D spp = ArrowActionGlyph.getNSEWPolicyGlyphPainter(GridGame.CLASS_AGENT, GridGame.VAR_X, GridGame.VAR_Y,
+//				GridGame.ACTION_NORTH, GridGame.ACTION_SOUTH, GridGame.ACTION_EAST, GridGame.ACTION_WEST);
+//		spp.setNumXCells(5);
+//		spp.setNumYCells(3);
+//		PolicyRenderLayer renderLayer = new PolicyRenderLayer(states, spp, policy);
+//		
+//		this.visualizer.addRenderLayer(renderLayer);
 	}
 
 	public void initGUI() {

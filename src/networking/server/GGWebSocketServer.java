@@ -16,6 +16,9 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
+import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
+import burlap.mdp.stochasticgames.agent.SimpleSGAgentGenerator;
+
 
 public class GGWebSocketServer extends WebSocketAdapter{
 	private static final String WORLD_DIRECTORY = System.getProperty("user.home") + "/grid_games/worlds";
@@ -37,8 +40,8 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	public GGWebSocketServer() {
 		this.server = GridGameManager.connect();
 	}
-	public GGWebSocketServer(String gameDirectory, String outputDirectory, String summeriesDirectory, String experimentDirectory, String paramsDirectory) {
-		this.server = GridGameManager.connect(gameDirectory, outputDirectory, summeriesDirectory, experimentDirectory, paramsDirectory);
+	public GGWebSocketServer(String gameDirectory, String outputDirectory, String summeriesDirectory, String experimentDirectory, String paramsDirectory, SGAgentGenerator agentGenerator) {
+		this.server = GridGameManager.connect(gameDirectory, outputDirectory, summeriesDirectory, experimentDirectory, paramsDirectory, agentGenerator);
 	}
 	
 	@Override
@@ -133,8 +136,8 @@ public class GGWebSocketServer extends WebSocketAdapter{
 		if (!summariesDirFile.mkdirs()) {
 			throw new RuntimeException("Could not make the summaries directory " + summariesDirFile.getAbsolutePath());
 		}
-		
-		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory, paramsDirectory);
+		SGAgentGenerator agentGenerator = new SimpleSGAgentGenerator();
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory, paramsDirectory, agentGenerator);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8787);

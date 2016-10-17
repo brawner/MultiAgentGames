@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import burlap.parallel.Concurrent;
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 import networking.common.messages.WorldFile;
 import networking.server.GridGameManager;
-import burlap.parallel.Concurrent;
 
 /**
  * Handles text interaction on the command line for the client. Probably not a whole lot has to be changed, except maybe the instructions it prints out.
