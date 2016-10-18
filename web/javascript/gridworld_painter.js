@@ -22,7 +22,7 @@ var GridWorldPainter = function (gridworld) {
 	this.currentAnimations = {};
 }
 
-GridWorldPainter.prototype.init = function (container, this_agent_name) {
+GridWorldPainter.prototype.init = function (container, this_agent_name, tile_click_cb) {
 	"use strict";
 
 	this_agent_name = typeof this_agent_name !== 'undefined' ? this_agent_name : 'agent1';
@@ -48,11 +48,15 @@ GridWorldPainter.prototype.init = function (container, this_agent_name) {
 
 	this.walls = {};
 	this.goals = {};
-	this.drawTilesGoals2DWalls.apply(this);
+	this.drawTilesGoals2DWalls(tile_click_cb);
 	this.draw1DWalls.apply(this);
 }
 
-GridWorldPainter.prototype.drawTilesGoals2DWalls = function() {
+GridWorldPainter.prototype.convertOffsetToGrid = function(px, py) {
+	return {x:px / this.TILE_SIZE, y:py / this.TILE_SIZE}
+}
+
+GridWorldPainter.prototype.drawTilesGoals2DWalls = function(cb) {
 	//draw tiles
 	for (var x = 0; x < this.gridworld.width; x++) {
 		for (var y = 0; y < this.gridworld.height; y++) {
@@ -62,7 +66,8 @@ GridWorldPainter.prototype.drawTilesGoals2DWalls = function() {
 				y : this.height - (y+1)*this.TILE_SIZE,
 				width : this.TILE_SIZE,
 				height : this.TILE_SIZE,
-				stroke : 'black'
+				stroke : 'black',
+				fill : 'white'
 			};
 
 			//goals
@@ -83,9 +88,18 @@ GridWorldPainter.prototype.drawTilesGoals2DWalls = function() {
 					}
 				}
 			}
-			
-			//var rect = new paper.Path.Rectangle(params);
+
+			var tileWidth = this.TILE_SIZE;
+			var gwHeight = this.gridworld.height - 1;
 			var tile = this.paper.add([tile_params])[0];
+			tile.attr({
+			    cursor: 'pointer',
+			}).mouseup(function(e) {
+				var px = Math.round(e.offsetX / tileWidth - 0.5);
+			    var py = gwHeight - Math.round(e.offsetY / tileWidth - 0.5);
+			    console.log("Click " + px + " " + py);
+			    cb(px,py);
+			}); 
 		}
 	}
 }
@@ -137,7 +151,7 @@ for (var x = 0; x < this.gridworld.width; x++) {
 
 }
 
-GridWorldPainter.prototype.reset = function(gridworld, container, agent_name) {
+GridWorldPainter.prototype.reset = function(gridworld, container, agent_name, tile_click_cb) {
 	this.gridworld = gridworld;
 	this.animationTimeouts = [];
 	this.objectImages = {};
@@ -146,7 +160,7 @@ GridWorldPainter.prototype.reset = function(gridworld, container, agent_name) {
 	if (typeof container.empty !== 'undefined' && typeof(container.empty) == typeof(Function)) {
 		container.empty();
 	}
-	this.init(container, agent_name);
+	this.init(container, agent_name, tile_click_cb);
 }
 
 GridWorldPainter.prototype.drawState = function (state) {
@@ -186,8 +200,7 @@ GridWorldPainter.prototype.drawState = function (state) {
 //hit edge of world
 //hit another agent (1) who waits; (2) who is also moving to the same tile
 
-GridWorldPainter.prototype.drawTransition
- = function (state, action, nextState, mdp, goal_callback) {
+GridWorldPainter.prototype.drawTransition = function (state, action, nextState, mdp, goal_callback) {
  	"use strict";
 	console.log('------------')
 	this.drawState(state);
@@ -251,8 +264,14 @@ GridWorldPainter.prototype.drawTransition
 											  cy : (this.gridworld.height - nextState[agent].location[1] - .5)*this.TILE_SIZE}, 
 											 this.ACTION_ANIMATION_TIME, 'easeInOut');
 			this.objectImages[agent].animate(movement);
+			this.drawState(nextState);
 
 			$.subscribe('killtimers', this.makeTimerKiller(this.objectImages[agent], movement));
+		}
+
+		if (typeof this.objectImages['nextMove'] !== 'undefined') {
+			this.objectImages['nextMove'].remove();
+			delete this.objectImages['nextMove'];
 		}
 	}
 	animation_time += this.ACTION_ANIMATION_TIME;
@@ -451,3 +470,138 @@ GridWorldPainter.prototype.hide_score = function () {
 	this.scoreboard_text.animate({opacity :0}, 250);
 	}
 }
+
+GridWorldPainter.prototype.drawAction = function(action, x, y) {
+	var newX = x,
+		newY = y;
+	switch(action) {
+		case "north":
+			newY = y + 1;
+			break;
+		case "west":
+			newX = x - 1;
+			break;
+		case "south":
+			newY = y - 1;
+			break;
+		case "east":
+			newX = x + 1;
+			break;
+	}
+	var agent_params = {cx : (newX + .5)*this.TILE_SIZE, 
+				                cy : (this.gridworld.height - newY - .5)*this.TILE_SIZE};
+			if (this.objectImages.hasOwnProperty("nextMove")) {
+				this.objectImages['nextMove'].attr(agent_params);
+			}
+			else {
+				agent_params.type = 'circle';
+				agent_params.fill = this.PRIMARY_AGENT_COLOR;
+				agent_params['fill-opacity'] = 0.5;
+				agent_params.r = this.AGENT_WIDTH;
+				agent_params.stroke = 'white';
+				agent_params['stroke-width'] = 1;
+
+				var objectImage = this.paper.add([agent_params])[0];
+				this.objectImages['nextMove'] = objectImage;
+			}
+}
+
+var ButtonPainter = function () {
+	"use strict";
+	this.PRIMARY_AGENT_COLOR = 'orange';
+
+	this.BUTTON_WIDTH = 150;
+	this.BUTTON_HEIGHT = 100;
+	this.BUTTON_CORNER_RADIUS = 10;
+	this.BUTTON_SPACING = 20;
+};
+
+ButtonPainter.prototype.init = function(container) {
+	console.log("Initializing button painter");
+	this.width = this.BUTTON_WIDTH * 3 + this.BUTTON_SPACING * 2;
+	this.height = this.BUTTON_HEIGHT * 3 + this.BUTTON_SPACING * 2;
+	if (typeof this.paper === 'undefined') {
+		this.paper = Raphael(container, this.width, this.height);
+	} else {
+		this.paper.setSize(this.width, this.height);
+	}
+
+};
+
+ButtonPainter.prototype.addButton = function(x, y, width, height, txt, cb) {
+		var group = this.paper.set();
+		var btn = this.paper.rect(x, y, width, height, this.BUTTON_CORNER_RADIUS);
+		var text = this.paper.text(x + width/2.0,y + height/2.0,txt);
+		btn.attr("fill", this.PRIMARY_AGENT_COLOR );
+		group.push(btn);
+		group.push(text);
+		$(text.node).css({'font-size':'x-large'})
+		//group.click(cb);
+
+		group.attr({
+		    cursor: 'pointer',
+		}).mouseup(function(e) {
+		    cb();
+		}); 
+		return group;
+};
+
+
+ButtonPainter.prototype.drawDirectionalButtons = function(up_cb, left_cb, down_cb, right_cb, wait_cb) {
+	"use strict";
+	console.log("Drawing buttons");
+	var left_left = 0
+	var up_wait_down_left = left_left + this.BUTTON_WIDTH + this.BUTTON_SPACING
+	var right_left = up_wait_down_left + this.BUTTON_WIDTH + this.BUTTON_SPACING
+
+	var up_top = 0
+	var left_wait_right_top = up_top + this.BUTTON_HEIGHT + this.BUTTON_SPACING
+	var down_top = left_wait_right_top + this.BUTTON_HEIGHT + this.BUTTON_SPACING
+
+	this.addButton(up_wait_down_left, up_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Up", up_cb);
+	this.addButton(left_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Left", left_cb);
+	this.addButton(up_wait_down_left, down_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Down", down_cb);
+	this.addButton(right_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Right", right_cb);
+	this.addButton(up_wait_down_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Wait", wait_cb);
+	
+};
+
+var GridButtonPainter = function(container, gwPainter) {
+	"use strict";
+	console.log("Initializing button painter");
+	this.width = gwPainter.width;
+	this.height = gwPainter.height;
+	this.TILE_SIZE = gwPainter.this.TILE_SIZE;
+	this.paper = gwPainter.paper;
+};
+
+
+GridButtonPainter.prototype.addButton = function(name, cb) {
+	"use strict";
+	
+};
+
+GridButtonPainter.prototype.drawClearButtons = function(cb) {
+	"use strict";
+	console.log("Drawing buttons");
+	var left_left = 0
+	var up_wait_down_left = left_left + this.BUTTON_WIDTH + this.BUTTON_SPACING
+	var right_left = up_wait_down_left + this.BUTTON_WIDTH + this.BUTTON_SPACING
+
+	var up_top = 0
+	var left_wait_right_top = up_top + this.BUTTON_HEIGHT + this.BUTTON_SPACING
+	var down_top = left_wait_right_top + this.BUTTON_HEIGHT + this.BUTTON_SPACING
+
+	this.addButton(up_wait_down_left, up_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Up", up_cb);
+	this.addButton(left_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Left", left_cb);
+	this.addButton(up_wait_down_left, down_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Down", down_cb);
+	this.addButton(right_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Right", right_cb);
+	this.addButton(up_wait_down_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Wait", wait_cb);
+	
+};
+
+
+
+
+
+

@@ -9,6 +9,7 @@ import java.util.List;
 import networking.common.messages.WorldFile;
 import networking.server.GridGameManager;
 import burlap.domain.stochasticdomain.gridgame.GridGameStandardMechanicsWithoutTieBreaking;
+import burlap.domain.stochasticdomain.gridgame.NullStateMapping;
 import burlap.domain.stochasticdomain.gridgame.SimultaneousGoalRewardFunction;
 import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.domain.stochasticgames.gridgame.GridGame;
@@ -68,7 +69,7 @@ public class GridGameWorldLoader {
 
 			WorldLoadingStateGenerator stateGenerator = 
 					GridGameWorldLoader.generateStateGenerator(token, domain, goalsPerAgent, useImmutableStates);
-			world = new NetworkWorld((SGDomain)domain, jointReward, terminalFunction, stateGenerator, null, numAgents, description);
+			world = new NetworkWorld((SGDomain)domain, jointReward, terminalFunction, stateGenerator, new NullStateMapping(), numAgents, description);
 			
 
 			

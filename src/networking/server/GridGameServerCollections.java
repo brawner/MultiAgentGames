@@ -1,6 +1,7 @@
 package networking.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -214,6 +215,14 @@ public class GridGameServerCollections {
 	public NetworkWorld getWorld(String id) {
 		synchronized(this.worldLookup) {
 			return this.worldLookup.get(id);
+		}
+	}
+	
+	public List<String> getWorldIds() {
+		synchronized(this.worldLookup) {
+			List<String> worldIds = new ArrayList<String>(this.worldLookup.keySet());
+			Collections.sort(worldIds);
+			return worldIds;
 		}
 	}
 	

@@ -6,6 +6,7 @@ import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.state.GGAgent;
 import burlap.domain.stochasticgames.gridgame.state.GGGoal;
 import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;
 import burlap.mdp.stochasticgames.model.JointRewardFunction;
@@ -21,9 +22,11 @@ public class SimultaneousGoalRewardFunction implements JointRewardFunction {
 
 	@Override
 	public double[] reward(State s, JointAction ja, State sp) {
-		double[] reward = new double[ja.size()];
-		List<ObjectInstance> agents = (List<ObjectInstance>)sp.get(GridGame.CLASS_AGENT);
-		List<ObjectInstance> goals = (List<ObjectInstance>)sp.get(GridGame.CLASS_GOAL);
+		GenericOOState ooState = (GenericOOState)sp;
+		List<ObjectInstance> agents = ooState.objectsOfClass(GridGame.CLASS_AGENT);
+		List<ObjectInstance> goals = ooState.objectsOfClass(GridGame.CLASS_GOAL);
+		
+		double[] reward = new double[agents.size()];
 		
 		boolean allPlayersInGoals = true;
 		for (ObjectInstance agent : agents) {

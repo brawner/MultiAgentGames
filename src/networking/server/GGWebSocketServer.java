@@ -17,6 +17,7 @@ import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
 
 import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
+import burlap.mdp.stochasticgames.agent.SimpleSGAgentGenerator;
 
 
 public class GGWebSocketServer extends WebSocketAdapter{
@@ -115,11 +116,11 @@ public class GGWebSocketServer extends WebSocketAdapter{
 	
 	public static void main(String[] args) {
 		Map<String, String> argsMap = parseInputArgs(args);
-		//String gameDirectory = argsMap.get(WORLD_DIRECTORY_FLAG);
+		String gameDirectory = argsMap.get(WORLD_DIRECTORY_FLAG);
 		String outputDirectoryRoot = argsMap.get(OUTPUT_DIRECTORY_FLAG);
 		String summariesDirectoryRoot = argsMap.get(SUMMARIES_DIRECTORY_FLAG);
-		//String experimentDirectory = argsMap.get(EXPERIMENT_DIRECTORY_FLAG);
-		//String paramsDirectory = argsMap.get(PARAMS_DIRECTORY_FLAG);
+		String experimentDirectory = argsMap.get(EXPERIMENT_DIRECTORY_FLAG);
+		String paramsDirectory = argsMap.get(PARAMS_DIRECTORY_FLAG);
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 		Date date = new Date();
@@ -135,7 +136,8 @@ public class GGWebSocketServer extends WebSocketAdapter{
 		if (!summariesDirFile.mkdirs()) {
 			throw new RuntimeException("Could not make the summaries directory " + summariesDirFile.getAbsolutePath());
 		}
-		//SGAgentGenerator agentGenerator = new SimpleSGAgentGenerator();
+		SGAgentGenerator agentGenerator = new SimpleSGAgentGenerator();
+		GGWebSocketServer ggServer = new GGWebSocketServer(gameDirectory, outputDirectory, summariesDirectory, experimentDirectory, paramsDirectory, agentGenerator);
 		Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(8787);

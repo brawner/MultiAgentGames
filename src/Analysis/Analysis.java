@@ -13,6 +13,7 @@ import burlap.behavior.stochasticgames.GameEpisode;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.domain.stochasticgames.gridgame.state.GGAgent;
 import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;
 
@@ -486,7 +487,8 @@ public class Analysis {
 	}
 	
 	public static void writeLineToFile(State state, JointAction action, int matchNum, int roundNum, int turnNum, double[] reward, String worldType, FileWriter writer, String participant1Id, String participant2Id) throws IOException {
-		List<ObjectInstance> agents = (List<ObjectInstance>)state.get(GridGame.CLASS_AGENT);
+		GenericOOState ooState = (GenericOOState)state;
+		List<ObjectInstance> agents = ooState.objectsOfClass(GridGame.CLASS_AGENT);
 		GGAgent[] players = new GGAgent[2];
 		
 		for (ObjectInstance agent : agents) {
@@ -497,13 +499,14 @@ public class Analysis {
 		}
 		int a1x = players[0].x;
 		int a1y = players[0].y;
+		
 		int a2x = players[1].x;
 		int a2y = players[1].y;
 		int trialNum = 0;
 		int reaction1 = 0;
 		int reaction2 = 0;
-		String action1 = (action == null) ? "null" : action.action(0).actionName();
-		String action2 = (action == null) ? "null" : action.action(1).actionName();
+		String action1 = (action == null || action.size() == 0) ? "null" : action.action(0).actionName();
+		String action2 = (action == null || action.size() == 0) ? "null" : action.action(1).actionName();
 		
 		String agent1Reward = "0.0";
 		String agent2Reward = "0.0";

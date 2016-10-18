@@ -8,15 +8,19 @@
 	}
 
 	#message_outer {
-		background-color:black;
+		background-color:white;
 	}
 
 	#messages {
 		font-size: 30px;
-		background-color:black;
-		color:white;
+		background-color:white;
+		color:black;
 		text-align : left;
 	    margin-left: 50px;
+	}
+	text {
+       -moz-user-select: none;
+       -webkit-user-select: none;
 	}
 	</style>
 	 <title>Game</title>
@@ -27,8 +31,7 @@
 </head>
 <body>
 	<!--utility libraries-->
-	<script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
-    <script src="javascript/lib/jquery.js"></script>
+	<script src="javascript/jquery.js"></script>
 	<script src="javascript/game.js"></script>	<!-- Handles websocket connections -->
 	<script src="javascript/connect.js"></script>
 	<script src="javascript/handler.js"></script>
@@ -41,9 +44,9 @@
 	<script src="javascript/clientMDP.js"></script>
 	<script src="javascript/demos.js"></script>
 	<script src="javascript/gridworld_painter.js"></script>
-	<script src="javascript/lib/raphael.js"></script>
-	<script src="javascript/lib/tiny-pubsub.js"></script>
-	<script src="javascript/lib/underscore.js"></script>
+	<script src="javascript/raphael.js"></script>
+	<script src="javascript/tiny-pubsub.js"></script>
+	<script src="javascript/underscore.js"></script>
 	<script>
 		$(document).ready(fnMain);
 		
@@ -56,6 +59,7 @@
 		</div>
 		<br>
 		<div id="task_display"></div>
+		<div id="button_pad"></div>
 	</div>
 </body>
 </html>

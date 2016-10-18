@@ -1,0 +1,7 @@
+0,1,0,agent0,unknown,0,1,0,north,NormLearningAgent0,unknown,4,1,0,east
+0,1,1,agent0,unknown,0,2,0,east,NormLearningAgent0,unknown,4,1,0,noop
+0,1,2,agent0,unknown,1,2,0,east,NormLearningAgent0,unknown,4,1,0,west
+0,1,3,agent0,unknown,2,2,0,east,NormLearningAgent0,unknown,3,1,0,west
+0,1,4,agent0,unknown,3,2,0,east,NormLearningAgent0,unknown,2,1,0,west
+0,1,5,agent0,unknown,4,2,0,south,NormLearningAgent0,unknown,1,1,0,west
+0,1,6,agent0,unknown,4,1,0,null,NormLearningAgent0,unknown,0,1,0,null

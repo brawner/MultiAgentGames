@@ -204,12 +204,12 @@ public class WorldLoadingStateGenerator implements StateGenerator{
 			copy = copy.addObject(goal);
 		}
 		
-		List<ObjectInstance> agentObjects = copy.objectsOfClass(GridGame.CLASS_AGENT);
-		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
-			SGAgent agent = agents.get(i);
-			ObjectInstance agentObject = agentObjects.get(i);
-			copy = copy.renameObject(agentObject.name(), agent.agentName());
-		}
+//		List<ObjectInstance> agentObjects = new ArrayList<ObjectInstance>(copy.objectsOfClass(GridGame.CLASS_AGENT));
+//		for (int i = 0; i < agentObjects.size() && i < agents.size(); i++) {
+//			SGAgent agent = agents.get(i);
+//			ObjectInstance agentObject = agentObjects.get(i);
+//			copy = copy.renameObject(agentObject.name(), agent.agentName());
+//		}
 		return copy;
 	}
 	

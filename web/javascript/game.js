@@ -37,6 +37,7 @@ var Game = function() {
         handler,
         // the current main painter object
         painter,
+        button_painter,
         text_messages,
         score_board,
         // tracks the connection status and displays it
@@ -53,7 +54,8 @@ var Game = function() {
         currentScore = 0,
         //for mark's code
         clientmdp,
-        previousState;
+        previousState,
+        actionChosen = false;
 
     var round_ended = false;
     var step_start_time = 0;
@@ -127,7 +129,10 @@ var Game = function() {
             //if the game exists, have agent join game
             
             url_client_id = vars['t_id'];
-            redirect_page = vars['redirect']+"/?"+"SID="+vars['SID']+"&t_id="+url_client_id;
+            if (typeof vars['redirect'] != 'undefined') {
+                redirect_page = vars['redirect']+"/?"+"SID="+vars['SID']+"&t_id="+url_client_id;
+            }
+            
 
             if(vars['human']!= null && vars['game']!=null){
                 var label = vars['game'];
@@ -150,10 +155,56 @@ var Game = function() {
             connection.Send(msg);
     };
 
-    this.onActionPress = function (event) {
+    var getCurrentXY = function() {
+        var cx = -1,
+            cy = -1;
+        
+        for (var i in currentState.Agents) {
+            var agent = currentState.Agents[i];
+            console.log(agent);
+            if (agent.Name == agent_name) {
+                cx = agent.X;
+                cy = agent.Y;
+            }
+        }
+        return {x:cx, y:cy};
+    }
+
+    var onAction = function(action) {
         if (agent_waited) {
             return;
         }
+        if (actionChosen) {
+            return;
+        }
+        actionChosen = true;
+        
+        //get reaction time
+        var rt = (+new Date) - step_start_time;
+        console.log("reaction time");
+        console.log(rt);
+        //client_id, agent_name, t_id, rt, game_number, action_number
+        var rt_msg = message_writer.log_reaction_time(client_id, agent_name, url_client_id, rt, game_number,action_number);
+        connection.Send(rt_msg);
+
+        //$(document).unbind('keydown.gridworld');
+        var msg = message_writer.updateActionMsg(client_id, action, agent_name);
+
+        var cXY = getCurrentXY();
+
+        painter.drawAction(action, cXY.x, cXY.y);
+
+         var send_action = $.proxy(function () {
+            console.log(msg);
+            connection.Send(msg); 
+                    
+        }, this);
+
+        send_action();
+        //setTimeout(send_action, END_OF_ROUND_PAUSE/4);
+    };
+
+    this.onActionPress = function (event) {
         var action;
         console.log("On action press");
         $(document).unbind('keydown.gridworld');
@@ -178,32 +229,38 @@ var Game = function() {
                 return;
         }
 
-        //get reaction time
-        var rt = (+new Date) - step_start_time;
-        console.log("reaction time");
-        console.log(rt);
-        //client_id, agent_name, t_id, rt, game_number, action_number
-        var rt_msg = message_writer.log_reaction_time(client_id, agent_name, url_client_id, rt, game_number,action_number);
-        connection.Send(rt_msg);
-
-        //$(document).unbind('keydown.gridworld');
-        var msg = message_writer.updateActionMsg(client_id, action, agent_name);
-
-        if(action=='noop'){
-            text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br> You waited."+"<br> Waiting on other player to move...");
+        onAction(action);
         
-        }else{
-            text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br> You went "+action+"."+"<br> Waiting on other player to move...");
+    };
+
+    this.onSquarePress = function(x,y) {
+        var cXY = getCurrentXY();
+        var diffX = x - cXY.x;
+        var diffY = y - cXY.y;
+        var action;
+        console.log("Move " + cXY + " -> " + "(" + x + ", " + y + ") = " + "(" + diffX + ", " + diffY + ")");
+            
+        if (diffX == 0 && diffY == 0) {
+            action = "noop";
         }
-
-         var send_action = $.proxy(function () {
-            console.log(msg);
-            connection.Send(msg); 
-                    
-        }, this);
-
-        send_action();
-        //setTimeout(send_action, END_OF_ROUND_PAUSE/4);
+        else if (diffX == 1 && diffY == 0) {
+            action = "east";
+        }
+        else if (diffX == -1 && diffY == 0) {
+            action = "west";
+        }
+        else if (diffX == 0 && diffY == 1) {
+            action = "north";
+        }
+        else if (diffX == 0 && diffY == -1) {
+            action = "south";
+        }
+        else {
+            console.log("Invalid move " + "(" + actX + ", " + actY + ") -> " + "(" + x + ", " + y + ") = " + "(" + diffX + ", " + diffY + ")");
+            return;
+        }
+        onAction(action);
+        
     }
 
 	// sets up everything
@@ -238,16 +295,16 @@ var Game = function() {
             painter.draw(element, button);
         }
 
-        var refresh_game = $.proxy(function () {
-            var initState = getAgentLocals(currentState);
-            console.log("Printing again %O", initState);
-            painter.drawState(initState);
-        });
+        // var refresh_game = $.proxy(function () {
+        //     var initState = getAgentLocals(currentState);
+        //     console.log("Printing again %O", initState);
+        //     painter.drawState(initState);
+        // });
 
-        $(window).focus(function() {
+        // $(window).focus(function() {
             
-            setTimeout(refresh_game, 10);
-        });
+        //     setTimeout(refresh_game, 10);
+        // });
         
     };
 
@@ -407,13 +464,31 @@ var Game = function() {
             //example gridworld and initState
 
             if (!is_initialized) {
+                console.log("Running not initialized code");
                 var gridworld = getGridworld(initMsg.state);
                 var initState = getAgentLocals(initMsg.state);
                 clientmdp = new ClientMDP(gridworld);
                 painter = new GridWorldPainter(gridworld);
-                painter.init($('#task_display')[0], initMsg.agent_name);
-                $(painter.paper.canvas).css({display :'block', margin : 'auto'}); //center the task
+                painter.init($('#task_display')[0], initMsg.agent_name, self.onSquarePress);
+                $(painter.paper.canvas).css({display :'block', position:"absolute", top:"0px", left:"0px"}); //center the task
                 painter.drawState(initState);
+
+                button_painter = new ButtonPainter();
+                button_painter.init($('#button_pad')[0]);
+                var bp_div = document.getElementById("button_pad");
+                bp_div.style.position = "absolute";
+                bp_div.style.top = "100px";
+                bp_div.style.left = "520px";
+
+
+
+                button_painter.drawDirectionalButtons(function() {console.log("Click north"); onAction("north");},
+                                                   function() {console.log("Click west"); onAction("west");},
+                                               function() {console.log("Click south"); onAction("south");},
+                                               function() {console.log("Click east"); onAction("east");},
+                                               function() {console.log("Click wait"); onAction("noop");});
+
+                
                 previousState = initState;
 
                 step_start_time = +new Date;
@@ -423,23 +498,26 @@ var Game = function() {
                 //score_board.hide();
 
                 text_messages = $('#messages');
-                text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore +"<br>      "+"<br>        "+"<br>        ");
+                text_messages.css({position:"absolute", top:"0px", left:"510px"})
+                text_messages.html('Player: '+painter.PRIMARY_AGENT_COLOR+'<BR>Score: '+ currentScore);
 
                 // show waiting board here if only one
                 if(initMsg.ready == "false"){
                     agent_waited = true;
-                    painter.draw_waiting();
+                    //painter.draw_waiting();
                     setTimeout(waitForOtherAgent, WAIT_FOR_PARTNER);
                 }
                 is_initialized = true;
             } else {
+                console.log("Running initialized code");
                 var load_next_round = function () { 
                     var gridworld = getGridworld(initMsg.state);
                     var initState = getAgentLocals(initMsg.state);
                     previousState = initState;
-                    painter.reset(gridworld, $('#task_display')[0], initMsg.agent_name);
+                    painter.reset(gridworld, $('#task_display')[0], initMsg.agent_name, self.onSquarePress);
                     $(painter.paper.canvas).css({display :'block', margin : 'auto'}); //center the task
                     painter.drawState(initState);
+
                     step_start_time = +new Date;
 
                     //score_board = $('#score_board')
@@ -447,7 +525,7 @@ var Game = function() {
                     //score_board.hide();
 
                     text_messages = $('#messages');
-                    text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore +"<br>      "+"<br>        "+"<br>        ");
+                    text_messages.html('Player: '+painter.PRIMARY_AGENT_COLOR+'<BR>Score: '+ currentScore);
                 }
                 setTimeout(load_next_round, END_OF_ROUND_PAUSE-500);
                    
@@ -561,7 +639,7 @@ var Game = function() {
     // Handle a game update, and update the state and visualization
     this.update_game = function(msg) {
         if(agent_waited){
-            painter.hide_waiting();
+            //painter.hide_waiting();
             agent_waited = false;
         }
         console.log("Running update_game with msg below");
@@ -573,6 +651,7 @@ var Game = function() {
                 currentScore = updateMsg.score;
             }
             currentAction = undefined;
+            actionChosen = false;
         }
 
     
@@ -585,20 +664,19 @@ var Game = function() {
 
             console.log(" RUNNING MARKS UPDATE CODE");
            
-            
+            var nextState = getAgentLocals(updateMsg.state);
+                
             if(updateMsg.action !=null){
                 
                 console.log(updateMsg.is_terminal);
                 
-                var currentActions = convertActions(updateMsg.action);
+                
+                var currentActions = convertActions(updateMsg.action, updateMsg.state.Agents);
 
-                var nextState = getAgentLocals(updateMsg.state);
                 console.log("current actions:");
                 console.log(currentActions);
                 var animation_time = painter.drawTransition(previousState, currentActions, nextState, clientmdp);
-                text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        "); // +"<br> Other Agent's Score: " + 0);
-
-                previousState = nextState;
+                text_messages.html('Player: '+painter.PRIMARY_AGENT_COLOR+'<BR>Score: '+ currentScore); // +"<br> Other Agent's Score: " + 0);
 
                 var load_next_step = $.proxy(function () {
                     step_start_time = +new Date;
@@ -620,36 +698,37 @@ var Game = function() {
 
                 setTimeout(load_next_step, animation_time);
             } 
+            previousState = nextState;
 
             if(round_ended){
                 //if its an initial state, wait a bit to load
-                var initState = getAgentLocals(updateMsg.state);
-
                 var load_next_round = (function (initState) {
                     return function () {
                         painter.drawState(initState);
                         step_start_time = +new Date;
                         previousState = initState;
 
-                        text_messages.html('You are the '+painter.PRIMARY_AGENT_COLOR+' player! <br> Your Score: '+ currentScore+"<br>        "+"<br>        "+"<br>        ");
+                        text_messages.html('Player: '+painter.PRIMARY_AGENT_COLOR+'<BR>Score: '+ currentScore);
                         round_ended = false;
                     }
-                }) (initState);
+                }) (nextState);
 
                 load_next_round = $.proxy(load_next_round, this);
 
                 setTimeout(load_next_round, END_OF_ROUND_PAUSE);
             }
+
+
         }
         
     };
 
    
-    var convertActions = function(taken_actions){
+    var convertActions = function(taken_actions, state){
 
         var jointaction = {};
         for(var j = 0; j < taken_actions.length;j++){
-            var an = taken_actions[j]['agent'];
+            var an = state[j].Name;
             var a = taken_actions[j]['action'];
             switch (a) {
             case 'west': 
@@ -680,6 +759,9 @@ var Game = function() {
 
         var locals = {}
         var agent;
+        if (!('Agents' in state)) {
+            return locals;
+        }
         for(var a = 0; a<state.Agents.length;a++){
             var temp = {};
             agent = state.Agents[a];
@@ -732,9 +814,10 @@ var Game = function() {
                 var go_to_next_url = $.proxy(function () {
                     var found_partner = !partnerTimeout;
                     var url = redirect_page + "&found_partner=" + found_partner.toString();
-
-                    console.log("Redirecting to: " + url);
-                    $(location).attr('href',url);
+                    if (typeof redirect_page != "undefined") {
+                        console.log("Redirecting to: " + url);
+                        $(location).attr('href',url);
+                    }
                 }, this)
 
                 setTimeout(draw_finalscreen, END_OF_ROUND_PAUSE);
@@ -750,15 +833,7 @@ var Game = function() {
     }
 
     // Callback function for the Action Handler when someone presses a button or enters a key action
-    var onAction = function(event) {
-        if (event in actions) {
-            currentAction = event;
-            sendActionUpdate();
-        }
-        console.log("Current action " + currentAction);
-        painter.draw(currentState, currentScore, currentAction);
-        //CALL MARK'S CODE HERE
-    };
+    
 
     // Not used
     var onInteraction = function(event) {

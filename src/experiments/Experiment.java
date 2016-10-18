@@ -255,7 +255,7 @@ public class Experiment {
 
 		GridGameServerToken token = GridGameWorldLoader.loadText(gamesFolder+"/"+gameName+".json");
 		NetworkWorld world = GridGameWorldLoader.loadWorld(token);
-		State state = world.startingState(); 
+		State state = world.startingStateWithoutNames(); 
 
 		return state;
 	}

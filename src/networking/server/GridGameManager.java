@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -451,7 +452,7 @@ public class GridGameManager {
 		NetworkWorld baseWorld = matchConfiguration.getWorldWithAgents();
 		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 		//SGDomain domain = baseWorld.getDomain();
-		State startState = baseWorld.startingState();
+		State startState = baseWorld.startingStateWithoutNames();
 		String agentName = matchConfiguration.getAgentName(handler);
 		response.setString(GameHandler.AGENT, agentName);
 		response.setState(GameHandler.STATE, startState);
@@ -696,9 +697,20 @@ public class GridGameManager {
 			this.collections.addConfiguration(configuration);
 			response.setString(STATUS, "Game " + configuration.getActiveGameID() + " has been initialized");
 		}
+		if (turkId == null) {
+			String baseId = session.getRemoteAddress().getHostString();
+			int count = 0;
+			turkId = baseId + count;
+			
+			Set<String> configAgentNames = configuration.getAttachedAgentNames();
+			while (configAgentNames.contains(turkId)) {
+				count += 1;
+				turkId = baseId + count;
+			}
+		}
+		
 		String activeId = configuration.getActiveGameID();
 		GameHandler handler = this.addHumanAgent(configuration, clientId, turkId, session, response);
-
 		this.addInitializationMsg(configuration, response, handler);
 		if (!configuration.isFullyConfigured()) {
 			return;
@@ -722,7 +734,7 @@ public class GridGameManager {
 		response.setString(GridGameManager.WORLD_TYPE, baseWorld.toString());
 		
 		//SGDomain domain = baseWorld.getDomain();
-		State startState = baseWorld.startingState();
+		State startState = baseWorld.startingStateWithoutNames();
 		String agentName = configuration.getCurrentMatch().getAgentName(handler);
 		response.setString(GameHandler.AGENT, agentName);
 		response.setState(GameHandler.STATE, startState);
@@ -765,6 +777,7 @@ public class GridGameManager {
 			return null;
 		} 
 		String text = builder.toString();
+		System.out.println("File text " + text);
 		SimpleSGAgentGenerator sgAgentGenerator = new SimpleSGAgentGenerator();
 		ExperimentConfiguration configuration = 
 				ExperimentConfiguration.createConfigurationFromExperimentStr(experimentType, text, collections, this.paramsDirectory, sgAgentGenerator);

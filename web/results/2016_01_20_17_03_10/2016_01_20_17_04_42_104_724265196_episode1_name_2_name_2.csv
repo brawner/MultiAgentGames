@@ -1,0 +1,16 @@
+Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action
+0,1,0,agent0,3,1,0,north,agent1,1,3,0,south
+0,1,1,agent0,3,2,0,north,agent1,1,2,0,south
+0,1,2,agent0,3,3,0,west,agent1,1,1,0,south
+0,1,3,agent0,2,3,0,west,agent1,1,0,0,east
+0,1,4,agent0,1,3,0,north,agent1,2,0,0,east
+0,1,5,agent0,1,4,0,west,agent1,3,0,0,east
+0,1,6,agent0,0,4,0,null,agent1,4,0,0,null
+Match,Round,Turn,agent1,agent1_x,agent1_y,agent1_rt,agent1_action,agent2,agent2_x,agent2_y,agent2_rt,agent2_action
+0,2,0,agent0,3,1,0,north,agent1,1,3,0,south
+0,2,1,agent0,3,2,0,north,agent1,1,2,0,south
+0,2,2,agent0,3,3,0,north,agent1,1,1,0,south
+0,2,3,agent0,3,4,0,east,agent1,1,0,0,east
+0,2,4,agent0,4,4,0,east,agent1,2,0,0,east
+0,2,5,agent0,4,4,0,west,agent1,3,0,0,east
+0,2,6,agent0,3,4,0,null,agent1,4,0,0,null

@@ -1,12 +1,17 @@
 package networking.server;
 
+import java.util.List;
+
 import networking.common.GridGameServerToken;
 import networking.common.TokenCastException;
 
 import org.eclipse.jetty.websocket.api.Session;
 
+import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.action.SimpleAction;
+import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;
 import burlap.mdp.stochasticgames.world.World;
@@ -161,6 +166,15 @@ public class GameHandler {
 	 * @param state
 	 */
 	public void updateClient(State state) {
+		GenericOOState ooState = (GenericOOState)state;
+		List<ObjectInstance> agents = ooState.objectsOfClass(GridGame.CLASS_AGENT);
+		
+		for (ObjectInstance agent : agents) {
+			System.out.println(agent.name());
+			if (!agent.name().contains("agent")) {
+				System.out.println(agents);
+			}
+		}
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, state);
 		GridGameServerToken msg = new GridGameServerToken();
@@ -183,9 +197,18 @@ public class GameHandler {
 	public void updateClient(State s, JointAction jointAction,
 			double[] jointReward, State sprime, boolean isTerminal) {
 		
-		this.currentScore += jointReward[this.agent.getAgentNum()];
+		int agentNum = this.agent.getAgentNum();
+		this.currentScore += jointReward[agentNum];
 		GridGameServerToken token = new GridGameServerToken();
 		token.setState(STATE, sprime);
+		GenericOOState ooState = (GenericOOState)sprime;
+		List<ObjectInstance> agents = ooState.objectsOfClass(GridGame.CLASS_AGENT);
+		for (ObjectInstance agent : agents) {
+			System.out.println(agent.name());
+			if (!agent.name().contains("agent")) {
+				System.out.println(agents);
+			}
+		}
 		token.setDouble(SCORE, this.currentScore);
 		token.setToken(ACTION, GridGameServerToken.tokenFromJointAction(jointAction));
 		token.setObject(REWARD, jointReward);
@@ -204,6 +227,7 @@ public class GameHandler {
 	public void updateClient(GridGameServerToken message) {
 		if (this.session.isOpen()) {
 			this.session.getRemote().sendStringByFuture(message.toJSONString());
+			System.out.print("Sending:\t" + message.toJSONString());
 		}
 	}
 
@@ -237,8 +261,7 @@ public class GameHandler {
 	 * @param world
 	 */
 	public void addNetworkAgent(World world) {
-		this.agent = NetworkAgent.getNetworkAgent(this);
-		//this.domain = world.getDomain();
+		this.agent = NetworkAgent.getNetworkAgent(this, world.getDomain(), this.turkId);
 		world.join(this.agent);
 	}
 

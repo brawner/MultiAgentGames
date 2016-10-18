@@ -44,7 +44,7 @@ public class NetworkWorld extends World {
 	protected final int								maxAgentsCanJoin;
 	protected final String							worldDescription;
 	protected double 							threadTimeout;
-	private AtomicBoolean							isOk;
+	private final AtomicBoolean							isOk;
 	private final WorldLoadingStateGenerator				wlStateGenerator;
 	/**
 	 * Initializes the world.
@@ -57,17 +57,37 @@ public class NetworkWorld extends World {
 		super(domain, jr, tf, sg, stateAbstraction);
 		this.maxAgentsCanJoin = numAgents;
 		this.worldDescription = description;
+		if (sg == null) {
+			throw new RuntimeException("This can't be null");
+		}
+		
 		this.wlStateGenerator = sg;
+		this.isOk = new AtomicBoolean(false);
+		this.threadTimeout = Parallel.NO_TIME_LIMIT;
 	}
 	
 	/**
 	 * Generates an example starting state;
 	 * @return
 	 */
-	public State startingState() {
-		
-		OOState startingState = (OOState) this.wlStateGenerator.generateState(this.agents);
-		return this.abstractionForAgents.mapState(startingState);
+	public State startingStateWithoutNames() {
+		WorldLoadingStateGenerator wlsg = (WorldLoadingStateGenerator) this.initialStateGenerator;
+		return (OOState) wlsg.generateState(this.agents);		
+	}
+	
+	public State startingStateWithNames() {
+//		WorldLoadingStateGenerator wlsg = (WorldLoadingStateGenerator) this.initialStateGenerator;
+//		OOState startingState = (OOState) wlsg.generateState(this.agents);
+//		return this.abstractionForAgents.mapState(startingState);
+		return this.startingStateWithoutNames();
+	}
+	
+	
+	@Override
+	public void generateNewCurrentState(){
+		if(!this.gameIsRunning()) {
+			this.currentState = this.startingStateWithNames();
+		}
 	}
 	
 	private void setOk(boolean value) {
@@ -113,12 +133,23 @@ public class NetworkWorld extends World {
 	}
 	
 	@Override
+	public GameEpisode runGame(int maxStages){	
+		this.currentState = this.startingStateWithNames();
+		return this.runGame(maxStages, this.currentState);
+		
+	}
+	
+	@Override
 	public GameEpisode runGame(int maxStages, State startState){
 		this.setOk(true);
-		currentState = initialStateGenerator.generateState();
+		this.currentState = startState;
 		
 		ForCallable<Boolean> gameStarting = new GameStartingCallable(this, this.agents);
 		Parallel.For(0, this.agents.size(), 1, gameStarting);
+		
+		for(WorldObserver wob : this.worldObservers){
+			wob.gameStarting(this.currentState);
+		}
 		/*
 		for(Agent a : agents){
 			a.gameStarting();
@@ -137,6 +168,11 @@ public class NetworkWorld extends World {
 		for(SGAgent a : agents){
 			a.gameTerminated();
 		}
+		
+		for(WorldObserver wob : this.worldObservers){
+			wob.gameEnding(this.currentState);
+		}
+
 		
 		// clean up threading
 		
@@ -247,5 +283,9 @@ public class NetworkWorld extends World {
 	@Override
 	public String toString() {
 		return (this.worldDescription == null) ? "" : this.worldDescription;
+	}
+	
+	public String getDescription() {
+		return this.worldDescription;
 	}
 }

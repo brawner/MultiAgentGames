@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import networking.common.GridGameExperimentToken;
+import networking.common.GridGameServerToken;
 import networking.common.Token;
 import networking.common.TokenCastException;
 import burlap.domain.stochasticdomain.world.NetworkWorld;
@@ -120,6 +121,11 @@ public class MatchConfiguration {
 			NetworkWorld world = collections.getWorld(worldId);
 			if (world == null) {
 				System.err.println("World " + worldId + " does not exist");
+				System.err.println("The following worlds exist: ");
+				for (String id : collections.getWorldIds()) {
+					NetworkWorld w = collections.getWorld(id);
+					System.err.println("\t" + id + ":\t" + w.getDescription());
+				}
 				return null;
 			}
 		
@@ -486,7 +492,7 @@ public class MatchConfiguration {
 	 */
 	public String getAgentName(GameHandler handler) {
 		NetworkWorld world = this.getWorldWithAgents();
-		OOState startingState = (OOState) world.startingState();
+		OOState startingState = (OOState) world.startingStateWithoutNames();
 		
 		int pos = -1;
 		synchronized(this.networkAgents) {
@@ -498,6 +504,10 @@ public class MatchConfiguration {
 		}
 		List<ObjectInstance> agents = startingState.objectsOfClass(GridGame.CLASS_AGENT);
 		return (pos == -1) ? null : agents.get(pos).name();
+	}
+	
+	public List<String> getAgentNames() {
+		return new ArrayList<String>(this.orderedAgents);
 	}
 
 	/**

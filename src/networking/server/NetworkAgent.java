@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import burlap.domain.stochasticdomain.world.NetworkWorld;
+import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.action.Action;
 import burlap.mdp.core.state.State;
 import burlap.mdp.stochasticgames.JointAction;
+import burlap.mdp.stochasticgames.SGDomain;
 import burlap.mdp.stochasticgames.agent.SGAgentBase;
 import burlap.mdp.stochasticgames.world.World;
 
@@ -28,19 +30,25 @@ public class NetworkAgent extends SGAgentBase {
 	
 	private Boolean gameStarted;
 	
+	private NetworkWorld nwWorld;
+	
+	private int agentNum;
+	
 	private static Map<GameHandler, NetworkAgent> agentMap = 
 			Collections.synchronizedMap(new HashMap<GameHandler, NetworkAgent>());
 	
-	private NetworkAgent(GameHandler handler) {
+	private NetworkAgent(GameHandler handler, SGDomain domain, String participantId) {
 		this.handler = handler;
 		this.gameStarted = false;
+		this.agentNum = -1;
+		this.init(domain, participantId, GridGame.getStandardGridGameAgentType(domain));
 	}
 	
-	public static NetworkAgent getNetworkAgent(GameHandler handler) {
+	public static NetworkAgent getNetworkAgent(GameHandler handler, SGDomain domain, String participantId) {
 		synchronized(NetworkAgent.agentMap) {
 			NetworkAgent agent = NetworkAgent.agentMap.get(handler);
 			if (agent == null) {
-				agent = new NetworkAgent(handler);
+				agent = new NetworkAgent(handler, domain, participantId);
 				NetworkAgent.agentMap.put(handler, agent);
 			}
 			return agent;
@@ -52,11 +60,13 @@ public class NetworkAgent extends SGAgentBase {
 	 */
 	@Override
 	public void gameStarting(World w, int i) {
-		NetworkWorld nw = (NetworkWorld)w;
-		if (nw.getCurrentWorldState() == null) {
-			nw.generateNewCurrentState();
+		this.agentNum = i;
+		this.world = w;
+		this.nwWorld = (NetworkWorld)w;
+		if (this.nwWorld.getCurrentWorldState() == null) {
+			this.nwWorld.generateNewCurrentState();
 		}
-		State state = nw.getCurrentWorldState();
+		State state = this.nwWorld.getCurrentWorldState();
 		this.handler.updateClient(state);
 		this.gameStarted = true;
 	}
@@ -116,7 +126,7 @@ public class NetworkAgent extends SGAgentBase {
 		if (action == null) {
 			this.handler.begForAction(s);
 		}
-		while (action == null && ((NetworkWorld)this.world).isOk() && this.handler.isConnected()) {
+		while (action == null && this.nwWorld.isOk() && this.handler.isConnected()) {
 			synchronized(this) {
 				action = this.currentAction;
 			}
@@ -129,6 +139,6 @@ public class NetworkAgent extends SGAgentBase {
 	}
 
 	public int getAgentNum() {
-		return -1;
+		return this.agentNum;
 	}
 }

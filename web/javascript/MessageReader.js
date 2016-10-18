@@ -107,15 +107,24 @@ var MessageReader = function() {
 
 	var getObjectsOfTypeFromMessage = function(state, fieldName, parserFn) {
 		var objects = [];
-		
-		for (var i = 0; i < state.length; i++) {
-			if (state[i]["class"] === fieldName) {
-				var obj = parserFn(state[i]);
-				if (typeof obj !== 'undefined' && obj !== null) {
-					objects.push(obj);
-				} else {
-					console.log("Could not parse %O", state[i]);
-				}
+		if (!(MessageFields.OBJECTS_BY_CLASS in state)) {
+			console.log("Field " + MessageFields.OBJECTS_BY_CLASS + " was not found in State");
+			return objects;
+		}
+
+		var objectsByClass = state[MessageFields.OBJECTS_BY_CLASS];
+
+		if (!(fieldName in objectsByClass)) {
+			console.log("Field " + fieldName + " was not found in objectsByClass");
+			return objects;
+		}
+		var objectsOfClass = objectsByClass[fieldName];
+		for (var i = 0; i < objectsOfClass.length; i++) {
+			var obj = parserFn(objectsOfClass[i]);
+			if (typeof obj !== 'undefined' && obj !== null) {
+				objects.push(obj);
+			} else {
+				console.log("Could not parse %s from %O", fieldName, objectsOfClass[i]);
 			}
 		}
 
@@ -124,6 +133,7 @@ var MessageReader = function() {
 
 	var getAgentFromMessage = function(msg) {
 		var agent;
+		
 		if (!(MessageFields.NAME in msg) ||
 			!(MessageFields.PLAYER_NUMBER in msg) ||
 			!(MessageFields.ATTX in msg) ||

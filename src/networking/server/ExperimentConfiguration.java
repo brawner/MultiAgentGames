@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 import networking.common.GridGameExperimentToken;
 import networking.common.TokenCastException;
@@ -105,6 +107,17 @@ public class ExperimentConfiguration {
 	
 	public List<MatchConfiguration> getAllMatches() {
 		return new ArrayList<MatchConfiguration>(this.matchConfigurations);
+	}
+	
+	public Set<String> getAttachedAgentNames() {
+		Set<String> agentNames = new HashSet<String>();
+		for (MatchConfiguration config : this.matchConfigurations) {
+			for (GameHandler handler : config.getHandlerLookup().values()) {
+				agentNames.add(handler.getNetworkAgent().agentName());
+			}
+		}
+		
+		return agentNames;
 	}
 	
 	public int getNumMatches() {
