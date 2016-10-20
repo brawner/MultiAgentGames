@@ -264,7 +264,7 @@ GridWorldPainter.prototype.drawTransition = function (state, action, nextState, 
 											  cy : (this.gridworld.height - nextState[agent].location[1] - .5)*this.TILE_SIZE}, 
 											 this.ACTION_ANIMATION_TIME, 'easeInOut');
 			this.objectImages[agent].animate(movement);
-			this.drawState(nextState);
+			//this.drawState(nextState);
 
 			$.subscribe('killtimers', this.makeTimerKiller(this.objectImages[agent], movement));
 		}

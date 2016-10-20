@@ -86,3 +86,9 @@ MessageFields.IS_READY = "is_ready";
 MessageFields.HEARTBEAT = "heartbeat";
 MessageFields.SERVER = "server";
 MessageFields.OTHER_VARS = "other_vars";
+MessageFields.SURVEY_RESPONSE = "survey_response";
+MessageFields.OPPONENT_TYPE = "opponent_type";
+MessageFields.HUMAN = "human";
+MessageFields.COMPUTER = "computer";
+
+

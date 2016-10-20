@@ -99,4 +99,11 @@ var MessageWriter = function() {
 
 		return msg;
 	};
+
+	this.surveyResponseMsg = function(humanOrComputer) {
+		var msg = {};
+		msg[MessageFields.MSG_TYPE] = MessageFields.SURVEY_RESPONSE;
+		msg[MessageFields.OPPONENT_TYPE] = humanOrComputer;
+		return msg;
+	};
 };

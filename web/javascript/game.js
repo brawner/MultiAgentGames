@@ -10,8 +10,7 @@
 function fnMain(jQuery) {
     "use strict";
     console.log($('#task_display'));
-    var game = new Game();
-    game.go();    
+    displayStartMenu();
 }
 
 window['fnMain'] = fnMain;
@@ -20,6 +19,26 @@ window['fnMain'] = fnMain;
 * This handles the coordination for an interactive game.
 */
 
+function displayConsent(numPlayers) {
+    
+    var callback = function() {
+        var game = new Game();
+        game.go(numPlayers);
+    };
+    var body = document.getElementsByTagName("body")[0];
+    var consentDiv = createConsent(callback);
+    body.appendChild(consentDiv);
+}
+
+function displayStartMenu() {
+
+    var callback = function(numPlayers) {
+        displayConsent(numPlayers);
+    };
+    var body = document.getElementsByTagName("body")[0];
+    var startMenuDiv = createStartMenu(callback);
+    body.appendChild(startMenuDiv);
+}
 
 /**
  * @constructor
@@ -504,7 +523,7 @@ var Game = function() {
                 // show waiting board here if only one
                 if(initMsg.ready == "false"){
                     agent_waited = true;
-                    //painter.draw_waiting();
+                    painter.draw_waiting();
                     setTimeout(waitForOtherAgent, WAIT_FOR_PARTNER);
                 }
                 is_initialized = true;
@@ -817,6 +836,8 @@ var Game = function() {
                     if (typeof redirect_page != "undefined") {
                         console.log("Redirecting to: " + url);
                         $(location).attr('href',url);
+                    } else {
+                        askSurvey();
                     }
                 }, this)
 
@@ -845,6 +866,12 @@ var Game = function() {
         var actualAction = actions[currentAction];
         var msg = message_writer.updateActionMsg(client_id, actualAction, agent_name);
         connection.Send(msg);
+    };
+
+    var askSurvey = function() {
+        var body = document.getElementsByTagName("body")[0];
+        var surveyDiv = createSurvey();
+        body.appendChild(surveyDiv);
     };
 
 	
