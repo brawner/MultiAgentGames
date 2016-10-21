@@ -2,40 +2,43 @@
 set -e
 source ~/.profile
 
-echo "Building burlap"
-cd ~/workspace/burlap
-ant dist
-cp dist/burlap.jar ../norm_learning/lib/
+#echo "Building burlap"
+#cd ~/workspace/burlap
+#ant dist
+#cp dist/burlap.jar ../norm_learning/lib/
 
-echo "Building norm learning"
-cd ~/workspace/norm_learning
-ant dist
-cp dist/burlap.jar ../MultiAgentGames/lib/
+#echo "Building norm learning"
+#cd ~/workspace/norm_learning
+#ant dist
+#cp dist/burlap.jar ../MultiAgentGames/lib/
 
 
 echo "Updating and building MultiAgentGames"
 cd ../MultiAgentGames
 ant
-java -jar compiler.jar -O ADVANCED --js_output_file=web/all.js \
-	--externs web/closure\ externs/jquery-1.9.js \
-	--externs web/closure\ externs/underscore-1.5.2.js \
-	--externs web/javascript/lib/raphael.js \
-	--externs web/javascript/lib/tiny-pubsub.js \
-	web/javascript/MessageFields.js \
-	web/javascript/MessageReader.js \
-	web/javascript/MessageWriter.js \
-	web/javascript/clientMDP.js \
-	web/javascript/config.js \
-	web/javascript/connect.js \
-	web/javascript/game.js \
-	web/javascript/gridworld_painter.js \
-	web/javascript/handler.js \
-	web/javascript/objects.js \
-	web/javascript/painter.js
+#java -jar compiler.jar -O ADVANCED --js_output_file=web/all.js \
+#	--externs web/closure\ externs/jquery-1.9.js \
+#	--externs web/closure\ externs/underscore-1.5.2.js \
+#	--externs web/javascript/lib/raphael.js \
+#	--externs web/javascript/lib/tiny-pubsub.js \
+#	web/javascript/MessageFields.js \
+#	web/javascript/MessageReader.js \
+#	web/javascript/MessageWriter.js \
+#	web/javascript/clientMDP.js \
+#	web/javascript/config.js \
+#	web/javascript/connect.js \
+#	web/javascript/game.js \
+#	web/javascript/gridworld_painter.js \
+#	web/javascript/handler.js \
+#	web/javascript/objects.js \
+#	web/javascript/painter.js
 
 echo "Syncing grid games files"
-mkdir -p ~/grid_games/results
-rsync -avz ./resources/ ~/grid_games/
+mkdir -p $HOME/grid_games/results
+mkdir -p $HOME/grid_games/experiments
+mkdir -p $HOME/grid_games/parameters
+mkdir -p $HOME/grid_games/server_out
+rsync -avz ./resources/ $HOME/grid_games/
 
 echo "Copying website files"
 sudo chown $USER:www-data -R /var/www/multi_grid_games
