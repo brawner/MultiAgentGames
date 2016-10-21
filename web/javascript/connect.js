@@ -166,9 +166,7 @@ var GameConnect = function(){
     this.Send = function(msg){
         msg[MessageFields.CLIENT_ID] = clientId;
         var msgString = JSON.stringify(msg);
-        if (msg[MessageFields.MSG_TYPE] !== MessageFields.HEARTBEAT) {
-            console.log("Sending: " + msgString);
-        }
+        console.log("Sending: " + msgString);
         websocket.send(msgString);
     };
 

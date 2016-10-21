@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
+import burlap.domain.stochasticgames.gridgame.GridGame;
+import burlap.mdp.stochasticgames.SGDomain;
 import burlap.mdp.stochasticgames.world.World;
 
 public class SimpleSGAgentGenerator implements SGAgentGenerator {
@@ -15,19 +17,19 @@ public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	}
 
 	@Override
-	public SGAgent generateAgent(String agentType, String[] params) {
+	public SGAgent generateAgent(SGDomain domain, String agentName, String agentType, String[] params) {
 		switch(agentType) {
 		case RANDOM_AGENT:
-			return SimpleSGAgentGenerator.getNewRandomAgent();
+			return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
 		}
 		return null;
 	}
 	
 	@Override
-	public SGAgent generateAgent(String agentType, String paramsFile) {
+	public SGAgent generateAgent(SGDomain domain, String agentName, String agentType, String paramsFile) {
 		switch(agentType) {
 		case RANDOM_AGENT:
-			return SimpleSGAgentGenerator.getNewRandomAgent();
+			return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
 		}
 		return null;
 	}
@@ -36,8 +38,12 @@ public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	 * Constructs a new Random agent
 	 * @return
 	 */
-	public static SGAgent getNewRandomAgent() {
-		return new RandomSGAgent();
+	public static SGAgent getNewRandomAgent(SGDomain domain, String agentName) {
+		RandomSGAgent agent = new RandomSGAgent();
+		SGAgentType agentType = GridGame.getStandardGridGameAgentType(domain);
+		agent.init(domain, agentName, agentType);
+	
+		return agent;
 	}
 
 	@Override

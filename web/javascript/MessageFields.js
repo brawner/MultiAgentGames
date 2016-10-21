@@ -90,5 +90,5 @@ MessageFields.SURVEY_RESPONSE = "survey_response";
 MessageFields.OPPONENT_TYPE = "opponent_type";
 MessageFields.HUMAN = "human";
 MessageFields.COMPUTER = "computer";
-
+MessageFields.NUM_PLAYERS = "num_players";
 

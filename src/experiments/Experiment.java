@@ -108,8 +108,11 @@ public class Experiment {
 		// create objects given types from experiment file
 		for (int match = 0; match < numMatches; match++) {
 			//System.out.println(paramFileLists.get(match).size());
-			agentLists.add(match, makeAgents(agentKindLists, paramFileLists, match,paramFilesFolder));
-			startingStates.add(match, makeState(games.get(match), gamesFolder));
+			List<SGAgent> agents = makeAgents(this.sgDomain, agentKindLists, paramFileLists, match,paramFilesFolder);
+			agentLists.add(match, agents);
+			
+			State startingState = makeState(games.get(match), gamesFolder);
+			startingStates.add(match, startingState);
 
 		}
 
@@ -119,9 +122,6 @@ public class Experiment {
 
 
 	private void readJSONExperimentFile(String experimentFile) {
-
-
-		
 		BufferedReader reader;
 		FileReader fileReader;
 		try {
@@ -260,23 +260,24 @@ public class Experiment {
 		return state;
 	}
 
-	private List<SGAgent> makeAgents(List<List<String>> agentKindsList,List<List<String>> paramFilesLists, int match, String paramFilesFolder) {
+	private List<SGAgent> makeAgents(SGDomain domain, List<List<String>> agentKindsList,List<List<String>> paramFilesLists, int match, String paramFilesFolder) {
 		List<SGAgent> matchAgents = new ArrayList<SGAgent>();
 
 
 		//System.out.println("Num agents: "+agentKindsList.get(match).size());
 		for(int agent = 0; agent< agentKindsList.get(match).size();agent++){
-			if(match==0){
-				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent),
-						paramFilesFolder+paramFilesLists.get(match).get(agent), outputFolder));
-
-			}else if(agentKindsList.get(match).get(agent).compareTo(agentKindsList.get(match-1).get(agent))==0 &&
-					paramFilesLists.get(match).get(agent).compareTo(paramFilesLists.get(match-1).get(agent))==0){
-				matchAgents.add(agentLists.get(match-1).get(agent));
-
+			String agentType = agentKindsList.get(match).get(agent);
+			String paramsFile = paramFilesLists.get(match).get(agent);
+			String prevAgentType = (match > 0) ? agentKindsList.get(match-1).get(agent) : null;
+			String prevParamsFile = (match > 0 ) ? paramFilesLists.get(match-1).get(agent) : null;
+			String path = new File(paramFilesFolder, paramsFile).toString();
+			
+			if(match != 0 && agentType.compareTo(prevAgentType)==0 && paramsFile.compareTo(prevParamsFile)==0){
+				SGAgent prevAgent = agentLists.get(match-1).get(agent);
+				matchAgents.add(prevAgent);
 			}else{
-				matchAgents.add(findAndCreateAgentOfKind(agentKindsList.get(match).get(agent), 
-						paramFilesFolder+paramFilesLists.get(match).get(agent),outputFolder));
+				SGAgent agentObj = findAndCreateAgentOfKind(domain, "agent" + agent, agentType, path, this.outputFolder);
+				matchAgents.add(agentObj);
 			}
 		}
 		return matchAgents;
@@ -284,8 +285,8 @@ public class Experiment {
 
 
 
-	private SGAgent findAndCreateAgentOfKind(String agentKind, String parametersFile, String outputFile) {
-		return this.agentGenerator.generateAgent(agentKind, parametersFile);
+	private SGAgent findAndCreateAgentOfKind(SGDomain domain, String agentName, String agentKind, String parametersFile, String outputFile) {
+		return this.agentGenerator.generateAgent(domain, agentName, agentKind, parametersFile);
 	}
 
 	public State getHallwayState() {

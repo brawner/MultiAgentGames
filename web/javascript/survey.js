@@ -1,10 +1,10 @@
-var createSurvey = function() {
+var createSurvey = function(connection, message_writer) {
 	var surveyDiv = document.createElement("div");
     surveyDiv.style.left = "250px";
 	surveyDiv.style.top = "100px";
 	
 	var textDiv = document.createElement("text");
-	textDiv.innerHTML = "<p>Do you think you played with a human or a computer?</p>";
+	textDiv.innerHTML = "<p>On a scale of 1 to 7, how human was your partner?</p>";
 	surveyDiv.appendChild(textDiv);
 
 	var human = document.createElement("button");
@@ -15,11 +15,15 @@ var createSurvey = function() {
 
     human.onclick = function() {
         var msg = message_writer.surveyResponseMsg(MessageFields.HUMAN);
-        connection.Send(msg);   
+        surveyDiv.remove();
+        connection.Send(msg);
+        window.location.reload();
     };
     computer.onclick = function() {
         var msg = message_writer.surveyResponseMsg(MessageFields.COMPUTER);
-        connection.Send(msg);   
+        surveyDiv.remove();
+        connection.Send(msg); 
+        window.location.reload();  
     };
     surveyDiv.appendChild(human);
     surveyDiv.appendChild(computer);

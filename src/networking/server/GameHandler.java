@@ -102,11 +102,13 @@ public class GameHandler {
 		try {
 			String msgType = msg.getString(GridGameManager.MSG_TYPE);
 
-			if (msgType.equals(JOIN_GAME)) {
-			}else if(msgType.equals(GridGameManager.REACTION_TIME)){
+			switch(msgType) {
+			case JOIN_GAME:
+				break;
+			case REACTION_TIME:
 				this.appendToActionRecord(msg);
-
-			} else if (msgType.equals(TAKE_ACTION)) {
+				break;
+			case TAKE_ACTION:
 				if (this.agent.isGameStarted()) {
 					String actionName = msg.getString(ACTION);
 					Action groundedAction = new SimpleAction(actionName);
@@ -116,13 +118,14 @@ public class GameHandler {
 					response.setString("Game_started", "Game was not started");
 					response.setError(true);
 				}
-			}else if(msgType.equals(INITIALIZE)){
-
-			}else if (msgType.equals(HEARTBEAT)){
-				
-			}else {
+				break;
+			case INITIALIZE:
+				break;
+			case HEARTBEAT:
+				break;
+			default:
 				System.out.println("Unhandled message type: " + msgType);
-				
+				break;
 			}
 		} catch (TokenCastException e) {
 			

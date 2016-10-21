@@ -24,7 +24,7 @@ var GridWorldPainter = function (gridworld) {
 
 GridWorldPainter.prototype.init = function (container, this_agent_name, tile_click_cb) {
 	"use strict";
-
+	this.container = container;
 	this_agent_name = typeof this_agent_name !== 'undefined' ? this_agent_name : 'agent1';
 	this.width = this.TILE_SIZE*this.gridworld.width;
 	this.height = this.TILE_SIZE*this.gridworld.height;
@@ -149,6 +149,10 @@ for (var x = 0; x < this.gridworld.width; x++) {
 		}
 	}
 
+}
+
+GridWorldPainter.prototype.clear = function() {
+	this.paper.clear();
 }
 
 GridWorldPainter.prototype.reset = function(gridworld, container, agent_name, tile_click_cb) {
@@ -518,6 +522,7 @@ var ButtonPainter = function () {
 
 ButtonPainter.prototype.init = function(container) {
 	console.log("Initializing button painter");
+	this.container = container;
 	this.width = this.BUTTON_WIDTH * 3 + this.BUTTON_SPACING * 2;
 	this.height = this.BUTTON_HEIGHT * 3 + this.BUTTON_SPACING * 2;
 	if (typeof this.paper === 'undefined') {
@@ -566,6 +571,11 @@ ButtonPainter.prototype.drawDirectionalButtons = function(up_cb, left_cb, down_c
 	
 };
 
+ButtonPainter.prototype.clear = function() {
+	this.paper.clear();
+}
+
+
 var GridButtonPainter = function(container, gwPainter) {
 	"use strict";
 	console.log("Initializing button painter");
@@ -599,6 +609,7 @@ GridButtonPainter.prototype.drawClearButtons = function(cb) {
 	this.addButton(up_wait_down_left, left_wait_right_top, this.BUTTON_WIDTH, this.BUTTON_HEIGHT, "Wait", wait_cb);
 	
 };
+
 
 
 

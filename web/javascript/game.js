@@ -43,7 +43,7 @@ function displayStartMenu() {
 /**
  * @constructor
  */
-var Game = function() {
+var Game = function(numPlayers) {
     "use strict";
     
     //The websocket connection object
@@ -58,9 +58,7 @@ var Game = function() {
         painter,
         button_painter,
         text_messages,
-        score_board,
         // tracks the connection status and displays it
-        status_painter,
         // The client id assigned by the server to this client
         client_id,
         // The name given to the agent associated with this client
@@ -150,7 +148,7 @@ var Game = function() {
             url_client_id = vars['t_id'];
             if (typeof vars['redirect'] != 'undefined') {
                 redirect_page = vars['redirect']+"/?"+"SID="+vars['SID']+"&t_id="+url_client_id;
-            }
+            } 
             
 
             if(vars['human']!= null && vars['game']!=null){
@@ -163,13 +161,17 @@ var Game = function() {
                 //load from config file
                 var label = null;
                 var exp_name = vars['exp_name'];
+                if (numPlayers == 2 && Math.random() < 0.5) {
+                    numPlayers = 1;
+                }
+                exp_name += 1;
                 agents = null;
             }
 
             console.log("Running based on URL");
             
 
-            var msg = message_writer.urlJoinMsg(label,agents,url_client_id, exp_name, vars);
+            var msg = message_writer.urlJoinMsg(label,agents,url_client_id, exp_name, numPlayers, vars);
             console.log(msg)
             connection.Send(msg);
     };
@@ -868,9 +870,19 @@ var Game = function() {
         connection.Send(msg);
     };
 
+    var clearScreen = function() {
+        button_painter.clear();
+        painter.clear();
+        text_messages.html("");
+    };
+
     var askSurvey = function() {
+        $(document).unbind('keydown.gridworld');
+        var exp = document.getElementById("experiment");
+        exp.innerHTML = "";
+        clearScreen();
         var body = document.getElementsByTagName("body")[0];
-        var surveyDiv = createSurvey();
+        var surveyDiv = createSurvey(connection, message_writer);
         body.appendChild(surveyDiv);
     };
 

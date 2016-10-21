@@ -343,7 +343,7 @@ public class GridGameManager {
 				break;
 			case GameHandler.RUN_URL_GAME:
 				this.runURLGame2(token,id,session,response);
-				break;
+				return response;
 			}
 
 			if (response.getError()) {
@@ -493,7 +493,7 @@ public class GridGameManager {
 			response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
 			return;
 		}
-		matchConfiguration.addAgentType(agentTypeStr);
+		matchConfiguration.addAgentType(configuration.getCurrentMatch().getBaseWorld().getDomain(), agentTypeStr);
 		this.updateConnected();
 	}
 
@@ -532,7 +532,7 @@ public class GridGameManager {
 				response.setString(WHY_ERROR, "An agent of type " + agentTypeStr + " cannot be added to this game");
 				return;
 			}
-			matchConfiguration.addAgentType(agentTypeStr);
+			matchConfiguration.addAgentType(matchConfiguration.getBaseWorld().getDomain(), agentTypeStr);
 		}
 
 		this.updateConnected();

@@ -13,13 +13,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import networking.common.GridGameExperimentToken;
-import networking.common.GridGameServerToken;
 import networking.common.Token;
 import networking.common.TokenCastException;
 import burlap.domain.stochasticdomain.world.NetworkWorld;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.stochasticgames.SGDomain;
 import burlap.mdp.stochasticgames.agent.SGAgent;
 import burlap.mdp.stochasticgames.agent.SGAgentGenerator;
 
@@ -160,7 +160,7 @@ public class MatchConfiguration {
 					}
 					params = Paths.get(paramsDirectory, params).toString();
 				}
-				configuration.addAgentType(agentTypeStr,  agentGenerator.isRepeatedAgentType(agentTypeStr), params);
+				configuration.addAgentType(world.getDomain(), agentTypeStr,  agentGenerator.isRepeatedAgentType(agentTypeStr), params);
 			}
 			return configuration;
 		
@@ -252,7 +252,7 @@ public class MatchConfiguration {
 			}
 		} else if (this.regeneratedAgents.containsKey(agentName)) {
 			String agentTypeStr = this.regeneratedAgents.get(agentName);
-			SGAgent agent = this.agentGenerator.generateAgent(agentTypeStr, "");
+			SGAgent agent = this.agentGenerator.generateAgent(world.getDomain(), agentName, agentTypeStr, "");
 //			SGAgentType agentType = 
 //					new SGAgentType(agentTypeStr, world.getDomain().getActionTypes());
 			if (!this.agentGenerator.isValidAgent(world, agent)) {
@@ -348,9 +348,9 @@ public class MatchConfiguration {
 		}
 	}
 	
-	public void addAgentType(String agentType, boolean repeated, String params) {
+	public void addAgentType(SGDomain domain, String agentType, boolean repeated, String params) {
 		if (repeated) {
-			SGAgent agent = this.agentGenerator.generateAgent(agentType, params);
+			SGAgent agent = this.agentGenerator.generateAgent(domain, agentType, "agent", params);
 			this.addAgent(agent);
 		}
 
@@ -373,8 +373,8 @@ public class MatchConfiguration {
 	 * other agents.
 	 * @param agentType
 	 */
-	public void addAgentType(String agentType) {
-		this.addAgentType(agentType, false, null);
+	public void addAgentType(SGDomain domain, String agentType) {
+		this.addAgentType(domain, agentType, false, null);
 	}
 	
 	/**
