@@ -2,11 +2,30 @@ var StartMenuText = "<p>Can you determine whether you are playing with a human o
 				  "<p>Here you can play a simple two-player cooperative game. If you can, find a " + 
 				  " partner to play on the other tablet. If you don't have a partner, " + 
 				  " we will connect you with a partner from Amazon Mechanical Turk.<p>" + 
-				  "<p>When the game starts, you will be randomly assigned to play with the designated partner " +
-				  " or an intelligent computer agent trained to play with humans </p>"
+				  
+                  "<p>When the game starts, you will be randomly assigned to play with the designated partner " +
+				  " or an intelligent computer agent trained to play with humans </p>" + 
+
+                  "<p>Your goal is to arrive at your goal square at the same time. If you do, you and your partner " + 
+                  " score a point. If you don't, neither agent will score. You must cooperate with your partner to " + 
+                  " successfully solve the game.</p>" + 
+
+                  "<p>Important! Do not talk to your partner while you are playing. Please be silent</p>"
+
 				  "<p>Please select your choice below";
 
-var pilotConsentText = "<p></p>"
+var PilotConsentText = "<p>This experiment investigates how people make decisions in environments containing " + 
+                  "multiple agents. In the experiment, you will be an agent in a virtual environment that " +
+                  "may contain one or more other agents (whose behavior may be determined by another participant " + 
+                  "or a computer algorithm). Depending on the study, you will have a score that depends on your " + 
+                  "and other agents' actions in the environment. The experiment is a Brown University research " + 
+                  "study.</p>" +
+
+                  "<p>Currently, this study is only in a pilot study phase. Your participation will only be used " + 
+                  " to better inform our study at a later date. If you have any information, you may contact " + 
+                  " Stephen Brawner (stephen_brawner@brown.edu).</p>" +
+
+                  "<p>Thank you for your participation</p>"
 
 var ConsentText = "<p>This experiment investigates how people make decisions in environments containing " + 
                   "multiple agents. In the experiment, you will be an agent in a virtual environment that " +
@@ -45,7 +64,7 @@ var createConsent = function(callback) {
 	var consentDiv = document.createElement("div");
 	consentDiv.style.width = "640px";
 	var consent = document.createElement("text");
-    consent.innerHTML = ConsentText;
+    consent.innerHTML = PilotConsentText;
     consent.style.position = "relative";
     consent.style.left = "10%";
     consent.style.top = "0%";
