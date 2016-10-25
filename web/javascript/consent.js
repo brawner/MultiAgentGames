@@ -25,7 +25,7 @@ var PilotConsentText = "<p>This experiment investigates how people make decision
                   " to better inform our study at a later date. If you have any information, you may contact " + 
                   " Stephen Brawner (stephen_brawner@brown.edu).</p>" +
 
-                  "<p>Thank you for your participation</p>"
+                  "<p>Do you agree to participate in our pilot study?</p>"
 
 var ConsentText = "<p>This experiment investigates how people make decisions in environments containing " + 
                   "multiple agents. In the experiment, you will be an agent in a virtual environment that " +
