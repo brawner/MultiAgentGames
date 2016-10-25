@@ -163,7 +163,7 @@ var Game = function(numPlayers) {
                 var label = null;
                 var exp_name = vars['exp_name'];
                 console.log("Num players " + numPlayers);
-                if (numPlayers == 2 && Math.random() < 0.0) {
+                if (numPlayers == 2 && Math.random() < 0.5) {
                     numPlayers = 1;
                 }
                 exp_name += numPlayers;
