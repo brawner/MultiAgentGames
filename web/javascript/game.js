@@ -22,8 +22,8 @@ window['fnMain'] = fnMain;
 function displayConsent(numPlayers) {
     
     var callback = function() {
-        var game = new Game();
-        game.go(numPlayers);
+        var game = new Game(numPlayers);
+        game.go();
     };
     var body = document.getElementsByTagName("body")[0];
     var consentDiv = createConsent(callback);
@@ -33,6 +33,7 @@ function displayConsent(numPlayers) {
 function displayStartMenu() {
 
     var callback = function(numPlayers) {
+        console.log("Num players requested: " + numPlayers);
         displayConsent(numPlayers);
     };
     var body = document.getElementsByTagName("body")[0];
@@ -161,10 +162,11 @@ var Game = function(numPlayers) {
                 //load from config file
                 var label = null;
                 var exp_name = vars['exp_name'];
-                if (numPlayers == 2 && Math.random() < 0.5) {
+                console.log("Num players " + numPlayers);
+                if (numPlayers == 2 && Math.random() < 0.0) {
                     numPlayers = 1;
                 }
-                exp_name += 1;
+                exp_name += numPlayers;
                 agents = null;
             }
 
@@ -660,7 +662,7 @@ var Game = function(numPlayers) {
     // Handle a game update, and update the state and visualization
     this.update_game = function(msg) {
         if(agent_waited){
-            //painter.hide_waiting();
+            painter.hide_waiting();
             agent_waited = false;
         }
         console.log("Running update_game with msg below");

@@ -6,7 +6,7 @@ var StartMenuText = "<p>Can you determine whether you are playing with a human o
 				  " or an intelligent computer agent trained to play with humans </p>"
 				  "<p>Please select your choice below";
 
-var pilotConsentText + "<p></p>"
+var pilotConsentText = "<p></p>"
 
 var ConsentText = "<p>This experiment investigates how people make decisions in environments containing " + 
                   "multiple agents. In the experiment, you will be an agent in a virtual environment that " +

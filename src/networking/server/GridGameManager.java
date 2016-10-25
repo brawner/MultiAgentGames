@@ -699,6 +699,10 @@ public class GridGameManager {
 			}
 			this.collections.addConfiguration(configuration);
 			response.setString(STATUS, "Game " + configuration.getActiveGameID() + " has been initialized");
+		} else if (!configuration.participantIdIsValid(turkId)) {
+			response.setError(true);
+			response.setString(WHY_ERROR, "The participant ID " + turkId + " has already been used");
+			return;
 		}
 		if (turkId == null) {
 			String baseId = session.getRemoteAddress().getHostString();

@@ -109,15 +109,27 @@ public class ExperimentConfiguration {
 		return new ArrayList<MatchConfiguration>(this.matchConfigurations);
 	}
 	
+	private Set<String> getAttachedAgentNames(MatchConfiguration config) {
+		Set<String> agentNames = new HashSet<String>();
+		for (GameHandler handler : config.getHandlerLookup().values()) {
+			agentNames.add(handler.getNetworkAgent().agentName());
+		}
+		return agentNames;
+	}
+	
 	public Set<String> getAttachedAgentNames() {
 		Set<String> agentNames = new HashSet<String>();
+		agentNames.addAll(this.getAttachedAgentNames(this.currentMatch));
 		for (MatchConfiguration config : this.matchConfigurations) {
-			for (GameHandler handler : config.getHandlerLookup().values()) {
-				agentNames.add(handler.getNetworkAgent().agentName());
-			}
+			agentNames.addAll(this.getAttachedAgentNames(config));
 		}
-		
 		return agentNames;
+	}
+	
+	public boolean participantIdIsValid(String participantId) {
+		Set<String> agentNames = this.getAttachedAgentNames();
+		boolean isNotValid = agentNames.contains(participantId);
+		return !isNotValid;
 	}
 	
 	public int getNumMatches() {

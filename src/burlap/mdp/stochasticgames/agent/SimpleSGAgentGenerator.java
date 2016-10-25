@@ -3,15 +3,20 @@ package burlap.mdp.stochasticgames.agent;
 import java.util.Arrays;
 import java.util.List;
 
+import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.RandomSGAgent;
+import burlap.behavior.stochasticgames.agents.madp.MADPPlanAgentFactory;
+import burlap.behavior.stochasticgames.agents.madp.MADPPlannerFactory.MAVIPlannerFactory;
+import burlap.behavior.stochasticgames.agents.naiveq.SGNaiveQFactory;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.stochasticgames.SGDomain;
 import burlap.mdp.stochasticgames.world.World;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
 
 public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	public static final String RANDOM_AGENT = "random";
-	
-	public static final List<String> ALLOWED_AGENTS = Arrays.asList(RANDOM_AGENT);
+	public static final String NAIVE_Q = "naiveq";
+	public static final List<String> ALLOWED_AGENTS = Arrays.asList(RANDOM_AGENT, NAIVE_Q);
 	public SimpleSGAgentGenerator() {
 		// TODO Auto-generated constructor stub
 	}
@@ -20,7 +25,10 @@ public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	public SGAgent generateAgent(SGDomain domain, String agentName, String agentType, String[] params) {
 		switch(agentType) {
 		case RANDOM_AGENT:
-			return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
+			return CDHallwayAgent.getAgent(domain, agentName);
+			//return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
+		case NAIVE_Q:
+			return SimpleSGAgentGenerator.getNewNaiveQAgent(domain, agentName);
 		}
 		return null;
 	}
@@ -29,7 +37,12 @@ public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	public SGAgent generateAgent(SGDomain domain, String agentName, String agentType, String paramsFile) {
 		switch(agentType) {
 		case RANDOM_AGENT:
-			return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
+			return CDHallwayAgent.getAgent(domain, agentName);
+			
+			//return SimpleSGAgentGenerator.getNewRandomAgent(domain, agentName);
+		case NAIVE_Q:
+			return SimpleSGAgentGenerator.getNewNaiveQAgent(domain, agentName);
+		
 		}
 		return null;
 	}
@@ -45,7 +58,20 @@ public class SimpleSGAgentGenerator implements SGAgentGenerator {
 	
 		return agent;
 	}
+	
+	public static SGAgent getNewNaiveQAgent(SGDomain domain, String agentName) {
+		SimpleHashableStateFactory hashFactory = new SimpleHashableStateFactory(false);
+		SGNaiveQFactory agentFactory = new SGNaiveQFactory(domain, 0.99, 0.05, 10.0, hashFactory);
+		return agentFactory.generateAgent(agentName, GridGame.getStandardGridGameAgentType(domain));
+	}
 
+//	public static SGAgent getNewMADPPlanAgent(SGDomain domain, String agentName) {
+//		MAVIPlannerFactory plannerFactory = new MAVIPlannerFactory(domain, , );
+//		
+//		PolicyFromJointPolicy policyFromJoint = new PolicyFromJointPolicy();
+//		MADPPlanAgentFactory agentFactory = new MADPPlanAgentFactory(domain, plannerFactory, policyFromJoint);
+//	}
+	
 	@Override
 	public boolean isValidAgent(World world, SGAgent agent) {
 		return SimpleSGAgentGenerator.ALLOWED_AGENTS.contains(agent.agentType().typeName);
