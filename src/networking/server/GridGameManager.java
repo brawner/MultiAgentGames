@@ -57,6 +57,7 @@ public class GridGameManager {
 	public static final String AGENT_TYPE = "agent_type";
 	public static final String GAME_MESSAGE = "game_message";
 	public static final String HELLO_MESSAGE = "hello";
+	public static final String SURVEY_RESPONSE = "survey_response";
 	public static final String WHY_ERROR = "why_error";
 	public static final String STATUS = "status";
 	public static final String RANDOM_AGENT = "random";
@@ -344,6 +345,8 @@ public class GridGameManager {
 			case GameHandler.RUN_URL_GAME:
 				this.runURLGame2(token,id,session,response);
 				return response;
+			case SURVEY_RESPONSE:
+				
 			}
 
 			if (response.getError()) {
