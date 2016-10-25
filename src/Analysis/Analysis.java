@@ -456,15 +456,15 @@ public class Analysis {
 			List<double[]> rewards = result.jointRewards;
 			List<State> states = result.states;
 			int i = 0;
-			String participantId1 = null;
-			String participantId2 = null;
-			for (GameHandler handler : configuration.getCurrentMatch().getHandlerLookup().values()) {
-				if (participantId1 == null) {
-					participantId1 = handler.getParticipantId();
-				} else if (participantId2 == null) {
-					participantId2 = handler.getParticipantId();
-				}
-			}
+			String participantId1 = configuration.getCurrentMatch().getAgentNames().get(0);;
+			String participantId2 = configuration.getCurrentMatch().getAgentNames().get(1);;
+//			for (GameHandler handler : configuration.getCurrentMatch().getHandlerLookup().values()) {
+//				if (participantId1 == null) {
+//					participantId1 = handler.getParticipantId();
+//				} else if (participantId2 == null) {
+//					participantId2 = handler.getParticipantId();
+//				}
+//			}
 			
 			
 			for (; i < actions.size(); i++) {

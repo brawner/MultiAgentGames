@@ -6,7 +6,40 @@ var StartMenuText = "<p>Can you determine whether you are playing with a human o
 				  " or an intelligent computer agent trained to play with humans </p>"
 				  "<p>Please select your choice below";
 
-var ConsentText = "<p>In common speech, consent occurs when one person voluntarily agrees to the proposal or desires of another.[1] The concept of consent has been operationalized in several major contexts, including in law, medicine and sexual relationships. Types of consent include implied consent, expressed consent, informed consent and unanimous consent. Consent as understood in legal contexts may differ from the everyday meaning. For example, a person under the Age of sexual consent may willingly engage in a sexual act; but that consent is not valid in a legal context.</p>";
+var pilotConsentText + "<p></p>"
+
+var ConsentText = "<p>This experiment investigates how people make decisions in environments containing " + 
+                  "multiple agents. In the experiment, you will be an agent in a virtual environment that " +
+                  "may contain one or more other agents (whose behavior may be determined by another participant " + 
+                  "or a computer algorithm). Depending on the study, you will have a score that depends on your " + 
+                  "and other agents’ actions in the environment. The experiment is a Brown University research " + 
+                  "study that will take place over a single session of at most one hour and take place at your " + 
+                  "current location. You will be paid a base payment of $2.00 for your participation with a bonus " + 
+                  "up to $1.00 contingent on your performance on the task.</p>" + 
+
+                  "<p>All data collected by us will be kept confidential to the extent of the law. We may ask " + 
+                  "you demographic information, such as your age, gender, level of education, and ethnicity. " + 
+                  "All experiments conducted online are hosted on a secure server. Your data will be maintained " + 
+                  "on a password-protected database. To preserve confidentiality, you will be assigned a random " + 
+                  "number (that is in no known way connected to this form) and you will automatically be identified " + 
+                  "by that number for the remainder of the experiment. Furthermore, any data stored on a computer will " + 
+                  "reference you only by this number. Your responses may be shown to future participants; however, it will " + 
+                  "be confidential and devoid of any identifying information. Only investigators delegated to this study " + 
+                  "will have access to any identifiable information and it will not be shared with third parties. " + 
+                  "In general, neither we nor anyone can absolutely guarantee the security of data transmitted over the web.</p>" + 
+
+                  "<p>Any questions concerning this research can be directed to Joseph Austerweil, Cognitive, Linguistic, " + 
+                  "and Psychological Sciences, Box 1821, Brown University; phone (401) 863-9758. If you have any questions " + 
+                  "about your rights as a human participant, contact the Research Protections Office at (401) 863-3050.</p> "+ 
+
+                  "<p>You will be put at no known risk in this experiment. There is no expected direct personal benefit " + 
+                  "from participation. The experimenter would be happy to answer any questions you might have. Your " + 
+                  "participation in this experiment is entirely voluntary. You may refuse to participate or discontinue " + 
+                  "your participation at any time without suffering penalty or any loss of benefit to which you are" +  
+                  "otherwise entitled. However, you will only be paid if you complete the task.</p>" + 
+
+                  "<p>I understand the above and hereby agree to serve as a research participant for this experiment. " + 
+                  "I am 18 years of age or older.</p><p>By clicking Next below, you agree to the above statement.</p>";
 
 var createConsent = function(callback) {
 	var consentDiv = document.createElement("div");
